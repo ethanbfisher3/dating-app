@@ -1,14 +1,13 @@
-import React, { useState } from "react"
+import React, { useRef, useState } from "react"
 import {
   View,
   Text,
-  Button,
   TouchableOpacity,
   ScrollView,
-  Switch,
   TextInput,
+  Animated,
+  Platform,
 } from "react-native"
-import { EvilIcons, Entypo, Foundation, FontAwesome } from "@expo/vector-icons"
 import DateTimePicker from "@react-native-community/datetimepicker"
 
 const dateCategories = [
@@ -22,36 +21,93 @@ const dateCategories = [
 ]
 const questionCount = 6
 
-export default function PlanADate({ navigation }) {
+export default function PlanADate({ navigation }: { navigation: any }) {
   const [maxPrice, setMaxPrice] = useState(50)
   const [hasStarvingStudentCard, setHasStarvingStudentCard] = useState(false)
-  const [selectedDate, setSelectedDate] = useState("")
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null)
   const [showDatePicker, setShowDatePicker] = useState(false)
   const [startHour, setStartHour] = useState(12)
   const [endHour, setEndHour] = useState(18)
   const [maxDistance, setMaxDistance] = useState(10)
   const [currentQuestion, setCurrentQuestion] = useState(1)
   const [showDateError, setShowDateError] = useState(false)
+  const [isAnimating, setIsAnimating] = useState(false)
   const [categoriesChecked, setCategoriesChecked] = useState(
     Array(dateCategories.length).fill(true),
   )
+  const questionTranslateX = useRef(new Animated.Value(0)).current
+  const questionOpacity = questionTranslateX.interpolate({
+    inputRange: [-80, 0, 80],
+    outputRange: [0.75, 1, 0.75],
+    extrapolate: "clamp",
+  })
+
+  const transitionToQuestion = (nextQuestion: number, direction: number) => {
+    if (
+      isAnimating ||
+      nextQuestion < 1 ||
+      nextQuestion > questionCount ||
+      nextQuestion === currentQuestion
+    ) {
+      return
+    }
+
+    setIsAnimating(true)
+    Animated.timing(questionTranslateX, {
+      toValue: direction * -80,
+      duration: 120,
+      useNativeDriver: true,
+    }).start(() => {
+      setCurrentQuestion(nextQuestion)
+      questionTranslateX.setValue(direction * 80)
+      Animated.timing(questionTranslateX, {
+        toValue: 0,
+        duration: 180,
+        useNativeDriver: true,
+      }).start(() => {
+        setIsAnimating(false)
+      })
+    })
+  }
+
+  const clampHour = (value: number) => {
+    if (Number.isNaN(value)) return 0
+    if (value < 0) return 0
+    if (value > 23) return 23
+    return value
+  }
+
+  const formatHour = (hour: number) => {
+    const normalized = ((hour % 24) + 24) % 24
+    const period = normalized < 12 ? "AM" : "PM"
+    const display = normalized % 12 === 0 ? 12 : normalized % 12
+    return `${display} ${period}`
+  }
+
+  const toggleCategory = (index: number) => {
+    const newChecked = [...categoriesChecked]
+    newChecked[index] = !newChecked[index]
+    setCategoriesChecked(newChecked)
+  }
 
   const handleNextQuestion = () => {
+    if (isAnimating) return
     if (currentQuestion === 2 && !selectedDate) {
       setShowDateError(true)
       return
     }
     setShowDateError(false)
     if (currentQuestion < questionCount) {
-      setCurrentQuestion(currentQuestion + 1)
+      transitionToQuestion(currentQuestion + 1, 1)
     } else {
       handleGenerateIdeas()
     }
   }
 
   const handlePreviousQuestion = () => {
+    if (isAnimating) return
     if (currentQuestion > 1) {
-      setCurrentQuestion(currentQuestion - 1)
+      transitionToQuestion(currentQuestion - 1, -1)
     }
   }
 
@@ -62,7 +118,7 @@ export default function PlanADate({ navigation }) {
     navigation.navigate("PlannedDateResults", {
       maxPrice,
       hasStarvingStudentCard,
-      selectedDate,
+      selectedDate: selectedDate ? selectedDate.toLocaleDateString() : "",
       startHour,
       endHour,
       maxDistance,
@@ -165,21 +221,32 @@ export default function PlanADate({ navigation }) {
                   color: selectedDate ? "#1a1a1a" : "#999",
                 }}
               >
-                {selectedDate ? selectedDate : "Select a date"}
+                {selectedDate ? selectedDate.toLocaleDateString() : "Select a date"}
               </Text>
             </TouchableOpacity>
             {showDatePicker && (
-              <DateTimePicker
-                value={selectedDate ? new Date(selectedDate) : new Date()}
-                mode="date"
-                display="calendar"
-                onChange={(event, date) => {
-                  setShowDatePicker(false)
-                  if (date) {
-                    setSelectedDate(date.toLocaleDateString())
-                  }
+              <View
+                style={{
+                  backgroundColor: "#fff",
+                  borderRadius: 10,
+                  overflow: "hidden",
                 }}
-              />
+              >
+                <DateTimePicker
+                  value={selectedDate || new Date()}
+                  mode="date"
+                  display={Platform.OS === "ios" ? "inline" : "calendar"}
+                  themeVariant={Platform.OS === "ios" ? "light" : undefined}
+                  onChange={(event, date) => {
+                    const isConfirmed =
+                      Platform.OS === "ios" || event.type === "set"
+                    setShowDatePicker(false)
+                    if (isConfirmed && date) {
+                      setSelectedDate(date)
+                    }
+                  }}
+                />
+              </View>
             )}
             {showDateError && (
               <Text style={{ color: "red", fontSize: 16, marginBottom: 12 }}>
@@ -256,8 +323,67 @@ export default function PlanADate({ navigation }) {
                 fontWeight: "600",
                 color: "#2c3e50",
               }}
-            >{`${startHour < 12 ? startHour : startHour === 12 ? 12 : startHour - 12}${startHour < 12 ? " AM" : " PM"} - ${endHour < 12 ? endHour : endHour === 12 ? 12 : endHour - 12}${endHour < 12 ? " AM" : " PM"}`}</Text>
-            {/* Replace with dropdowns or pickers for start/end time */}
+            >{`${formatHour(startHour)} - ${formatHour(endHour)}`}</Text>
+            <View style={{ flexDirection: "row", gap: 12, marginBottom: 8 }}>
+              <View style={{ flex: 1 }}>
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontWeight: "600",
+                    color: "#555",
+                    marginBottom: 6,
+                  }}
+                >
+                  Start Time (0-23)
+                </Text>
+                <TextInput
+                  style={{
+                    borderWidth: 2,
+                    borderColor: "#1e90ff",
+                    borderRadius: 10,
+                    padding: 14,
+                    fontSize: 18,
+                    backgroundColor: "#fff",
+                  }}
+                  keyboardType="numeric"
+                  value={String(startHour)}
+                  onChangeText={(text) => {
+                    const num = clampHour(parseInt(text) || 0)
+                    setStartHour(num)
+                  }}
+                  placeholder="e.g. 17"
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontWeight: "600",
+                    color: "#555",
+                    marginBottom: 6,
+                  }}
+                >
+                  End Time (0-23)
+                </Text>
+                <TextInput
+                  style={{
+                    borderWidth: 2,
+                    borderColor: "#1e90ff",
+                    borderRadius: 10,
+                    padding: 14,
+                    fontSize: 18,
+                    backgroundColor: "#fff",
+                  }}
+                  keyboardType="numeric"
+                  value={String(endHour)}
+                  onChangeText={(text) => {
+                    const num = clampHour(parseInt(text) || 0)
+                    setEndHour(num)
+                  }}
+                  placeholder="e.g. 20"
+                />
+              </View>
+            </View>
             <View
               style={{
                 flexDirection: "row",
@@ -418,23 +544,38 @@ export default function PlanADate({ navigation }) {
                 flexDirection: "row",
                 alignItems: "center",
                 marginVertical: 20,
-                backgroundColor: "#f8f9fa",
+                backgroundColor: "#eaf4ff",
                 padding: 16,
                 borderRadius: 10,
               }}
             >
-              <Switch
-                value={hasStarvingStudentCard}
-                onValueChange={setHasStarvingStudentCard}
-                trackColor={{ false: "#767577", true: "#81b0ff" }}
-                thumbColor={hasStarvingStudentCard ? "#1e90ff" : "#f4f3f4"}
-              />
+              <TouchableOpacity
+                onPress={() => setHasStarvingStudentCard((prev) => !prev)}
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: 6,
+                  borderWidth: 2,
+                  borderColor: hasStarvingStudentCard ? "#1e90ff" : "#7a8a99",
+                  backgroundColor: hasStarvingStudentCard
+                    ? "#1e90ff"
+                    : "#ffffff",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                {hasStarvingStudentCard ? (
+                  <Text style={{ color: "#fff", fontSize: 18, fontWeight: "900" }}>
+                    ✓
+                  </Text>
+                ) : null}
+              </TouchableOpacity>
               <Text
                 style={{
                   marginLeft: 14,
                   fontSize: 17,
                   fontWeight: "600",
-                  color: "#2c3e50",
+                  color: "#1f2d3d",
                 }}
               >
                 Yes, I have a Starving Student Card
@@ -515,40 +656,42 @@ export default function PlanADate({ navigation }) {
             >
               Select interests for this date
             </Text>
-            {dateCategories.map((category, index) => (
-              <View
-                key={index}
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  marginVertical: 8,
-                  backgroundColor: "#f8f9fa",
-                  padding: 14,
-                  borderRadius: 10,
-                }}
-              >
-                <Switch
-                  value={categoriesChecked[index]}
-                  onValueChange={(value) => {
-                    const newChecked = [...categoriesChecked]
-                    newChecked[index] = value
-                    setCategoriesChecked(newChecked)
-                  }}
-                  trackColor={{ false: "#767577", true: "#81b0ff" }}
-                  thumbColor={categoriesChecked[index] ? "#1e90ff" : "#f4f3f4"}
-                />
-                <Text
-                  style={{
-                    marginLeft: 14,
-                    fontSize: 18,
-                    fontWeight: "600",
-                    color: "#2c3e50",
-                  }}
-                >
-                  {category}
-                </Text>
-              </View>
-            ))}
+            <View
+              style={{
+                flexDirection: "row",
+                flexWrap: "wrap",
+                gap: 10,
+                marginBottom: 8,
+              }}
+            >
+              {dateCategories.map((category, index) => {
+                const isSelected = categoriesChecked[index]
+                return (
+                  <TouchableOpacity
+                    key={index}
+                    onPress={() => toggleCategory(index)}
+                    style={{
+                      backgroundColor: isSelected ? "#1e90ff" : "#ffffff",
+                      borderColor: isSelected ? "#1e90ff" : "#b8c2cc",
+                      borderWidth: 2,
+                      borderRadius: 999,
+                      paddingVertical: 10,
+                      paddingHorizontal: 16,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 16,
+                        fontWeight: "700",
+                        color: isSelected ? "#ffffff" : "#2c3e50",
+                      }}
+                    >
+                      {category}
+                    </Text>
+                  </TouchableOpacity>
+                )
+              })}
+            </View>
             {categoriesChecked.every((checked) => !checked) && (
               <Text style={{ color: "red", marginTop: 10, fontSize: 16 }}>
                 Please check at least one category.
@@ -638,19 +781,6 @@ export default function PlanADate({ navigation }) {
         Let's find the perfect date idea for you! We'll ask a few questions to
         personalize your experience.
       </Text>
-      {/* Example usage: <EvilIcons name="some-icon" size={24} color="black" /> */}
-      {/* Custom Slider implementation using React Native's Slider (if available) or a simple input */}
-      <View style={{ width: "80%", marginVertical: 20 }}>
-        <Text>Choose a value:</Text>
-        <View style={{ flexDirection: "row", alignItems: "center" }}>
-          <Text>Min</Text>
-          <View style={{ flex: 1, marginHorizontal: 10 }}>
-            {/* Replace with your slider logic or use a simple input */}
-            {/* Example: <Slider value={sliderValue} onValueChange={setSliderValue} minimumValue={0} maximumValue={10} /> */}
-          </View>
-          <Text>Max</Text>
-        </View>
-      </View>
       <View style={{ marginBottom: 40, alignItems: "center" }}>
         <View
           style={{
@@ -685,7 +815,14 @@ export default function PlanADate({ navigation }) {
           Question {currentQuestion} of {questionCount}
         </Text>
       </View>
-      {renderQuestion()}
+      <Animated.View
+        style={{
+          transform: [{ translateX: questionTranslateX }],
+          opacity: questionOpacity,
+        }}
+      >
+        {renderQuestion()}
+      </Animated.View>
     </ScrollView>
   )
 }

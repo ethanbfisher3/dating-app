@@ -119,72 +119,77 @@ export default function InspectDateIdea({ route }) {
             SSC Deals
           </Text>
           {sscDeals.map((d, i) => (
-            <View
-              key={i}
-              style={{
-                marginTop: 12,
-                padding: 14,
-                backgroundColor: "#f7fbff",
-                borderRadius: 10,
-              }}
-            >
-              <Text
-                style={{ fontWeight: "700", fontSize: 18, color: "#1a1a1a" }}
-              >
-                {d.name}
-              </Text>
-              {d.deal ? (
-                <Text
+            (() => {
+              const dealImage = (d as any).image || (d as any).imgSrc
+              return (
+                <View
+                  key={i}
                   style={{
-                    color: "#333",
-                    marginTop: 6,
-                    fontSize: 15,
-                    lineHeight: 22,
+                    marginTop: 12,
+                    padding: 14,
+                    backgroundColor: "#f7fbff",
+                    borderRadius: 10,
                   }}
                 >
-                  {d.deal}
-                </Text>
-              ) : null}
-              {d.image ? (
-                <Image
-                  source={{ uri: d.image }}
-                  style={{
-                    width: 120,
-                    height: 60,
-                    marginTop: 10,
-                    borderRadius: 8,
-                  }}
-                />
-              ) : null}
-              <TouchableOpacity
-                style={{
-                  marginTop: 12,
-                  paddingVertical: 10,
-                  paddingHorizontal: 16,
-                  backgroundColor: "#1e90ff",
-                  borderRadius: 8,
-                  alignSelf: "flex-start",
-                  shadowColor: "#000",
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.2,
-                  shadowRadius: 4,
-                  elevation: 3,
-                }}
-                onPress={() => {
-                  const q = encodeURIComponent(
-                    `${d.name} starving student card deal`,
-                  )
-                  const url = `https://www.google.com/search?q=${q}`
-                  Linking.openURL(url).catch(() => {})
-                }}
-              >
-                <Text
-                  style={{ color: "#fff", fontWeight: "700", fontSize: 15 }}
-                >
-                  Open deal
-                </Text>
-              </TouchableOpacity>
-            </View>
+                  <Text
+                    style={{ fontWeight: "700", fontSize: 18, color: "#1a1a1a" }}
+                  >
+                    {d.name}
+                  </Text>
+                  {d.deal ? (
+                    <Text
+                      style={{
+                        color: "#333",
+                        marginTop: 6,
+                        fontSize: 15,
+                        lineHeight: 22,
+                      }}
+                    >
+                      {d.deal}
+                    </Text>
+                  ) : null}
+                  {dealImage ? (
+                    <Image
+                      source={{ uri: dealImage }}
+                      style={{
+                        width: 120,
+                        height: 60,
+                        marginTop: 10,
+                        borderRadius: 8,
+                      }}
+                    />
+                  ) : null}
+                  <TouchableOpacity
+                    style={{
+                      marginTop: 12,
+                      paddingVertical: 10,
+                      paddingHorizontal: 16,
+                      backgroundColor: "#1e90ff",
+                      borderRadius: 8,
+                      alignSelf: "flex-start",
+                      shadowColor: "#000",
+                      shadowOffset: { width: 0, height: 2 },
+                      shadowOpacity: 0.2,
+                      shadowRadius: 4,
+                      elevation: 3,
+                    }}
+                    onPress={() => {
+                      const q = encodeURIComponent(
+                        `${d.name} starving student card deal`,
+                      )
+                      const url = `https://www.google.com/search?q=${q}`
+                      Linking.openURL(url).catch(() => {})
+                    }}
+                  >
+                    <Text
+                      style={{ color: "#fff", fontWeight: "700", fontSize: 15 }}
+                    >
+                      Open deal
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              )
+            })()
           ))}
         </View>
       ) : null}

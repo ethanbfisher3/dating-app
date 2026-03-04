@@ -1,7 +1,7 @@
 import React from "react"
-import { ScrollView, Text, View } from "react-native"
+import { ScrollView, Text, View, TouchableOpacity } from "react-native"
 
-export default function Info() {
+export default function Info({ goToTab }) {
   return (
     <ScrollView
       contentContainerStyle={{ padding: 24, backgroundColor: "#fafbfc" }}
@@ -14,7 +14,7 @@ export default function Info() {
           color: "#1a1a1a",
         }}
       >
-        About BYUSINGLES
+        Info
       </Text>
 
       <View
@@ -51,12 +51,12 @@ export default function Info() {
           BYUSINGLES is your ultimate companion for planning unforgettable dates
           in the Provo, Utah area.
         </Text>
-        <Text style={{ fontSize: 17, lineHeight: 26, color: "#555" }}>
+        {/* <Text style={{ fontSize: 17, lineHeight: 26, color: "#555" }}>
           Whether you're a BYU student looking for creative date ideas, trying
           to plan the perfect evening, or just exploring what Provo has to
           offer, we're here to help you create meaningful connections and
           memorable experiences.
-        </Text>
+        </Text> */}
       </View>
 
       <View
@@ -82,16 +82,21 @@ export default function Info() {
         >
           What We Offer
         </Text>
-        <View style={{ marginBottom: 12 }}>
+        <TouchableOpacity
+          style={{ marginBottom: 12 }}
+          activeOpacity={0.8}
+          onPress={() => goToTab?.("Date Ideas")}
+        >
           <Text
             style={{
               fontSize: 18,
               fontWeight: "700",
               color: "#1a1a1a",
               marginBottom: 6,
+              textDecorationLine: "underline",
             }}
           >
-            📍 Local Date Ideas
+            📍 Local Events & Date Ideas
           </Text>
           <Text
             style={{
@@ -104,15 +109,20 @@ export default function Info() {
             Curated list of date spots in and around Provo, from outdoor
             adventures to cozy cafes.
           </Text>
-        </View>
+        </TouchableOpacity>
 
-        <View style={{ marginBottom: 12 }}>
+        <TouchableOpacity
+          style={{ marginBottom: 12 }}
+          activeOpacity={0.8}
+          onPress={() => goToTab?.("Date Planner")}
+        >
           <Text
             style={{
               fontSize: 18,
               fontWeight: "700",
               color: "#1a1a1a",
               marginBottom: 6,
+              textDecorationLine: "underline",
             }}
           >
             🎯 Smart Date Planner
@@ -128,15 +138,20 @@ export default function Info() {
             Answer a few questions and get personalized date recommendations
             based on your budget, interests, and preferences.
           </Text>
-        </View>
+        </TouchableOpacity>
 
-        <View style={{ marginBottom: 12 }}>
+        <TouchableOpacity
+          style={{ marginBottom: 12 }}
+          activeOpacity={0.8}
+          onPress={() => goToTab?.("Recipe Ideas")}
+        >
           <Text
             style={{
               fontSize: 18,
               fontWeight: "700",
               color: "#1a1a1a",
               marginBottom: 6,
+              textDecorationLine: "underline",
             }}
           >
             🍳 Recipe Ideas
@@ -152,9 +167,9 @@ export default function Info() {
             Simple, affordable recipes perfect for cooking together on a date
             night.
           </Text>
-        </View>
+        </TouchableOpacity>
 
-        <View style={{ marginBottom: 12 }}>
+        {/* <View style={{ marginBottom: 12 }}>
           <Text
             style={{
               fontSize: 18,
@@ -176,31 +191,7 @@ export default function Info() {
             Find places that accept the Starving Student Card to save money on
             your dates.
           </Text>
-        </View>
-
-        <View>
-          <Text
-            style={{
-              fontSize: 18,
-              fontWeight: "700",
-              color: "#1a1a1a",
-              marginBottom: 6,
-            }}
-          >
-            🎓 Campus Events & Clubs
-          </Text>
-          <Text
-            style={{
-              fontSize: 16,
-              lineHeight: 24,
-              color: "#555",
-              marginLeft: 12,
-            }}
-          >
-            Discover BYU events and clubs where you can meet new people and find
-            date ideas.
-          </Text>
-        </View>
+        </View> */}
       </View>
 
       <View
@@ -231,27 +222,6 @@ export default function Info() {
           Our mission is to make date planning easy, affordable, and fun for
           everyone in the Provo area. From first dates to celebrating
           anniversaries, we're here to help you create moments that matter.
-        </Text>
-      </View>
-
-      <View
-        style={{
-          backgroundColor: "#f8f9fa",
-          padding: 20,
-          borderRadius: 12,
-          marginBottom: 20,
-        }}
-      >
-        <Text
-          style={{
-            fontSize: 17,
-            lineHeight: 26,
-            color: "#555",
-            textAlign: "center",
-            fontStyle: "italic",
-          }}
-        >
-          "Bringing You Unforgettable Sparks" ✨
         </Text>
       </View>
 

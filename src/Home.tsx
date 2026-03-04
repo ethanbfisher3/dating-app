@@ -1,10 +1,9 @@
-import React from 'react'
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native'
 
 export default function Home({ navigation }) {
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>BYUSINGLES</Text>
+      <Text style={styles.title}>Provo Date Planner</Text>
       <Text style={styles.tagline}>Bringing You Unforgettable Sparks</Text>
       <Text style={styles.paragraph}>
         Are you a student in Provo, Utah struggling to think of good date ideas?

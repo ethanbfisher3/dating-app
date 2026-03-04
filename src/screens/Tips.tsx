@@ -14,10 +14,10 @@ export default function Tips() {
           color: "#1a1a1a",
         }}
       >
-        Tips for Finding Girls
+        Finding A Date
       </Text>
 
-      <View
+      {/* <View
         style={{
           backgroundColor: "#fff",
           padding: 20,
@@ -41,7 +41,7 @@ export default function Tips() {
           "And their young men and their daughters became exceedingly fair." (3
           Nephi 2:16)
         </Text>
-      </View>
+      </View> */}
 
       <View
         style={{

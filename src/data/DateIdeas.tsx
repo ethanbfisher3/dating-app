@@ -8,7 +8,7 @@ import treats_and_drinks from "./ssc_deals/treats_and_drinks"
 import { sanitizeUri } from "../utils/imageUtils"
 import { findAssetForPath } from "../assets/imageMap"
 
-var dateideas = [
+var dateideas: any[] = [
   {
     name: "Provo Farmers Market",
     mapSrc:
