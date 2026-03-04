@@ -75,20 +75,36 @@ export default function PlanADate({ navigation }) {
       case 1:
         return (
           <View style={{ marginBottom: 30 }}>
-            <Text style={{ fontWeight: "bold", fontSize: 18 }}>
+            <Text
+              style={{
+                fontWeight: "800",
+                fontSize: 26,
+                marginBottom: 12,
+                color: "#1a1a1a",
+              }}
+            >
               What's your budget?
             </Text>
-            <Text style={{ marginVertical: 10 }}>
+            <Text
+              style={{
+                marginVertical: 14,
+                fontSize: 20,
+                fontWeight: "600",
+                color: "#2c3e50",
+              }}
+            >
               Up to ${maxPrice} {maxPrice === 0 ? "(Free Only)" : ""}
             </Text>
             <TextInput
               style={{
-                borderWidth: 1,
-                borderColor: "#ccc",
-                borderRadius: 5,
-                padding: 10,
+                borderWidth: 2,
+                borderColor: "#1e90ff",
+                borderRadius: 10,
+                padding: 16,
                 width: "100%",
-                marginBottom: 10,
+                marginBottom: 16,
+                fontSize: 18,
+                backgroundColor: "#fff",
               }}
               keyboardType="numeric"
               value={String(maxPrice)}
@@ -98,26 +114,59 @@ export default function PlanADate({ navigation }) {
               }}
               placeholder="Enter your budget (0-100)"
             />
-            <Button title="Next" onPress={handleNextQuestion} />
+            <TouchableOpacity
+              style={{
+                backgroundColor: "#1e90ff",
+                paddingVertical: 16,
+                paddingHorizontal: 24,
+                borderRadius: 10,
+                alignItems: "center",
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.2,
+                shadowRadius: 4,
+                elevation: 3,
+              }}
+              onPress={handleNextQuestion}
+            >
+              <Text style={{ color: "#fff", fontSize: 18, fontWeight: "700" }}>
+                Next
+              </Text>
+            </TouchableOpacity>
           </View>
         )
       case 2:
         return (
           <View style={{ marginBottom: 30 }}>
-            <Text style={{ fontWeight: "bold", fontSize: 18 }}>
+            <Text
+              style={{
+                fontWeight: "800",
+                fontSize: 26,
+                marginBottom: 12,
+                color: "#1a1a1a",
+              }}
+            >
               When is your date?
             </Text>
             <TouchableOpacity
               style={{
-                padding: 10,
-                borderWidth: 1,
-                borderColor: "#ccc",
-                borderRadius: 5,
-                marginVertical: 10,
+                padding: 16,
+                borderWidth: 2,
+                borderColor: "#1e90ff",
+                borderRadius: 10,
+                marginVertical: 14,
+                backgroundColor: "#fff",
               }}
               onPress={() => setShowDatePicker(true)}
             >
-              <Text>{selectedDate ? selectedDate : "Select a date"}</Text>
+              <Text
+                style={{
+                  fontSize: 18,
+                  color: selectedDate ? "#1a1a1a" : "#999",
+                }}
+              >
+                {selectedDate ? selectedDate : "Select a date"}
+              </Text>
             </TouchableOpacity>
             {showDatePicker && (
               <DateTimePicker
@@ -133,7 +182,7 @@ export default function PlanADate({ navigation }) {
               />
             )}
             {showDateError && (
-              <Text style={{ color: "red" }}>
+              <Text style={{ color: "red", fontSize: 16, marginBottom: 12 }}>
                 Please select a date before continuing.
               </Text>
             )}
@@ -142,44 +191,156 @@ export default function PlanADate({ navigation }) {
                 flexDirection: "row",
                 justifyContent: "space-between",
                 marginTop: 20,
+                gap: 12,
               }}
             >
-              <Button title="Back" onPress={handlePreviousQuestion} />
-              <Button title="Next" onPress={handleNextQuestion} />
+              <TouchableOpacity
+                style={{
+                  flex: 1,
+                  backgroundColor: "#6c757d",
+                  paddingVertical: 16,
+                  paddingHorizontal: 20,
+                  borderRadius: 10,
+                  alignItems: "center",
+                }}
+                onPress={handlePreviousQuestion}
+              >
+                <Text
+                  style={{ color: "#fff", fontSize: 18, fontWeight: "700" }}
+                >
+                  Back
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={{
+                  flex: 1,
+                  backgroundColor: "#1e90ff",
+                  paddingVertical: 16,
+                  paddingHorizontal: 20,
+                  borderRadius: 10,
+                  alignItems: "center",
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.2,
+                  shadowRadius: 4,
+                  elevation: 3,
+                }}
+                onPress={handleNextQuestion}
+              >
+                <Text
+                  style={{ color: "#fff", fontSize: 18, fontWeight: "700" }}
+                >
+                  Next
+                </Text>
+              </TouchableOpacity>
             </View>
           </View>
         )
       case 3:
         return (
           <View style={{ marginBottom: 30 }}>
-            <Text style={{ fontWeight: "bold", fontSize: 18 }}>
+            <Text
+              style={{
+                fontWeight: "800",
+                fontSize: 26,
+                marginBottom: 12,
+                color: "#1a1a1a",
+              }}
+            >
               What time of day?
             </Text>
             <Text
-              style={{ marginVertical: 10 }}
+              style={{
+                marginVertical: 14,
+                fontSize: 20,
+                fontWeight: "600",
+                color: "#2c3e50",
+              }}
             >{`${startHour < 12 ? startHour : startHour === 12 ? 12 : startHour - 12}${startHour < 12 ? " AM" : " PM"} - ${endHour < 12 ? endHour : endHour === 12 ? 12 : endHour - 12}${endHour < 12 ? " AM" : " PM"}`}</Text>
             {/* Replace with dropdowns or pickers for start/end time */}
-            <Button title="Back" onPress={handlePreviousQuestion} />
-            <Button title="Next" onPress={handleNextQuestion} />
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                marginTop: 20,
+                gap: 12,
+              }}
+            >
+              <TouchableOpacity
+                style={{
+                  flex: 1,
+                  backgroundColor: "#6c757d",
+                  paddingVertical: 16,
+                  paddingHorizontal: 20,
+                  borderRadius: 10,
+                  alignItems: "center",
+                }}
+                onPress={handlePreviousQuestion}
+              >
+                <Text
+                  style={{ color: "#fff", fontSize: 18, fontWeight: "700" }}
+                >
+                  Back
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={{
+                  flex: 1,
+                  backgroundColor: "#1e90ff",
+                  paddingVertical: 16,
+                  paddingHorizontal: 20,
+                  borderRadius: 10,
+                  alignItems: "center",
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.2,
+                  shadowRadius: 4,
+                  elevation: 3,
+                }}
+                onPress={handleNextQuestion}
+              >
+                <Text
+                  style={{ color: "#fff", fontSize: 18, fontWeight: "700" }}
+                >
+                  Next
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
         )
       case 4:
         return (
           <View style={{ marginBottom: 30 }}>
-            <Text style={{ fontWeight: "bold", fontSize: 18 }}>
+            <Text
+              style={{
+                fontWeight: "800",
+                fontSize: 26,
+                marginBottom: 12,
+                color: "#1a1a1a",
+              }}
+            >
               How far are you willing to travel?
             </Text>
-            <Text style={{ marginVertical: 10 }}>
+            <Text
+              style={{
+                marginVertical: 14,
+                fontSize: 20,
+                fontWeight: "600",
+                color: "#2c3e50",
+              }}
+            >
               Up to {maxDistance} miles from BYU Campus
             </Text>
             <TextInput
               style={{
-                borderWidth: 1,
-                borderColor: "#ccc",
-                borderRadius: 5,
-                padding: 10,
+                borderWidth: 2,
+                borderColor: "#1e90ff",
+                borderRadius: 10,
+                padding: 16,
                 width: "100%",
-                marginBottom: 10,
+                marginBottom: 16,
+                fontSize: 18,
+                backgroundColor: "#fff",
               }}
               keyboardType="numeric"
               value={String(maxDistance)}
@@ -194,17 +355,62 @@ export default function PlanADate({ navigation }) {
                 flexDirection: "row",
                 justifyContent: "space-between",
                 marginTop: 20,
+                gap: 12,
               }}
             >
-              <Button title="Back" onPress={handlePreviousQuestion} />
-              <Button title="Next" onPress={handleNextQuestion} />
+              <TouchableOpacity
+                style={{
+                  flex: 1,
+                  backgroundColor: "#6c757d",
+                  paddingVertical: 16,
+                  paddingHorizontal: 20,
+                  borderRadius: 10,
+                  alignItems: "center",
+                }}
+                onPress={handlePreviousQuestion}
+              >
+                <Text
+                  style={{ color: "#fff", fontSize: 18, fontWeight: "700" }}
+                >
+                  Back
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={{
+                  flex: 1,
+                  backgroundColor: "#1e90ff",
+                  paddingVertical: 16,
+                  paddingHorizontal: 20,
+                  borderRadius: 10,
+                  alignItems: "center",
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.2,
+                  shadowRadius: 4,
+                  elevation: 3,
+                }}
+                onPress={handleNextQuestion}
+              >
+                <Text
+                  style={{ color: "#fff", fontSize: 18, fontWeight: "700" }}
+                >
+                  Next
+                </Text>
+              </TouchableOpacity>
             </View>
           </View>
         )
       case 5:
         return (
           <View style={{ marginBottom: 30 }}>
-            <Text style={{ fontWeight: "bold", fontSize: 18 }}>
+            <Text
+              style={{
+                fontWeight: "800",
+                fontSize: 26,
+                marginBottom: 12,
+                color: "#1a1a1a",
+              }}
+            >
               Starving Student Card?
             </Text>
             <View
@@ -212,17 +418,36 @@ export default function PlanADate({ navigation }) {
                 flexDirection: "row",
                 alignItems: "center",
                 marginVertical: 20,
+                backgroundColor: "#f8f9fa",
+                padding: 16,
+                borderRadius: 10,
               }}
             >
               <Switch
                 value={hasStarvingStudentCard}
                 onValueChange={setHasStarvingStudentCard}
+                trackColor={{ false: "#767577", true: "#81b0ff" }}
+                thumbColor={hasStarvingStudentCard ? "#1e90ff" : "#f4f3f4"}
               />
-              <Text style={{ marginLeft: 10 }}>
+              <Text
+                style={{
+                  marginLeft: 14,
+                  fontSize: 17,
+                  fontWeight: "600",
+                  color: "#2c3e50",
+                }}
+              >
                 Yes, I have a Starving Student Card
               </Text>
             </View>
-            <Text style={{ fontSize: 14, color: "#666", marginTop: 10 }}>
+            <Text
+              style={{
+                fontSize: 16,
+                color: "#666",
+                marginTop: 10,
+                lineHeight: 24,
+              }}
+            >
               {hasStarvingStudentCard
                 ? "Great! We'll include date ideas that offer discounts with the Starving Student Card, even if they're above your budget."
                 : "If you have a Starving Student Card, check this box to see more discounted options!"}
@@ -232,17 +457,62 @@ export default function PlanADate({ navigation }) {
                 flexDirection: "row",
                 justifyContent: "space-between",
                 marginTop: 20,
+                gap: 12,
               }}
             >
-              <Button title="Back" onPress={handlePreviousQuestion} />
-              <Button title="Next" onPress={handleNextQuestion} />
+              <TouchableOpacity
+                style={{
+                  flex: 1,
+                  backgroundColor: "#6c757d",
+                  paddingVertical: 16,
+                  paddingHorizontal: 20,
+                  borderRadius: 10,
+                  alignItems: "center",
+                }}
+                onPress={handlePreviousQuestion}
+              >
+                <Text
+                  style={{ color: "#fff", fontSize: 18, fontWeight: "700" }}
+                >
+                  Back
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={{
+                  flex: 1,
+                  backgroundColor: "#1e90ff",
+                  paddingVertical: 16,
+                  paddingHorizontal: 20,
+                  borderRadius: 10,
+                  alignItems: "center",
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.2,
+                  shadowRadius: 4,
+                  elevation: 3,
+                }}
+                onPress={handleNextQuestion}
+              >
+                <Text
+                  style={{ color: "#fff", fontSize: 18, fontWeight: "700" }}
+                >
+                  Next
+                </Text>
+              </TouchableOpacity>
             </View>
           </View>
         )
       case 6:
         return (
           <View style={{ marginBottom: 30 }}>
-            <Text style={{ fontWeight: "bold", fontSize: 18 }}>
+            <Text
+              style={{
+                fontWeight: "800",
+                fontSize: 26,
+                marginBottom: 16,
+                color: "#1a1a1a",
+              }}
+            >
               Select interests for this date
             </Text>
             {dateCategories.map((category, index) => (
@@ -251,7 +521,10 @@ export default function PlanADate({ navigation }) {
                 style={{
                   flexDirection: "row",
                   alignItems: "center",
-                  marginVertical: 5,
+                  marginVertical: 8,
+                  backgroundColor: "#f8f9fa",
+                  padding: 14,
+                  borderRadius: 10,
                 }}
               >
                 <Switch
@@ -261,12 +534,23 @@ export default function PlanADate({ navigation }) {
                     newChecked[index] = value
                     setCategoriesChecked(newChecked)
                   }}
+                  trackColor={{ false: "#767577", true: "#81b0ff" }}
+                  thumbColor={categoriesChecked[index] ? "#1e90ff" : "#f4f3f4"}
                 />
-                <Text style={{ marginLeft: 10 }}>{category}</Text>
+                <Text
+                  style={{
+                    marginLeft: 14,
+                    fontSize: 18,
+                    fontWeight: "600",
+                    color: "#2c3e50",
+                  }}
+                >
+                  {category}
+                </Text>
               </View>
             ))}
             {categoriesChecked.every((checked) => !checked) && (
-              <Text style={{ color: "red", marginTop: 10 }}>
+              <Text style={{ color: "red", marginTop: 10, fontSize: 16 }}>
                 Please check at least one category.
               </Text>
             )}
@@ -275,14 +559,52 @@ export default function PlanADate({ navigation }) {
                 flexDirection: "row",
                 justifyContent: "space-between",
                 marginTop: 20,
+                gap: 12,
               }}
             >
-              <Button title="Back" onPress={handlePreviousQuestion} />
-              <Button
-                title="Generate Date Ideas"
+              <TouchableOpacity
+                style={{
+                  flex: 1,
+                  backgroundColor: "#6c757d",
+                  paddingVertical: 16,
+                  paddingHorizontal: 20,
+                  borderRadius: 10,
+                  alignItems: "center",
+                }}
+                onPress={handlePreviousQuestion}
+              >
+                <Text
+                  style={{ color: "#fff", fontSize: 18, fontWeight: "700" }}
+                >
+                  Back
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={{
+                  flex: 1,
+                  backgroundColor: "#28a745",
+                  paddingVertical: 16,
+                  paddingHorizontal: 20,
+                  borderRadius: 10,
+                  alignItems: "center",
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.2,
+                  shadowRadius: 4,
+                  elevation: 3,
+                  opacity: categoriesChecked.every((checked) => !checked)
+                    ? 0.5
+                    : 1,
+                }}
                 onPress={handleNextQuestion}
                 disabled={categoriesChecked.every((checked) => !checked)}
-              />
+              >
+                <Text
+                  style={{ color: "#fff", fontSize: 18, fontWeight: "700" }}
+                >
+                  Generate Date Ideas
+                </Text>
+              </TouchableOpacity>
             </View>
           </View>
         )
@@ -292,11 +614,27 @@ export default function PlanADate({ navigation }) {
   }
 
   return (
-    <ScrollView contentContainerStyle={{ padding: 20 }}>
-      <Text style={{ fontWeight: "bold", fontSize: 22, marginVertical: 20 }}>
+    <ScrollView
+      contentContainerStyle={{ padding: 24, backgroundColor: "#fafbfc" }}
+    >
+      <Text
+        style={{
+          fontWeight: "900",
+          fontSize: 36,
+          marginVertical: 24,
+          color: "#1a1a1a",
+        }}
+      >
         Plan a Date
       </Text>
-      <Text style={{ marginBottom: 10 }}>
+      <Text
+        style={{
+          marginBottom: 20,
+          fontSize: 17,
+          lineHeight: 26,
+          color: "#555",
+        }}
+      >
         Let's find the perfect date idea for you! We'll ask a few questions to
         personalize your experience.
       </Text>
@@ -326,18 +664,24 @@ export default function PlanADate({ navigation }) {
               <View
                 key={question}
                 style={{
-                  width: 12,
-                  height: 12,
-                  borderRadius: 6,
+                  width: 16,
+                  height: 16,
+                  borderRadius: 8,
                   backgroundColor:
-                    question <= currentQuestion ? "#007AFF" : "#e0e0e0",
-                  marginHorizontal: 3,
+                    question <= currentQuestion ? "#1e90ff" : "#e0e0e0",
+                  marginHorizontal: 5,
+                  shadowColor:
+                    question <= currentQuestion ? "#1e90ff" : "transparent",
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.3,
+                  shadowRadius: 4,
+                  elevation: question <= currentQuestion ? 2 : 0,
                 }}
               />
             ),
           )}
         </View>
-        <Text style={{ fontSize: 14, color: "#666" }}>
+        <Text style={{ fontSize: 16, color: "#666", fontWeight: "600" }}>
           Question {currentQuestion} of {questionCount}
         </Text>
       </View>

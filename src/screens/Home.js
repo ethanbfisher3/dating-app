@@ -9,58 +9,222 @@ import {
 
 export default function Home({ navigation }) {
   return (
-    <ScrollView contentContainerStyle={{ padding: 20 }}>
-      <Text style={{ fontWeight: "bold", fontSize: 28, marginVertical: 20 }}>
+    <ScrollView
+      contentContainerStyle={{ padding: 24, backgroundColor: "#fafbfc" }}
+    >
+      <Text
+        style={{
+          fontWeight: "900",
+          fontSize: 42,
+          marginVertical: 24,
+          color: "#1a1a1a",
+          letterSpacing: 0.5,
+        }}
+      >
         BYUSINGLES
       </Text>
-      <Text style={{ fontSize: 18, marginBottom: 10 }}>
+      <Text
+        style={{
+          fontSize: 24,
+          marginBottom: 16,
+          fontWeight: "600",
+          color: "#2c3e50",
+        }}
+      >
         Bringing You Unforgettable Sparks
       </Text>
-      <Text style={{ marginBottom: 10 }}>
+      <Text
+        style={{
+          marginBottom: 32,
+          fontSize: 17,
+          lineHeight: 24,
+          color: "#555",
+        }}
+      >
         Are you a student in Provo, Utah struggling to think of good date ideas?
         We're here to help.
       </Text>
       <TouchableOpacity
-        style={{ marginVertical: 10 }}
+        style={{
+          marginVertical: 12,
+          backgroundColor: "#1e90ff",
+          paddingVertical: 18,
+          paddingHorizontal: 24,
+          borderRadius: 12,
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 3 },
+          shadowOpacity: 0.2,
+          shadowRadius: 6,
+          elevation: 5,
+        }}
         onPress={() => navigation.navigate("DateIdeas")}
       >
-        <Text style={{ color: "#007AFF", fontSize: 18 }}>Date Ideas</Text>
+        <Text
+          style={{
+            color: "#fff",
+            fontSize: 20,
+            fontWeight: "700",
+            textAlign: "center",
+          }}
+        >
+          Date Ideas
+        </Text>
       </TouchableOpacity>
       <TouchableOpacity
-        style={{ marginVertical: 10 }}
-        onPress={() => navigation.navigate("PlanADate")}
+        style={{
+          marginVertical: 12,
+          backgroundColor: "#1e90ff",
+          paddingVertical: 18,
+          paddingHorizontal: 24,
+          borderRadius: 12,
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 3 },
+          shadowOpacity: 0.2,
+          shadowRadius: 6,
+          elevation: 5,
+        }}
+        onPress={() => navigation.navigate("Date Planner")}
       >
-        <Text style={{ color: "#007AFF", fontSize: 18 }}>Plan a Date</Text>
+        <Text
+          style={{
+            color: "#fff",
+            fontSize: 20,
+            fontWeight: "700",
+            textAlign: "center",
+          }}
+        >
+          Plan a Date
+        </Text>
       </TouchableOpacity>
       <TouchableOpacity
-        style={{ marginVertical: 10 }}
+        style={{
+          marginVertical: 12,
+          backgroundColor: "#1e90ff",
+          paddingVertical: 18,
+          paddingHorizontal: 24,
+          borderRadius: 12,
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 3 },
+          shadowOpacity: 0.2,
+          shadowRadius: 6,
+          elevation: 5,
+        }}
         onPress={() => navigation.navigate("RecipesPage")}
       >
-        <Text style={{ color: "#007AFF", fontSize: 18 }}>Recipes</Text>
+        <Text
+          style={{
+            color: "#fff",
+            fontSize: 20,
+            fontWeight: "700",
+            textAlign: "center",
+          }}
+        >
+          Recipes
+        </Text>
       </TouchableOpacity>
       <TouchableOpacity
-        style={{ marginVertical: 10 }}
+        style={{
+          marginVertical: 12,
+          backgroundColor: "#1e90ff",
+          paddingVertical: 18,
+          paddingHorizontal: 24,
+          borderRadius: 12,
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 3 },
+          shadowOpacity: 0.2,
+          shadowRadius: 6,
+          elevation: 5,
+        }}
         onPress={() => navigation.navigate("Clubs")}
       >
-        <Text style={{ color: "#007AFF", fontSize: 18 }}>Clubs</Text>
+        <Text
+          style={{
+            color: "#fff",
+            fontSize: 20,
+            fontWeight: "700",
+            textAlign: "center",
+          }}
+        >
+          Clubs
+        </Text>
       </TouchableOpacity>
       <TouchableOpacity
-        style={{ marginVertical: 10 }}
+        style={{
+          marginVertical: 12,
+          backgroundColor: "#1e90ff",
+          paddingVertical: 18,
+          paddingHorizontal: 24,
+          borderRadius: 12,
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 3 },
+          shadowOpacity: 0.2,
+          shadowRadius: 6,
+          elevation: 5,
+        }}
         onPress={() => navigation.navigate("EventsPage")}
       >
-        <Text style={{ color: "#007AFF", fontSize: 18 }}>Events</Text>
+        <Text
+          style={{
+            color: "#fff",
+            fontSize: 20,
+            fontWeight: "700",
+            textAlign: "center",
+          }}
+        >
+          Events
+        </Text>
       </TouchableOpacity>
       <TouchableOpacity
-        style={{ marginVertical: 10 }}
+        style={{
+          marginVertical: 12,
+          backgroundColor: "#1e90ff",
+          paddingVertical: 18,
+          paddingHorizontal: 24,
+          borderRadius: 12,
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 3 },
+          shadowOpacity: 0.2,
+          shadowRadius: 6,
+          elevation: 5,
+        }}
         onPress={() => navigation.navigate("Tips")}
       >
-        <Text style={{ color: "#007AFF", fontSize: 18 }}>Tips</Text>
+        <Text
+          style={{
+            color: "#fff",
+            fontSize: 20,
+            fontWeight: "700",
+            textAlign: "center",
+          }}
+        >
+          Tips
+        </Text>
       </TouchableOpacity>
       <TouchableOpacity
-        style={{ marginVertical: 10 }}
+        style={{
+          marginVertical: 12,
+          backgroundColor: "#1e90ff",
+          paddingVertical: 18,
+          paddingHorizontal: 24,
+          borderRadius: 12,
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 3 },
+          shadowOpacity: 0.2,
+          shadowRadius: 6,
+          elevation: 5,
+        }}
         onPress={() => navigation.navigate("Contact")}
       >
-        <Text style={{ color: "#007AFF", fontSize: 18 }}>Contact</Text>
+        <Text
+          style={{
+            color: "#fff",
+            fontSize: 20,
+            fontWeight: "700",
+            textAlign: "center",
+          }}
+        >
+          Contact
+        </Text>
       </TouchableOpacity>
     </ScrollView>
   )

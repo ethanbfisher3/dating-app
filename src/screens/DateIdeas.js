@@ -1,7 +1,7 @@
-import React from 'react'
-import { View, Text, FlatList, StyleSheet } from 'react-native'
-import dateideas from '../data/DateIdeas'
-import DateIdeaBox from '../Components/DateIdeaBox'
+import React from "react"
+import { View, Text, FlatList, StyleSheet } from "react-native"
+import dateideas from "../data/DateIdeas"
+import DateIdeaBox from "../Components/DateIdeaBox"
 
 export default function DateIdeasScreen({ navigation }) {
   return (
@@ -12,7 +12,9 @@ export default function DateIdeasScreen({ navigation }) {
         renderItem={({ item }) => (
           <DateIdeaBox
             idea={item}
-            onPressInspect={(idea) => navigation.navigate('InspectDateIdea', { id: idea.id })}
+            onPressInspect={(idea) =>
+              navigation.navigate("InspectDateIdea", { id: idea.id })
+            }
             navigation={navigation}
           />
         )}
@@ -22,9 +24,14 @@ export default function DateIdeasScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 10 },
-  item: { flexDirection: 'row', padding: 10, borderBottomWidth: 1, borderColor: '#eee' },
+  container: { flex: 1, padding: 16, backgroundColor: "#fafbfc" },
+  item: {
+    flexDirection: "row",
+    padding: 10,
+    borderBottomWidth: 1,
+    borderColor: "#eee",
+  },
   image: { width: 80, height: 60, marginRight: 10, borderRadius: 6 },
-  name: { fontWeight: '700' },
-  desc: { color: '#444' },
+  name: { fontWeight: "700" },
+  desc: { color: "#444" },
 })

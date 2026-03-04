@@ -1,5 +1,5 @@
-import React from 'react'
-import { View, Text, Image, StyleSheet } from 'react-native'
+import React from "react"
+import { View, Text, Image, StyleSheet } from "react-native"
 
 export default function Box({ title, subtitle, image, children }) {
   return (
@@ -16,14 +16,18 @@ export default function Box({ title, subtitle, image, children }) {
 
 const styles = StyleSheet.create({
   box: {
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    overflow: 'hidden',
-    marginVertical: 8,
-    elevation: 1,
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    overflow: "hidden",
+    marginVertical: 12,
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
   },
-  image: { width: '100%', height: 160, resizeMode: 'cover' },
-  content: { padding: 12 },
-  title: { fontSize: 16, fontWeight: '700', marginBottom: 4 },
-  subtitle: { color: '#666', marginBottom: 8 },
+  image: { width: "100%", height: 220, resizeMode: "cover" },
+  content: { padding: 18 },
+  title: { fontSize: 22, fontWeight: "800", marginBottom: 6, color: "#1a1a1a" },
+  subtitle: { color: "#666", marginBottom: 12, fontSize: 16 },
 })

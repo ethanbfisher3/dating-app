@@ -14,6 +14,6 @@ export default function Layout({ children, navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f6f8fb" },
-  content: { padding: 12, paddingBottom: 32 },
+  container: { flex: 1, backgroundColor: "#fafbfc" },
+  content: { flex: 1 },
 })

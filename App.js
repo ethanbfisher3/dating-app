@@ -1,8 +1,12 @@
 import React from "react"
+import "react-native-gesture-handler"
 import { NavigationContainer } from "@react-navigation/native"
 import { createNativeStackNavigator } from "@react-navigation/native-stack"
-import { SafeAreaView, StatusBar } from "react-native"
-import Home from "./src/Home"
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs"
+import { View, StatusBar } from "react-native"
+import { GestureHandlerRootView } from "react-native-gesture-handler"
+import { Ionicons } from "@expo/vector-icons"
+import Home from "./src/screens/Home"
 import Pages from "./src/Pages"
 import DateIdeas from "./src/screens/DateIdeas"
 import InspectDateIdea from "./src/screens/InspectDateIdea"
@@ -14,118 +18,90 @@ import EventsPage from "./src/screens/EventsPage"
 import Tips from "./src/screens/Tips"
 import Contact from "./src/screens/Contact"
 import PlannedDateResults from "./src/screens/PlannedDateResults"
-import Layout from "./src/Components/Layout"
+import Info from "./src/screens/Info"
 
 const Stack = createNativeStackNavigator()
+const Tab = createBottomTabNavigator()
+
+// Home Stack Navigator
+function HomeStack() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="HomeMain" component={Home} />
+      <Stack.Screen name="DateIdeas" component={DateIdeas} />
+      <Stack.Screen name="InspectDateIdea" component={InspectDateIdea} />
+      <Stack.Screen name="Clubs" component={Clubs} />
+      <Stack.Screen name="EventsPage" component={EventsPage} />
+      <Stack.Screen name="RecipesPage" component={RecipesPage} />
+      <Stack.Screen name="RecipeDetail" component={RecipeDetail} />
+      <Stack.Screen name="Contact" component={Contact} />
+      <Stack.Screen name="Pages" component={Pages} />
+    </Stack.Navigator>
+  )
+}
+
+// Date Planner Stack Navigator
+function PlannerStack() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="PlanADateMain" component={PlanADate} />
+      <Stack.Screen name="PlannedDateResults" component={PlannedDateResults} />
+    </Stack.Navigator>
+  )
+}
 
 export default function App() {
   return (
-    <NavigationContainer>
-      <StatusBar barStyle="dark-content" />
-      <SafeAreaView style={{ flex: 1 }}>
-        <Stack.Navigator
-          initialRouteName="Home"
-          screenOptions={{ headerShown: false }}
-        >
-          {/** wrap each screen component with Layout so header/footer are present */}
-          <Stack.Screen
-            name="Home"
-            component={(props) => (
-              <Layout navigation={props.navigation}>
-                <Home {...props} />
-              </Layout>
-            )}
-          />
-          <Stack.Screen
-            name="Pages"
-            component={(props) => (
-              <Layout navigation={props.navigation}>
-                <Pages {...props} />
-              </Layout>
-            )}
-          />
-          <Stack.Screen
-            name="DateIdeas"
-            component={(props) => (
-              <Layout navigation={props.navigation}>
-                <DateIdeas {...props} />
-              </Layout>
-            )}
-          />
-          <Stack.Screen
-            name="InspectDateIdea"
-            component={(props) => (
-              <Layout navigation={props.navigation}>
-                <InspectDateIdea {...props} />
-              </Layout>
-            )}
-          />
-          <Stack.Screen
-            name="PlanADate"
-            component={(props) => (
-              <Layout navigation={props.navigation}>
-                <PlanADate {...props} />
-              </Layout>
-            )}
-          />
-          <Stack.Screen
-            name="PlannedDateResults"
-            component={(props) => (
-              <Layout navigation={props.navigation}>
-                <PlannedDateResults {...props} />
-              </Layout>
-            )}
-          />
-          <Stack.Screen
-            name="Tips"
-            component={(props) => (
-              <Layout navigation={props.navigation}>
-                <Tips {...props} />
-              </Layout>
-            )}
-          />
-          <Stack.Screen
-            name="Contact"
-            component={(props) => (
-              <Layout navigation={props.navigation}>
-                <Contact {...props} />
-              </Layout>
-            )}
-          />
-          <Stack.Screen
-            name="EventsPage"
-            component={(props) => (
-              <Layout navigation={props.navigation}>
-                <EventsPage {...props} />
-              </Layout>
-            )}
-          />
-          <Stack.Screen
-            name="RecipesPage"
-            component={(props) => (
-              <Layout navigation={props.navigation}>
-                <RecipesPage {...props} />
-              </Layout>
-            )}
-          />
-          <Stack.Screen
-            name="RecipeDetail"
-            component={(props) => (
-              <Layout navigation={props.navigation}>
-                <RecipeDetail {...props} />
-              </Layout>
-            )}
-          />
-          <Stack.Screen
-            name="Clubs"
-            component={(props) => (
-              <Layout navigation={props.navigation}>
-                <Clubs {...props} />
-              </Layout>
-            )}
-          />
-        </Stack.Navigator>
-      </SafeAreaView>
-    </NavigationContainer>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <NavigationContainer>
+        <StatusBar barStyle="dark-content" backgroundColor="#f3f6fb" />
+        <View style={{ flex: 1, backgroundColor: "#fafbfc" }}>
+          <Tab.Navigator
+            screenOptions={({ route }) => ({
+              headerShown: false,
+              animationEnabled: true,
+              tabBarIcon: ({ focused, color, size }) => {
+                let iconName
+
+                if (route.name === "Home") {
+                  iconName = focused ? "home" : "home-outline"
+                } else if (route.name === "Date Planner") {
+                  iconName = focused ? "calendar" : "calendar-outline"
+                } else if (route.name === "Tips") {
+                  iconName = focused ? "bulb" : "bulb-outline"
+                } else if (route.name === "Info") {
+                  iconName = focused
+                    ? "information-circle"
+                    : "information-circle-outline"
+                }
+
+                return <Ionicons name={iconName} size={size} color={color} />
+              },
+              tabBarActiveTintColor: "#1e90ff",
+              tabBarInactiveTintColor: "#8e8e93",
+              tabBarStyle: {
+                backgroundColor: "#ffffff",
+                borderTopWidth: 1,
+                borderTopColor: "#e0e0e0",
+                paddingBottom: 16,
+                paddingTop: 8,
+                height: 72,
+              },
+              tabBarLabelStyle: {
+                fontSize: 12,
+                fontWeight: "600",
+              },
+            })}
+            swipeEnabled={true}
+            lazy={false}
+          >
+            <Tab.Screen name="Home" component={HomeStack} />
+            <Tab.Screen name="Date Planner" component={PlannerStack} />
+            <Tab.Screen name="Tips" component={Tips} />
+            <Tab.Screen name="Info" component={Info} />
+          </Tab.Navigator>
+        </View>
+      </NavigationContainer>
+    </GestureHandlerRootView>
   )
 }
