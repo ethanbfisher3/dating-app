@@ -1,0 +1,8 @@
+{
+  "expo": {
+    "name": "BYU Dating",
+    "slug": "byu-dating-native",
+    "platforms": ["ios", "android", "web"],
+    "version": "1.0.0"
+  }
+}
