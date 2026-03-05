@@ -8,9 +8,13 @@ import {
   SectionList,
 } from "react-native"
 import { getRecipeByIndex } from "../data/Recipes"
-import { sanitizeUri } from "../utils/imageUtils"
+import { sanitizeUri } from "../utils/utils"
+import type { AppScreenProps } from "../types/navigation"
 
-export default function RecipeDetail({ route, navigation }) {
+export default function RecipeDetail({
+  route,
+  navigation,
+}: AppScreenProps<"RecipeDetail">) {
   useLayoutEffect(() => {
     navigation.setOptions({
       headerBackTitle: "Back",

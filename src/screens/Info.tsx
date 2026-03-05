@@ -4,7 +4,7 @@ import { ScrollView, Text, View, TouchableOpacity } from "react-native"
 export default function Info({ goToTab }) {
   return (
     <ScrollView
-      contentContainerStyle={{ padding: 24, backgroundColor: "#fafbfc" }}
+      contentContainerStyle={{ padding: 24, paddingTop: 36, backgroundColor: "#fafbfc" }}
     >
       <Text
         style={{
@@ -87,17 +87,29 @@ export default function Info({ goToTab }) {
           activeOpacity={0.8}
           onPress={() => goToTab?.("Date Ideas")}
         >
-          <Text
-            style={{
-              fontSize: 18,
-              fontWeight: "700",
-              color: "#1a1a1a",
-              marginBottom: 6,
-              textDecorationLine: "underline",
-            }}
-          >
-            📍 Local Events & Date Ideas
-          </Text>
+          <View style={{ flexDirection: "row" }}>
+            <Text
+              style={{
+                fontSize: 18,
+                fontWeight: "700",
+                color: "#1a1a1a",
+                marginBottom: 6,
+              }}
+            >
+              📅{" "}
+            </Text>
+            <Text
+              style={{
+                fontSize: 18,
+                fontWeight: "700",
+                color: "#1a1a1a",
+                marginBottom: 6,
+                textDecorationLine: "underline",
+              }}
+            >
+              Local Events & Date Ideas
+            </Text>
+          </View>
           <Text
             style={{
               fontSize: 16,
@@ -116,17 +128,29 @@ export default function Info({ goToTab }) {
           activeOpacity={0.8}
           onPress={() => goToTab?.("Date Planner")}
         >
-          <Text
-            style={{
-              fontSize: 18,
-              fontWeight: "700",
-              color: "#1a1a1a",
-              marginBottom: 6,
-              textDecorationLine: "underline",
-            }}
-          >
-            🎯 Smart Date Planner
-          </Text>
+          <View style={{ flexDirection: "row" }}>
+            <Text
+              style={{
+                fontSize: 18,
+                fontWeight: "700",
+                color: "#1a1a1a",
+                marginBottom: 6,
+              }}
+            >
+              🎯{" "}
+            </Text>
+            <Text
+              style={{
+                fontSize: 18,
+                fontWeight: "700",
+                color: "#1a1a1a",
+                marginBottom: 6,
+                textDecorationLine: "underline",
+              }}
+            >
+              Smart Date Planner
+            </Text>
+          </View>
           <Text
             style={{
               fontSize: 16,
@@ -145,17 +169,29 @@ export default function Info({ goToTab }) {
           activeOpacity={0.8}
           onPress={() => goToTab?.("Recipe Ideas")}
         >
-          <Text
-            style={{
-              fontSize: 18,
-              fontWeight: "700",
-              color: "#1a1a1a",
-              marginBottom: 6,
-              textDecorationLine: "underline",
-            }}
-          >
-            🍳 Recipe Ideas
-          </Text>
+          <View style={{ flexDirection: "row" }}>
+            <Text
+              style={{
+                fontSize: 18,
+                fontWeight: "700",
+                color: "#1a1a1a",
+                marginBottom: 6,
+              }}
+            >
+              🍳{" "}
+            </Text>
+            <Text
+              style={{
+                fontSize: 18,
+                fontWeight: "700",
+                color: "#1a1a1a",
+                marginBottom: 6,
+                textDecorationLine: "underline",
+              }}
+            >
+              Recipe Ideas
+            </Text>
+          </View>
           <Text
             style={{
               fontSize: 16,

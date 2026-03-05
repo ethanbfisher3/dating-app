@@ -2,6 +2,7 @@ import { useCallback, useRef, useState } from "react"
 import "react-native-gesture-handler"
 import { NavigationContainer } from "@react-navigation/native"
 import { createNativeStackNavigator } from "@react-navigation/native-stack"
+import type { AppNavigation, RootStackParamList } from "./src/types/navigation"
 import {
   View,
   StatusBar,
@@ -19,8 +20,9 @@ import Info from "./src/screens/Info"
 import DateIdeas from "./src/screens/DateIdeas"
 import RecipesPage from "./src/screens/RecipesPage"
 import RecipeDetail from "./src/screens/RecipeDetail"
+import InspectDateIdea from "./src/screens/InspectDateIdea"
 
-const Stack = createNativeStackNavigator()
+const Stack = createNativeStackNavigator<RootStackParamList>()
 
 // Define tabs (order matters for swipe left/right)
 const TABS = [
@@ -85,13 +87,14 @@ export default function App() {
           <Stack.Screen name="PlanADate" component={PlanADate} />
           <Stack.Screen name="RecipesPage" component={RecipesPage} />
           <Stack.Screen name="RecipeDetail" component={RecipeDetail} />
+          <Stack.Screen name="InspectDateIdea" component={InspectDateIdea} />
         </Stack.Navigator>
       </NavigationContainer>
     </GestureHandlerRootView>
   )
 }
 
-function MainTabs({ navigation }: { navigation: any }) {
+function MainTabs({ navigation }: { navigation: AppNavigation }) {
   const pagerRef = useRef<PagerView | null>(null)
   const [currentPage, setCurrentPage] = useState(0)
 

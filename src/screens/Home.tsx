@@ -6,11 +6,12 @@ import {
   StyleSheet,
   TouchableOpacity,
 } from "react-native"
+import type { AppNavigation } from "../types/navigation"
 
-export default function Home({ navigation }) {
+export default function Home({ navigation }: { navigation: AppNavigation }) {
   return (
     <ScrollView
-      contentContainerStyle={{ padding: 24, backgroundColor: "#fafbfc" }}
+      contentContainerStyle={{ padding: 24, paddingTop:36, backgroundColor: "#fafbfc" }}
     >
       <Text
         style={{

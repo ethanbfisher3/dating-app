@@ -1,29 +1,31 @@
-import React from "react"
-import { View, Text, Image, TouchableOpacity, StyleSheet } from "react-native"
-import WebsiteLink from "./WebsiteLink"
-import { findDealsForName } from "../data/sscIndex"
-import { sanitizeUri } from "../utils/imageUtils"
-import { DateIdea } from "src/data/DateIdeas"
+import React from "react";
+import { View, Text, Image, TouchableOpacity, StyleSheet } from "react-native";
+import WebsiteLink from "./WebsiteLink";
+import { findDealsForName } from "../data/sscIndex";
+import { openWebsite, sanitizeUri } from "../utils/utils";
+import { DateIdea } from "src/data/DateIdeas";
+import type { AppNavigation } from "../types/navigation";
+import { Link } from "@react-navigation/native";
 
 function getDistanceText(idea: DateIdea) {
-  if (idea.distanceFromCampus) return `${idea.distanceFromCampus} mi`
+  if (idea.distanceFromCampus) return `${idea.distanceFromCampus} mi`;
   if (idea.locations && idea.locations.length) {
-    const ds = idea.locations.map((l) => l.distanceFromCampus).filter(Boolean)
-    if (!ds.length) return null
-    const first = ds[0]
-    return typeof first === "number" ? `${first} mi` : String(first)
+    const ds = idea.locations.map((l) => l.distanceFromCampus).filter(Boolean);
+    if (!ds.length) return null;
+    const first = ds[0];
+    return typeof first === "number" ? `${first} mi` : String(first);
   }
-  return null
+  return null;
 }
 
 function getSeasonText(idea: DateIdea) {
   const months =
-    idea.seasonalTimeframe?.months || idea.seasonalTimeframe?.months
-  if (!months || !months.length) return null
-  if (months.length >= 11) return "All year"
-  const first = months[0]
-  const last = months[months.length - 1]
-  return first === last ? first : `${first}–${last}`
+    idea.seasonalTimeframe?.months || idea.seasonalTimeframe?.months;
+  if (!months || !months.length) return null;
+  if (months.length >= 11) return "All year";
+  const first = months[0];
+  const last = months[months.length - 1];
+  return first === last ? first : `${first}–${last}`;
 }
 
 function Chip({ children, style }: { children: React.ReactNode; style?: any }) {
@@ -31,7 +33,7 @@ function Chip({ children, style }: { children: React.ReactNode; style?: any }) {
     <View style={[styles.chip, style]}>
       <Text style={styles.chipText}>{children}</Text>
     </View>
-  )
+  );
 }
 
 export default function DateIdeaBox({
@@ -39,14 +41,23 @@ export default function DateIdeaBox({
   onPressInspect,
   navigation,
 }: {
-  idea: DateIdea
-  onPressInspect?: (idea: any) => void
-  navigation?: any
+  idea: DateIdea;
+  onPressInspect?: (idea: DateIdea) => void;
+  navigation?: AppNavigation;
 }) {
-  if (!idea) return null
-  const distanceText = getDistanceText(idea)
-  const seasonText = getSeasonText(idea)
-  const sscDeals = idea.CanUseSSC ? findDealsForName(idea.name || "") : []
+  if (!idea) return null;
+  const distanceText = getDistanceText(idea);
+  const seasonText = getSeasonText(idea);
+  const sscDeals = idea.CanUseSSC ? findDealsForName(idea.name || "") : [];
+  const handleInspectPress = () => {
+    if (onPressInspect) {
+      onPressInspect(idea);
+      return;
+    }
+    if (navigation) {
+      navigation.navigate("InspectDateIdea", { id: idea.id });
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -73,10 +84,6 @@ export default function DateIdeaBox({
         </View>
 
         {idea.description ? (
-          <Text style={styles.subtitle}>{idea.description}</Text>
-        ) : null}
-
-        {idea.description ? (
           <Text style={styles.desc} numberOfLines={3}>
             {idea.description}
           </Text>
@@ -101,19 +108,25 @@ export default function DateIdeaBox({
         </View>
 
         <View style={styles.rowActions}>
-          <TouchableOpacity
-            style={styles.button}
-            onPress={() => onPressInspect?.(idea)}
-          >
-            <Text style={styles.buttonText}>Details</Text>
-          </TouchableOpacity>
-          {idea.website ? (
-            <WebsiteLink href={idea.website}>Visit</WebsiteLink>
-          ) : null}
+          {!idea.website ? (
+            <TouchableOpacity
+              style={styles.button}
+              onPress={handleInspectPress}
+            >
+              <Text style={styles.buttonText}>Details</Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity
+              onPress={() => openWebsite(idea.website)}
+              style={styles.button}
+            >
+              <Text style={styles.buttonText}>Website</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
     </View>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
@@ -180,4 +193,4 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   buttonText: { color: "#fff", fontWeight: "700", fontSize: 16 },
-})
+});

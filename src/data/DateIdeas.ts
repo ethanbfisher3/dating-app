@@ -5,10 +5,11 @@ import free_deals from "./ssc_deals/free_deals"
 import pizza from "./ssc_deals/pizza"
 import restaurants from "./ssc_deals/restaurants"
 import treats_and_drinks from "./ssc_deals/treats_and_drinks"
-import { sanitizeUri } from "../utils/imageUtils"
+import { sanitizeUri } from "../utils/utils"
 import { findAssetForPath } from "../assets/imageMap"
 
 export interface DateIdea {
+  id?: number
   name: string
   mapSrc?: string
   description: string
@@ -684,6 +685,17 @@ const dateideas: DateIdea[] = [
   },
 ]
 
+export type DateIdeaWithId = DateIdea & { id: number }
+
+const dateideasWithIds: DateIdeaWithId[] = dateideas.map((idea, index) => ({
+  ...idea,
+  id: index + 1,
+}))
+
+export function getDateIdeaById(id: number | string) {
+  return dateideasWithIds.find((idea) => String(idea.id) === String(id))
+}
+
 // Helper: parse SSC distance strings (e.g., "0.31Mi", "<1 mile") into numeric miles
 const parseSSCDistance = (d) => {
   if (d === undefined || d === null) return undefined
@@ -767,4 +779,4 @@ const normalizedFromGroups = Object.keys(grouped).map((key) => {
   }
 })
 
-export default dateideas
+export default dateideasWithIds

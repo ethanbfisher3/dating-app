@@ -1,7 +1,8 @@
 import React from "react"
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native"
+import type { AppNavigation } from "../types/navigation"
 
-export default function Header({ navigation }) {
+export default function Header({ navigation }: { navigation?: AppNavigation }) {
   return (
     <View style={styles.header}>
       <TouchableOpacity onPress={() => navigation?.navigate("Home")}>

@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react"
+import React, { useRef, useState } from "react";
 import {
   View,
   Text,
@@ -7,8 +7,9 @@ import {
   TextInput,
   Animated,
   Platform,
-} from "react-native"
-import DateTimePicker from "@react-native-community/datetimepicker"
+} from "react-native";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import type { AppNavigation } from "../types/navigation";
 
 const dateCategories = [
   "Food",
@@ -18,29 +19,34 @@ const dateCategories = [
   "Learning",
   "Shopping",
   "Recreation",
-]
-const questionCount = 6
+];
+const questionCount = 6;
 
-export default function PlanADate({ navigation }: { navigation: any }) {
-  const [maxPrice, setMaxPrice] = useState(50)
-  const [hasStarvingStudentCard, setHasStarvingStudentCard] = useState(false)
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null)
-  const [showDatePicker, setShowDatePicker] = useState(false)
-  const [startHour, setStartHour] = useState(12)
-  const [endHour, setEndHour] = useState(18)
-  const [maxDistance, setMaxDistance] = useState(10)
-  const [currentQuestion, setCurrentQuestion] = useState(1)
-  const [showDateError, setShowDateError] = useState(false)
-  const [isAnimating, setIsAnimating] = useState(false)
+export default function PlanADate({
+  navigation,
+}: {
+  navigation: AppNavigation;
+}) {
+  const [maxPrice, setMaxPrice] = useState<string>("50");
+  const [hasStarvingStudentCard, setHasStarvingStudentCard] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [startHour, setStartHour] = useState(12);
+  const [endHour, setEndHour] = useState(18);
+  const [maxDistance, setMaxDistance] = useState(10);
+  const [currentQuestion, setCurrentQuestion] = useState(1);
+  const [showDateError, setShowDateError] = useState(false);
+  const [showPriceError, setShowPriceError] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
   const [categoriesChecked, setCategoriesChecked] = useState(
     Array(dateCategories.length).fill(true),
-  )
-  const questionTranslateX = useRef(new Animated.Value(0)).current
+  );
+  const questionTranslateX = useRef(new Animated.Value(0)).current;
   const questionOpacity = questionTranslateX.interpolate({
     inputRange: [-80, 0, 80],
     outputRange: [0.75, 1, 0.75],
     extrapolate: "clamp",
-  })
+  });
 
   const transitionToQuestion = (nextQuestion: number, direction: number) => {
     if (
@@ -49,82 +55,90 @@ export default function PlanADate({ navigation }: { navigation: any }) {
       nextQuestion > questionCount ||
       nextQuestion === currentQuestion
     ) {
-      return
+      return;
     }
 
-    setIsAnimating(true)
+    setIsAnimating(true);
     Animated.timing(questionTranslateX, {
       toValue: direction * -80,
       duration: 120,
       useNativeDriver: true,
     }).start(() => {
-      setCurrentQuestion(nextQuestion)
-      questionTranslateX.setValue(direction * 80)
+      setCurrentQuestion(nextQuestion);
+      questionTranslateX.setValue(direction * 80);
       Animated.timing(questionTranslateX, {
         toValue: 0,
         duration: 180,
         useNativeDriver: true,
       }).start(() => {
-        setIsAnimating(false)
-      })
-    })
-  }
+        setIsAnimating(false);
+      });
+    });
+  };
 
   const clampHour = (value: number) => {
-    if (Number.isNaN(value)) return 0
-    if (value < 0) return 0
-    if (value > 23) return 23
-    return value
-  }
+    if (Number.isNaN(value)) return 0;
+    if (value < 0) return 0;
+    if (value > 23) return 23;
+    return value;
+  };
 
   const formatHour = (hour: number) => {
-    const normalized = ((hour % 24) + 24) % 24
-    const period = normalized < 12 ? "AM" : "PM"
-    const display = normalized % 12 === 0 ? 12 : normalized % 12
-    return `${display} ${period}`
-  }
+    const normalized = ((hour % 24) + 24) % 24;
+    const period = normalized < 12 ? "AM" : "PM";
+    const display = normalized % 12 === 0 ? 12 : normalized % 12;
+    return `${display} ${period}`;
+  };
 
   const toggleCategory = (index: number) => {
-    const newChecked = [...categoriesChecked]
-    newChecked[index] = !newChecked[index]
-    setCategoriesChecked(newChecked)
-  }
+    const newChecked = [...categoriesChecked];
+    newChecked[index] = !newChecked[index];
+    setCategoriesChecked(newChecked);
+  };
 
   const handleNextQuestion = () => {
-    if (isAnimating) return
+    if (isAnimating) return;
     if (currentQuestion === 2 && !selectedDate) {
-      setShowDateError(true)
-      return
+      setShowDateError(true);
+      return;
     }
-    setShowDateError(false)
+    if (
+      currentQuestion === 1 &&
+      (Number.isNaN(parseInt(maxPrice)) || parseInt(maxPrice) < 0)
+    ) {
+      setShowPriceError(true);
+      return;
+    }
+    setShowDateError(false);
+    setShowPriceError(false);
     if (currentQuestion < questionCount) {
-      transitionToQuestion(currentQuestion + 1, 1)
+      transitionToQuestion(currentQuestion + 1, 1);
     } else {
-      handleGenerateIdeas()
+      handleGenerateIdeas();
     }
-  }
+  };
 
   const handlePreviousQuestion = () => {
-    if (isAnimating) return
+    if (isAnimating) return;
     if (currentQuestion > 1) {
-      transitionToQuestion(currentQuestion - 1, -1)
+      transitionToQuestion(currentQuestion - 1, -1);
     }
-  }
+  };
 
   const handleGenerateIdeas = () => {
     const selectedCategories = dateCategories.filter(
       (_, i) => categoriesChecked[i],
-    )
+    );
     navigation.navigate("PlannedDateResults", {
-      maxPrice,
+      maxPrice: parseInt(maxPrice),
       hasStarvingStudentCard,
       selectedDate: selectedDate ? selectedDate.toLocaleDateString() : "",
       startHour,
       endHour,
       maxDistance,
       categories: selectedCategories,
-    })
-  }
+    });
+  };
 
   const renderQuestion = () => {
     switch (currentQuestion) {
@@ -149,7 +163,7 @@ export default function PlanADate({ navigation }: { navigation: any }) {
                 color: "#2c3e50",
               }}
             >
-              Up to ${maxPrice} {maxPrice === 0 ? "(Free Only)" : ""}
+              Up to ${maxPrice} {parseInt(maxPrice) === 0 ? "(Free Only)" : ""}
             </Text>
             <TextInput
               style={{
@@ -162,14 +176,16 @@ export default function PlanADate({ navigation }: { navigation: any }) {
                 fontSize: 18,
                 backgroundColor: "#fff",
               }}
-              keyboardType="numeric"
+              keyboardType="number-pad"
               value={String(maxPrice)}
-              onChangeText={(text) => {
-                const num = parseInt(text) || 0
-                setMaxPrice(num)
-              }}
+              onChangeText={(text) => setMaxPrice(text)}
               placeholder="Enter your budget (0-100)"
             />
+            {showPriceError && (
+              <Text style={{ color: "red", fontSize: 16, marginBottom: 12 }}>
+                Please enter a valid budget.
+              </Text>
+            )}
             <TouchableOpacity
               style={{
                 backgroundColor: "#1e90ff",
@@ -190,7 +206,7 @@ export default function PlanADate({ navigation }: { navigation: any }) {
               </Text>
             </TouchableOpacity>
           </View>
-        )
+        );
       case 2:
         return (
           <View style={{ marginBottom: 30 }}>
@@ -221,7 +237,9 @@ export default function PlanADate({ navigation }: { navigation: any }) {
                   color: selectedDate ? "#1a1a1a" : "#999",
                 }}
               >
-                {selectedDate ? selectedDate.toLocaleDateString() : "Select a date"}
+                {selectedDate
+                  ? selectedDate.toLocaleDateString()
+                  : "Select a date"}
               </Text>
             </TouchableOpacity>
             {showDatePicker && (
@@ -239,10 +257,10 @@ export default function PlanADate({ navigation }: { navigation: any }) {
                   themeVariant={Platform.OS === "ios" ? "light" : undefined}
                   onChange={(event, date) => {
                     const isConfirmed =
-                      Platform.OS === "ios" || event.type === "set"
-                    setShowDatePicker(false)
+                      Platform.OS === "ios" || event.type === "set";
+                    setShowDatePicker(false);
                     if (isConfirmed && date) {
-                      setSelectedDate(date)
+                      setSelectedDate(date);
                     }
                   }}
                 />
@@ -302,7 +320,7 @@ export default function PlanADate({ navigation }: { navigation: any }) {
               </TouchableOpacity>
             </View>
           </View>
-        )
+        );
       case 3:
         return (
           <View style={{ marginBottom: 30 }}>
@@ -348,8 +366,8 @@ export default function PlanADate({ navigation }: { navigation: any }) {
                   keyboardType="numeric"
                   value={String(startHour)}
                   onChangeText={(text) => {
-                    const num = clampHour(parseInt(text) || 0)
-                    setStartHour(num)
+                    const num = clampHour(parseInt(text) || 0);
+                    setStartHour(num);
                   }}
                   placeholder="e.g. 17"
                 />
@@ -377,8 +395,8 @@ export default function PlanADate({ navigation }: { navigation: any }) {
                   keyboardType="numeric"
                   value={String(endHour)}
                   onChangeText={(text) => {
-                    const num = clampHour(parseInt(text) || 0)
-                    setEndHour(num)
+                    const num = clampHour(parseInt(text) || 0);
+                    setEndHour(num);
                   }}
                   placeholder="e.g. 20"
                 />
@@ -433,7 +451,7 @@ export default function PlanADate({ navigation }: { navigation: any }) {
               </TouchableOpacity>
             </View>
           </View>
-        )
+        );
       case 4:
         return (
           <View style={{ marginBottom: 30 }}>
@@ -471,8 +489,8 @@ export default function PlanADate({ navigation }: { navigation: any }) {
               keyboardType="numeric"
               value={String(maxDistance)}
               onChangeText={(text) => {
-                const num = parseInt(text) || 1
-                setMaxDistance(num)
+                const num = parseInt(text) || 1;
+                setMaxDistance(num);
               }}
               placeholder="Enter max distance (1-30)"
             />
@@ -525,7 +543,7 @@ export default function PlanADate({ navigation }: { navigation: any }) {
               </TouchableOpacity>
             </View>
           </View>
-        )
+        );
       case 5:
         return (
           <View style={{ marginBottom: 30 }}>
@@ -565,7 +583,9 @@ export default function PlanADate({ navigation }: { navigation: any }) {
                 }}
               >
                 {hasStarvingStudentCard ? (
-                  <Text style={{ color: "#fff", fontSize: 18, fontWeight: "900" }}>
+                  <Text
+                    style={{ color: "#fff", fontSize: 18, fontWeight: "900" }}
+                  >
                     ✓
                   </Text>
                 ) : null}
@@ -642,7 +662,7 @@ export default function PlanADate({ navigation }: { navigation: any }) {
               </TouchableOpacity>
             </View>
           </View>
-        )
+        );
       case 6:
         return (
           <View style={{ marginBottom: 30 }}>
@@ -665,7 +685,7 @@ export default function PlanADate({ navigation }: { navigation: any }) {
               }}
             >
               {dateCategories.map((category, index) => {
-                const isSelected = categoriesChecked[index]
+                const isSelected = categoriesChecked[index];
                 return (
                   <TouchableOpacity
                     key={index}
@@ -689,7 +709,7 @@ export default function PlanADate({ navigation }: { navigation: any }) {
                       {category}
                     </Text>
                   </TouchableOpacity>
-                )
+                );
               })}
             </View>
             {categoriesChecked.every((checked) => !checked) && (
@@ -750,15 +770,19 @@ export default function PlanADate({ navigation }: { navigation: any }) {
               </TouchableOpacity>
             </View>
           </View>
-        )
+        );
       default:
-        return null
+        return null;
     }
-  }
+  };
 
   return (
     <ScrollView
-      contentContainerStyle={{ padding: 24, backgroundColor: "#fafbfc" }}
+      contentContainerStyle={{
+        padding: 24,
+        paddingTop: 36,
+        backgroundColor: "#fafbfc",
+      }}
     >
       <Text
         style={{
@@ -824,5 +848,5 @@ export default function PlanADate({ navigation }: { navigation: any }) {
         {renderQuestion()}
       </Animated.View>
     </ScrollView>
-  )
+  );
 }
