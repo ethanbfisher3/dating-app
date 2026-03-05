@@ -1,13 +1,15 @@
 TODO:
-add tutorial like the mood app
 add activities for dates like the egg dropping thing
 move page up when user is inputing text on a textview
 let user delete the text in question 4 of date planner
 Full-on date editor after the 'plan a date' section. If the user already has date ideas, they can skip the questions section and go straight to the date editor
 make the distances dynamic, so the app will check the user's location and calculate their distance from the different date ideas
+Find some page that shows local events (or multiple pages) to populate the date ideas list
+New images
 
-Thoughts:
+Maybe do:
 When filtering date ideas, only show one category at a time since at one point there might be a ton of ideas and loading will take a while
+add tutorial like the mood app
 
 Eventually:
 users can input their own date ideas

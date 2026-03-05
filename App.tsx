@@ -54,20 +54,20 @@ const TABS = [
     iconOutline: "restaurant-outline",
     component: RecipesPage,
   },
-  // {
-  //   key: "Tips",
-  //   title: "Tips",
-  //   icon: "bulb",
-  //   iconOutline: "bulb-outline",
-  //   component: Tips,
-  // },
   {
-    key: "Info",
-    title: "Info",
-    icon: "information-circle",
-    iconOutline: "information-circle-outline",
-    component: Info,
+    key: "Tips",
+    title: "Tips",
+    icon: "bulb",
+    iconOutline: "bulb-outline",
+    component: Tips,
   },
+  // {
+  //   key: "Info",
+  //   title: "Info",
+  //   icon: "information-circle",
+  //   iconOutline: "information-circle-outline",
+  //   component: Info,
+  // },
 ]
 
 export default function App() {
