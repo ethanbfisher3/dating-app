@@ -8,9 +8,9 @@ import {
   Linking,
   TouchableOpacity,
 } from "react-native";
-import { getDateIdeaById } from "../data/DateIdeas";
+import { getDateIdeaById, milesBetween } from "../data/DateIdeas";
 import { findDealsForName } from "../data/sscIndex";
-import { openWebsite, sanitizeUri } from "../utils/utils";
+import { openWebsite } from "../utils/utils";
 import type { AppScreenProps } from "../types/navigation";
 
 export default function InspectDateIdea({
@@ -22,8 +22,21 @@ export default function InspectDateIdea({
       headerBackTitle: "Back",
     });
   }, [navigation]);
-  const { id } = route.params || {};
+
+  const { id, userLocation } = route.params || {};
   const idea = getDateIdeaById(id);
+
+  const getLocationDistanceText = (location: {
+    location: { latitude: number; longitude: number };
+  }) => {
+    if (!userLocation) return "";
+    if (location.location.latitude === 0 && location.location.longitude === 0) {
+      return "";
+    }
+    const miles = milesBetween(userLocation, location.location);
+    return `· ${miles.toFixed(1)} mi`;
+  };
+
   if (!idea)
     return (
       <View style={{ padding: 20 }}>
@@ -99,9 +112,7 @@ export default function InspectDateIdea({
                 {location.name}{" "}
               </Text>
               <Text style={styles.location}>
-                {location.distanceFromCampus
-                  ? `· ${location.distanceFromCampus}`
-                  : ""}
+                {getLocationDistanceText(location)}
               </Text>
             </TouchableOpacity>
           ))}

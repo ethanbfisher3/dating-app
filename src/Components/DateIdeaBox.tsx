@@ -1,32 +1,14 @@
 import React from "react";
 import { View, Text, Image, TouchableOpacity, StyleSheet } from "react-native";
-import WebsiteLink from "./WebsiteLink";
 import { findDealsForName } from "../data/sscIndex";
-import { openWebsite, sanitizeUri } from "../utils/utils";
-import { DateIdea } from "src/data/DateIdeas";
+import { openWebsite } from "../utils/utils";
+import {
+  DateIdea,
+  GeoLocation,
+  getDistanceText,
+  getSeasonText,
+} from "src/data/DateIdeas";
 import type { AppNavigation } from "../types/navigation";
-import { Link } from "@react-navigation/native";
-
-function getDistanceText(idea: DateIdea) {
-  if (idea.distanceFromCampus) return `${idea.distanceFromCampus} mi`;
-  if (idea.locations && idea.locations.length) {
-    const ds = idea.locations.map((l) => l.distanceFromCampus).filter(Boolean);
-    if (!ds.length) return null;
-    const first = ds[0];
-    return typeof first === "number" ? `${first} mi` : String(first);
-  }
-  return null;
-}
-
-function getSeasonText(idea: DateIdea) {
-  const months =
-    idea.seasonalTimeframe?.months || idea.seasonalTimeframe?.months;
-  if (!months || !months.length) return null;
-  if (months.length >= 11) return "All year";
-  const first = months[0];
-  const last = months[months.length - 1];
-  return first === last ? first : `${first}–${last}`;
-}
 
 function Chip({ children, style }: { children: React.ReactNode; style?: any }) {
   return (
@@ -40,13 +22,15 @@ export default function DateIdeaBox({
   idea,
   onPressInspect,
   navigation,
+  userLocation,
 }: {
   idea: DateIdea;
   onPressInspect?: (idea: DateIdea) => void;
   navigation?: AppNavigation;
+  userLocation: GeoLocation | null;
 }) {
   if (!idea) return null;
-  const distanceText = getDistanceText(idea);
+  const distanceText = getDistanceText(idea, userLocation);
   const seasonText = getSeasonText(idea);
   const sscDeals = idea.CanUseSSC ? findDealsForName(idea.name || "") : [];
   const handleInspectPress = () => {
@@ -55,7 +39,10 @@ export default function DateIdeaBox({
       return;
     }
     if (navigation) {
-      navigation.navigate("InspectDateIdea", { id: idea.id });
+      navigation.navigate("InspectDateIdea", {
+        id: idea.id,
+        userLocation,
+      });
     }
   };
 
