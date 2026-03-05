@@ -22,7 +22,7 @@ export default function InspectDateIdea({ route }) {
       </View>
     )
   const imageUri = sanitizeUri(
-    idea.imgSrc || idea.image || idea.img || idea.photo || idea.image_url,
+    idea.image || idea.image || idea.img || idea.photo || idea.image_url,
   )
   const sscDeals = idea.CanUseSSC
     ? findDealsForName(idea.name || idea.title || "")
@@ -118,7 +118,7 @@ export default function InspectDateIdea({ route }) {
           >
             SSC Deals
           </Text>
-          {sscDeals.map((d, i) => (
+          {sscDeals.map((d, i) =>
             (() => {
               const dealImage = (d as any).image || (d as any).imgSrc
               return (
@@ -132,7 +132,11 @@ export default function InspectDateIdea({ route }) {
                   }}
                 >
                   <Text
-                    style={{ fontWeight: "700", fontSize: 18, color: "#1a1a1a" }}
+                    style={{
+                      fontWeight: "700",
+                      fontSize: 18,
+                      color: "#1a1a1a",
+                    }}
                   >
                     {d.name}
                   </Text>
@@ -189,8 +193,8 @@ export default function InspectDateIdea({ route }) {
                   </TouchableOpacity>
                 </View>
               )
-            })()
-          ))}
+            })(),
+          )}
         </View>
       ) : null}
     </ScrollView>
