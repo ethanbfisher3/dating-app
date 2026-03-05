@@ -3,8 +3,9 @@ import { View, Text, Image, TouchableOpacity, StyleSheet } from "react-native"
 import WebsiteLink from "./WebsiteLink"
 import { findDealsForName } from "../data/sscIndex"
 import { sanitizeUri } from "../utils/imageUtils"
+import { DateIdea } from "src/data/DateIdeas"
 
-function getDistanceText(idea) {
+function getDistanceText(idea: DateIdea) {
   if (idea.distanceFromCampus) return `${idea.distanceFromCampus} mi`
   if (idea.locations && idea.locations.length) {
     const ds = idea.locations.map((l) => l.distanceFromCampus).filter(Boolean)
@@ -15,8 +16,9 @@ function getDistanceText(idea) {
   return null
 }
 
-function getSeasonText(idea) {
-  const months = idea.seasonalTimeframe?.months || idea.seasonalTimeframe
+function getSeasonText(idea: DateIdea) {
+  const months =
+    idea.seasonalTimeframe?.months || idea.seasonalTimeframe?.months
   if (!months || !months.length) return null
   if (months.length >= 11) return "All year"
   const first = months[0]
@@ -24,7 +26,7 @@ function getSeasonText(idea) {
   return first === last ? first : `${first}–${last}`
 }
 
-function Chip({ children, style }) {
+function Chip({ children, style }: { children: React.ReactNode; style?: any }) {
   return (
     <View style={[styles.chip, style]}>
       <Text style={styles.chipText}>{children}</Text>
@@ -32,30 +34,26 @@ function Chip({ children, style }) {
   )
 }
 
-export default function DateIdeaBox({ idea, onPressInspect, navigation }) {
+export default function DateIdeaBox({
+  idea,
+  onPressInspect,
+  navigation,
+}: {
+  idea: DateIdea
+  onPressInspect?: (idea: any) => void
+  navigation?: any
+}) {
   if (!idea) return null
-  const rawImage =
-    idea.imgSrc ||
-    idea.image ||
-    idea.img ||
-    idea.photo ||
-    idea.image_url ||
-    null
-  const imageUri = sanitizeUri(rawImage)
   const distanceText = getDistanceText(idea)
   const seasonText = getSeasonText(idea)
-  const sscDeals = idea.CanUseSSC
-    ? findDealsForName(idea.name || idea.title || "")
-    : []
+  const sscDeals = idea.CanUseSSC ? findDealsForName(idea.name || "") : []
 
   return (
     <View style={styles.container}>
-      {imageUri ? (
-        <Image source={{ uri: imageUri }} style={styles.image} />
-      ) : null}
+      {idea.image ? <Image source={idea.image} style={styles.image} /> : null}
       <View style={styles.body}>
         <View style={styles.rowTop}>
-          <Text style={styles.title}>{idea.name || idea.title}</Text>
+          <Text style={styles.title}>{idea.name}</Text>
           <View style={styles.badges}>
             {idea.free ? (
               <Chip style={{ backgroundColor: "#e6ffef" }}>Free</Chip>
@@ -74,8 +72,8 @@ export default function DateIdeaBox({ idea, onPressInspect, navigation }) {
           </View>
         </View>
 
-        {idea.subtitle ? (
-          <Text style={styles.subtitle}>{idea.subtitle}</Text>
+        {idea.description ? (
+          <Text style={styles.subtitle}>{idea.description}</Text>
         ) : null}
 
         {idea.description ? (

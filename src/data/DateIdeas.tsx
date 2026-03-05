@@ -8,12 +8,42 @@ import treats_and_drinks from "./ssc_deals/treats_and_drinks"
 import { sanitizeUri } from "../utils/imageUtils"
 import { findAssetForPath } from "../assets/imageMap"
 
-var dateideas: any[] = [
+export interface DateIdea {
+  name: string
+  mapSrc?: string
+  description: string
+  image?: any
+  website?: string
+  rating?: string
+  pricing?: string
+  free?: boolean
+  hours?: string
+  categories: string[]
+  minDateNumber: number
+  distanceFromCampus?: number
+  timeOfDay: string[]
+  seasonalTimeframe: {
+    months: string[]
+  }
+  CanUseSSC: boolean
+  locations?: {
+    name: string
+    src: string
+    distanceFromCampus: number | string
+  }[]
+  link?: {
+    text: string
+    url: string
+  }
+  majorRizz?: boolean
+}
+
+const dateideas: DateIdea[] = [
   {
     name: "Provo Farmers Market",
     mapSrc:
       "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3045.9467147884125!2d-111.6712989236048!3d40.23248696683182!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x874d99ffbc44fe4f%3A0xf80b7a7a8af35062!2sProvo%20Farmers%20Market!5e0!3m2!1sen!2sus!4v1726350046948!5m2!1sen!2sus",
-    imgSrc: `${process.env.PUBLIC_URL}/images/date_ideas/farmers_market.png`,
+    image: require("../../assets/images/date_ideas/farmers_market.png"),
     website: "http://www.provofarmersmarket.com/",
     rating: "★★★★★",
     pricing: "$0-$30/person",
@@ -32,7 +62,7 @@ var dateideas: any[] = [
   },
   {
     name: "Pickleball",
-    imgSrc: `${process.env.PUBLIC_URL}/images/date_ideas/pickleball.png`,
+    image: require("../../assets/images/date_ideas/pickleball.png"),
     description:
       "Pickleball is a great way to spend time with a girl! It allows for exercise but it's easy enough to keep a conversation going too!",
     minDateNumber: 0,
@@ -67,7 +97,7 @@ var dateideas: any[] = [
   },
   {
     name: "Go for a Walk or Hike",
-    imgSrc: `${process.env.PUBLIC_URL}/images/date_ideas/walk_or_hike.png`,
+    image: require("../../assets/images/date_ideas/walk_or_hike.png"),
     minDateNumber: 0,
     description:
       "Going for a walk is a great first date idea. It allows you to get to know another person while you enjoy nature!",
@@ -108,7 +138,7 @@ var dateideas: any[] = [
   },
   {
     name: "Cook some food!",
-    imgSrc: `${process.env.PUBLIC_URL}/images/date_ideas/cook.png`,
+    image: require("../../assets/images/date_ideas/cook.png"),
     minDateNumber: 0,
     categories: ["Cooking", "Food"],
     description:
@@ -142,7 +172,7 @@ var dateideas: any[] = [
     name: "Skating",
     pricing: "$10-$15/person",
     majorRizz: true,
-    imgSrc: `${process.env.PUBLIC_URL}/images/date_ideas/ice_skating.png`,
+    image: require("../../assets/images/date_ideas/ice_skating.png"),
     minDateNumber: 0,
     categories: ["Recreation", "Sports"],
     description:
@@ -182,7 +212,7 @@ var dateideas: any[] = [
     name: "Downtown Provo Events",
     description:
       "Living in Provo, you can find lots of events happening closeby! Many are free or very cheap and allow you to spend quality time with a girl.",
-    imgSrc:
+    image:
       "https://s3.us-east-1.amazonaws.com/bt-prod-img/place/Provo-Utah.jpg",
     minDateNumber: 1,
     categories: ["Recreation"],
@@ -210,13 +240,12 @@ var dateideas: any[] = [
   },
   {
     name: "Carve Pumpkins!",
-    months: ["October"],
     description:
       "Carving pumpkins is great for being creative and also spending time with a girl!",
     minDateNumber: 0,
     categories: ["Cooking", "Recreation"],
     pricing: "$10-$20",
-    imgSrc:
+    image:
       "https://img.freepik.com/premium-photo/serious-young-multiethnic-couple-sitting-table-preparing-pumpkins-carving_622301-3359.jpg",
     timeOfDay: ["afternoon", "evening"],
     seasonalTimeframe: {
@@ -231,7 +260,7 @@ var dateideas: any[] = [
     minDateNumber: 1,
     categories: ["Sports", "Outdoors"],
     pricing: "$20 - $50",
-    imgSrc:
+    image:
       "https://www.health.com/thmb/9SaajPUAjKpnlhdOQdrSalgO_9k=/2121x0/filters:no_upscale():max_bytes(150000):strip_icc()/RockClimbing-c7d67bffc2e44e9d836e7263eb52555c.jpg",
     locations: [
       {
@@ -267,7 +296,7 @@ var dateideas: any[] = [
     minDateNumber: 0,
     categories: ["Sports", "Recreation"],
     pricing: "$20 - $30",
-    imgSrc:
+    image:
       "https://www.k1speed.com/wp-content/uploads/2018/09/couple-racing-1024x683.jpg",
     locations: [
       {
@@ -308,7 +337,7 @@ var dateideas: any[] = [
     minDateNumber: 0,
     categories: ["Shopping", "Recreation"],
     pricing: "$0 - $100",
-    imgSrc:
+    image:
       "https://media.istockphoto.com/id/1369227756/photo/giggling-their-way-through-the-mall.jpg?s=612x612&w=0&k=20&c=QCk2FJg1m0bTFCOAvspDbCnM1p-NMMM7qdnPJXCwqH4=",
     locations: [
       {
@@ -354,7 +383,7 @@ var dateideas: any[] = [
     categories: ["Learning", "Recreation"],
     pricing: "Free",
     free: true,
-    imgSrc:
+    image:
       "https://cdn.britannica.com/51/194651-050-747F0C18/Interior-National-Gallery-of-Art-Washington-DC.jpg",
     locations: [
       {
@@ -420,7 +449,7 @@ var dateideas: any[] = [
     minDateNumber: 0,
     categories: ["Food", "Outdoors", "Recreation"],
     pricing: "Free to $20",
-    imgSrc:
+    image:
       "https://assets.simpleviewinc.com/simpleview/image/upload/c_fill,h_900,q_75,w_1200/v1/clients/utahvalley/Picnictable_45577c44-ac66-4e51-a1c1-7282b080f301.jpg",
     locations: [
       {
@@ -453,7 +482,7 @@ var dateideas: any[] = [
     name: "Top Golf",
     description: "Great fun for a small price!",
     pricing: "$30/person",
-    imgSrc:
+    image:
       "https://dynamic-media-cdn.tripadvisor.com/media/photo-o/04/cc/08/8e/topgolf-the-colony.jpg?w=900&h=500&s=1",
     minDateNumber: 1,
     categories: ["Recreation"],
@@ -485,7 +514,7 @@ var dateideas: any[] = [
     minDateNumber: 1,
     categories: ["Entertainment", "Recreation"],
     pricing: "$10-$25/person",
-    imgSrc:
+    image:
       "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=500&h=300&fit=crop",
     locations: [
       {
@@ -530,7 +559,7 @@ var dateideas: any[] = [
     minDateNumber: 1,
     categories: ["Entertainment", "Recreation"],
     pricing: "$5-$15/person",
-    imgSrc:
+    image:
       "https://images.unsplash.com/photo-1547036967-23d11aacaee0?w=500&h=300&fit=crop",
     locations: [
       {
@@ -570,7 +599,7 @@ var dateideas: any[] = [
     minDateNumber: 1,
     categories: ["Arts & Crafts", "Recreation"],
     pricing: "$15-$40/person",
-    imgSrc:
+    image:
       "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=500&h=300&fit=crop",
     locations: [
       {
@@ -615,7 +644,7 @@ var dateideas: any[] = [
     minDateNumber: 0,
     categories: ["Entertainment", "Recreation"],
     pricing: "$8-$15/person",
-    imgSrc:
+    image:
       "https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=500&h=300&fit=crop",
     locations: [
       {
@@ -681,7 +710,7 @@ const sscSources = [
 ]
 
 const allSSC = sscSources.flatMap((s) =>
-  s.list.map((it) => ({ ...it, _category: s.category }))
+  s.list.map((it) => ({ ...it, _category: s.category })),
 )
 
 // Group by normalized lower-case name
@@ -697,7 +726,7 @@ const normalizedFromGroups = Object.keys(grouped).map((key) => {
   // choose the first non-empty image, else fallback
   const img =
     group.find((g) => g.image && g.image !== "data:,")?.image ||
-    `${process.env.PUBLIC_URL}/images/ssc.png`
+    require("../../assets/images/ssc.png")
   // parse distances and pick the minimum (closest)
   const distances = group
     .map((g) => parseSSCDistance(g.distance))
@@ -707,18 +736,18 @@ const normalizedFromGroups = Object.keys(grouped).map((key) => {
   const dealsCount = group.length
   // pick pricing/free heuristics
   const anyFree = group.some(
-    (g) => g.free === true || (g.pricing && /free/i.test(g.pricing))
+    (g) => g.free === true || (g.pricing && /free/i.test(g.pricing)),
   )
   const pricing =
     group.find((g) => g.pricing && !/free/i.test(g.pricing))?.pricing ||
     (anyFree ? "Free" : undefined)
   // collect categories (dedupe)
   const categories = Array.from(
-    new Set(group.map((g) => g._category).filter(Boolean))
+    new Set(group.map((g) => g._category).filter(Boolean)),
   )
 
   const uniqueDeals = Array.from(
-    new Set(group.map((g) => g.deal).filter(Boolean))
+    new Set(group.map((g) => g.deal).filter(Boolean)),
   )
   return {
     name: group[0].name,
@@ -738,32 +767,4 @@ const normalizedFromGroups = Object.keys(grouped).map((key) => {
   }
 })
 
-export const getDateIdeaById = (id) => {
-  return dateideas.find((idea) => idea.id === id)
-}
-
-if (config.displaySSCDeals) dateideas = dateideas.concat(normalizedFromGroups)
-// Resolve and sanitize image URIs. If the project public images exist on disk
-// we map relative `/images/...` paths to absolute file URIs so Expo can load them
-const projectPublicBase = 'file:///C:/Users/ethan/Websites/byu-dating/public'
-dateideas = dateideas.map((idea) => {
-  const raw = idea.imgSrc || idea.img || idea.image || idea.image_url || null
-  const s = sanitizeUri(raw)
-  if (s && (s.startsWith('/images') || s.startsWith('images') || s.startsWith('./images'))) {
-    // normalize leading slashes and prepend public folder path
-    const path = s.replace(/^\.?\/?/, '/')
-    idea.imgSrc = projectPublicBase + path
-  } else {
-    idea.imgSrc = s
-  }
-  // Prefer a bundled asset if one exists in imageMap
-  const bundled = findAssetForPath(idea.imgSrc || raw)
-  if (bundled) idea.imgSrc = bundled
-  return idea
-})
-
-let id = 0
-dateideas = dateideas
-  .map((idea) => ({ ...idea, id: id++ }))
-  .sort((a, b) => a.id - b.id)
 export default dateideas

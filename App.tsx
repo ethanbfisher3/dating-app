@@ -2,7 +2,13 @@ import { useCallback, useRef, useState } from "react"
 import "react-native-gesture-handler"
 import { NavigationContainer } from "@react-navigation/native"
 import { createNativeStackNavigator } from "@react-navigation/native-stack"
-import { View, StatusBar, TouchableOpacity, Text, StyleSheet } from "react-native"
+import {
+  View,
+  StatusBar,
+  TouchableOpacity,
+  Text,
+  StyleSheet,
+} from "react-native"
 import { GestureHandlerRootView } from "react-native-gesture-handler"
 import Ionicons from "@expo/vector-icons/Ionicons"
 import PagerView from "react-native-pager-view"
@@ -12,6 +18,7 @@ import Tips from "./src/screens/Tips"
 import Info from "./src/screens/Info"
 import DateIdeas from "./src/screens/DateIdeas"
 import RecipesPage from "./src/screens/RecipesPage"
+import RecipeDetail from "./src/screens/RecipeDetail"
 
 const Stack = createNativeStackNavigator()
 
@@ -77,13 +84,14 @@ export default function App() {
           <Stack.Screen name="DateIdeas" component={DateIdeas} />
           <Stack.Screen name="PlanADate" component={PlanADate} />
           <Stack.Screen name="RecipesPage" component={RecipesPage} />
+          <Stack.Screen name="RecipeDetail" component={RecipeDetail} />
         </Stack.Navigator>
       </NavigationContainer>
     </GestureHandlerRootView>
   )
 }
 
-function MainTabs({ navigation } : {navigation:any}) {
+function MainTabs({ navigation }: { navigation: any }) {
   const pagerRef = useRef<PagerView | null>(null)
   const [currentPage, setCurrentPage] = useState(0)
 
@@ -144,8 +152,15 @@ function MainTabs({ navigation } : {navigation:any}) {
                 <View
                   style={
                     isCenterTab
-                      ? [styles.centerTabCircle, { backgroundColor: centerButtonColor }]
-                      : {display:'flex', alignItems:'center', justifyContent:'center' }
+                      ? [
+                          styles.centerTabCircle,
+                          { backgroundColor: centerButtonColor },
+                        ]
+                      : {
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }
                   }
                 >
                   <Ionicons
