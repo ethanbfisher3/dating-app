@@ -45,7 +45,9 @@ export default function DateIdeasScreen({
 
   const categories = useMemo(() => {
     return Array.from(
-      new Set(dateideas.flatMap((idea) => idea.categories || []).filter(Boolean)),
+      new Set(
+        dateideas.flatMap((idea) => idea.categories || []).filter(Boolean),
+      ),
     );
   }, []);
 
@@ -151,16 +153,20 @@ export default function DateIdeasScreen({
                       key={itemCategory}
                       style={[
                         styles.categoryButton,
-                        category === itemCategory && styles.categoryButtonActive,
+                        category === itemCategory &&
+                          styles.categoryButtonActive,
                       ]}
                       onPress={() =>
-                        setCategory(category === itemCategory ? "" : itemCategory)
+                        setCategory(
+                          category === itemCategory ? "" : itemCategory,
+                        )
                       }
                     >
                       <Text
                         style={[
                           styles.categoryText,
-                          category === itemCategory && styles.categoryTextActive,
+                          category === itemCategory &&
+                            styles.categoryTextActive,
                         ]}
                       >
                         {itemCategory}
