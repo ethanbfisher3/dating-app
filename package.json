@@ -19,6 +19,8 @@
     "@react-navigation/native-stack": "^6.9.12",
     "expo": "~54.0.33",
     "expo-location": "~19.0.8",
+    "express": "^5.2.1",
+    "node-fetch": "^3.3.2",
     "react": "19.1.0",
     "react-native": "0.81.5",
     "react-native-elements": "^3.4.3",

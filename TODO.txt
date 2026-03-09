@@ -1,12 +1,23 @@
 TODO:
 add activities for dates like the egg dropping thing
+Finish the date planner generator
 Full-on date editor after the 'plan a date' section. If the user already has date ideas, they can skip the questions section and go straight to the date editor
 New images
+the user currently can't delete the mile on the distance from you questions
+it should scroll down automatically on the date planner
+
 
 APIs:
-Google Places API
-Eventbrite API (for events)
+Google Places API:
+
+
+
+Eventbrite API (for events):
+https://www.eventbriteapi.com/v3/users/me/?token=SHCJ67YZJ5CNPEYVYVAJ
+
+
 Yelp API (for food and activities)
+
 
 Maybe do:
 When filtering date ideas, only show one category at a time since at one point there might be a ton of ideas and loading will take a while
@@ -23,6 +34,7 @@ idea = template.format(
     park=park.name
 )
 <--- Python code
+
 
 Eventually:
 users can input their own date ideas
