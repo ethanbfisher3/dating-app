@@ -13,7 +13,6 @@ Google Places API:
 
 
 Eventbrite API (for events):
-https://www.eventbriteapi.com/v3/users/me/?token=SHCJ67YZJ5CNPEYVYVAJ
 
 
 Yelp API (for food and activities)
