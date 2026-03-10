@@ -9,12 +9,6 @@ it should scroll down automatically on the date planner
 
 APIs:
 Google Places API:
-
-
-
-Eventbrite API (for events):
-
-
 Yelp API (for food and activities)
 
 
