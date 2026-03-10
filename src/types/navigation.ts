@@ -11,6 +11,7 @@ export type PlannedDateResultsParams = {
   endHour: number;
   maxDistance: number;
   categories: string[];
+  userLocation?: UserLocationParams | null;
 };
 
 export type UserLocationParams = {

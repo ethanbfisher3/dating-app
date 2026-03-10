@@ -1,6 +1,7 @@
 const express = require("express");
 const env = require("dotenv");
 const categories = require("./categories");
+const { getDatePlannerIdeas } = require("./datePlanner");
 env.config();
 
 // Node 18+ has a global fetch. Fallback to node-fetch for older runtimes.
@@ -13,6 +14,18 @@ const fetchFn =
 const app = express();
 const port = 3000;
 let eventbriteAccessToken: string | null = null;
+
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Methods", "GET,OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(204);
+  }
+
+  next();
+});
 
 const EVENTBRITE_API_KEY = process.env.EVENTBRITE_API_KEY;
 const EVENTBRITE_CLIENT_SECRET = process.env.EVENTBRITE_CLIENT_SECRET;
@@ -414,6 +427,96 @@ app.get("/eventbrite/events", async (req, res) => {
     console.error("Error fetching Eventbrite events by category:", error);
     return res.status(500).json({
       error: "Failed to fetch Eventbrite events by category",
+    });
+  }
+});
+
+app.get("/date-planner/ideas", async (req, res) => {
+  try {
+    const categoriesRaw = req.query.categories;
+    const categoriesQuery = Array.isArray(categoriesRaw)
+      ? categoriesRaw.join(",")
+      : typeof categoriesRaw === "string"
+        ? categoriesRaw
+        : "";
+
+    const categories = categoriesQuery
+      .split(",")
+      .map((value) => value.trim())
+      .filter(Boolean);
+
+    const date =
+      typeof req.query.date === "string" ? req.query.date.trim() : "";
+    const startHourRaw =
+      typeof req.query.startHour === "string" ? req.query.startHour.trim() : "";
+    const endHourRaw =
+      typeof req.query.endHour === "string" ? req.query.endHour.trim() : "";
+    const ideaCountRaw =
+      typeof req.query.ideaCount === "string"
+        ? req.query.ideaCount.trim()
+        : "10";
+
+    const startHour = Number.parseInt(startHourRaw, 10);
+    const endHour = Number.parseInt(endHourRaw, 10);
+    const ideaCountParsed = Number.parseInt(ideaCountRaw, 10);
+    const ideaCount = Number.isNaN(ideaCountParsed)
+      ? 10
+      : Math.max(1, Math.min(20, ideaCountParsed));
+
+    const userLatitudeRaw =
+      typeof req.query.userLatitude === "string"
+        ? req.query.userLatitude.trim()
+        : "";
+    const userLongitudeRaw =
+      typeof req.query.userLongitude === "string"
+        ? req.query.userLongitude.trim()
+        : "";
+    const userLatitude = Number.parseFloat(userLatitudeRaw);
+    const userLongitude = Number.parseFloat(userLongitudeRaw);
+    const hasUserLocation =
+      !Number.isNaN(userLatitude) && !Number.isNaN(userLongitude);
+
+    if (!date || Number.isNaN(startHour) || Number.isNaN(endHour)) {
+      return res.status(400).json({
+        error:
+          "Missing or invalid required query params: date (YYYY-MM-DD), startHour (0-23), endHour (0-23)",
+        example:
+          "/date-planner/ideas?categories=Food,Outdoors&date=2026-03-15&startHour=18&endHour=21&ideaCount=10",
+      });
+    }
+
+    if (startHour < 0 || startHour > 23 || endHour < 0 || endHour > 23) {
+      return res.status(400).json({
+        error: "startHour and endHour must be between 0 and 23.",
+      });
+    }
+
+    const result = await getDatePlannerIdeas({
+      categories,
+      date,
+      startHour,
+      endHour,
+      ideaCount,
+      userLatitude: hasUserLocation ? userLatitude : undefined,
+      userLongitude: hasUserLocation ? userLongitude : undefined,
+    });
+
+    return res.json({
+      request: {
+        categories,
+        date,
+        startHour,
+        endHour,
+        ideaCount,
+        userLatitude: hasUserLocation ? userLatitude : null,
+        userLongitude: hasUserLocation ? userLongitude : null,
+      },
+      ...result,
+    });
+  } catch (error: any) {
+    console.error("Date planner query failed:", error);
+    return res.status(500).json({
+      error: error?.message || "Failed to generate date planner ideas.",
     });
   }
 });

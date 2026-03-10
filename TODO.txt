@@ -5,6 +5,7 @@ Full-on date editor after the 'plan a date' section. If the user already has dat
 New images
 the user currently can't delete the mile on the distance from you questions
 it should scroll down automatically on the date planner
+What to do if someone is not in utah planning a date?
 
 
 APIs:
@@ -13,6 +14,7 @@ Yelp API (for food and activities)
 
 
 Maybe do:
+Date history/Journaling page?
 When filtering date ideas, only show one category at a time since at one point there might be a ton of ideas and loading will take a while
 add tutorial like the mood app
 Instead of the date planner showing up with ideas, it will generate a list of full-on date (Ex: eat at some place then walk somewhere and do some activity until some time). The user will be able to select one of these or create their own date from other ideas
