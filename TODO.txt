@@ -7,6 +7,8 @@ the user currently can't delete the mile on the distance from you questions
 it should scroll down automatically on the date planner
 What to do if someone is not in utah planning a date?
 Replace the 'Date Ideas' page with something else
+Check if BYU Events are included
+Come up with a better name for the app
 
 Maybe do:
 Date history/Journaling page?
@@ -18,7 +20,3 @@ On the date planner results page, the user can regenerate not just a date idea, 
 Eventually:
 users can input their own date ideas
 users can upload pictures or reviews and there can be a 'recent dates in provo' section on the app to make it more like social media. Then, when a user is looking at date ideas or a place, it will show them dates that have taken place at that spot
-
-New ideas for the app name:
-Provo Date Atlas
-Provo Date Planner 

@@ -3,6 +3,12 @@
     "name": "BYU Dating",
     "slug": "byu-dating-native",
     "platforms": ["ios", "android", "web"],
-    "version": "1.0.0"
+    "version": "1.0.0",
+    "icon": "./src/assets/images/date_planner_icon.png",
+    "backgroundColor": "#FFFFFF",
+    "splash": {
+      "backgroundColor": "#FFFFFF",
+      "image": "./src/assets/images/date_planner_icon.png"
+    }
   }
 }

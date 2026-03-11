@@ -1,29 +1,30 @@
-import { useCallback, useRef, useState } from "react";
-import "react-native-gesture-handler";
-import { NavigationContainer } from "@react-navigation/native";
-import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import type { AppNavigation, RootStackParamList } from "./src/types/navigation";
+import { useCallback, useRef, useState } from "react"
+import "react-native-gesture-handler"
+import { NavigationContainer } from "@react-navigation/native"
+import { createNativeStackNavigator } from "@react-navigation/native-stack"
+import type { AppNavigation, RootStackParamList } from "./src/types/navigation"
 import {
   View,
   StatusBar,
   TouchableOpacity,
   Text,
   StyleSheet,
-} from "react-native";
-import { GestureHandlerRootView } from "react-native-gesture-handler";
-import Ionicons from "@expo/vector-icons/Ionicons";
-import PagerView from "react-native-pager-view";
-import Home from "./src/screens/Home";
-import PlanADate from "./src/screens/PlanADate";
-import Info from "./src/screens/Info";
-import DateIdeas from "./src/screens/DateIdeas";
-import RecipesPage from "./src/screens/RecipesPage";
-import RecipeDetail from "./src/screens/RecipeDetail";
-import InspectDateIdea from "./src/screens/InspectDateIdea";
-import PlannedDateResults from "./src/screens/PlannedDateResults";
-import SavedIdeas from "./src/screens/SavedIdeas";
+} from "react-native"
+import { GestureHandlerRootView } from "react-native-gesture-handler"
+import Ionicons from "@expo/vector-icons/Ionicons"
+import PagerView from "react-native-pager-view"
+import Home from "./src/screens/Home"
+import PlanADate from "./src/screens/PlanADate"
+import Info from "./src/screens/Info"
+import DateIdeas from "./src/screens/DateIdeas"
+import RecipesPage from "./src/screens/RecipesPage"
+import RecipeDetail from "./src/screens/RecipeDetail"
+import InspectDateIdea from "./src/screens/InspectDateIdea"
+import PlannedDateResults from "./src/screens/PlannedDateResults"
+import SavedIdeas from "./src/screens/SavedIdeas"
+import DateHistory from "src/screens/DateHistory"
 
-const Stack = createNativeStackNavigator<RootStackParamList>();
+const Stack = createNativeStackNavigator<RootStackParamList>()
 
 // Define tabs (order matters for swipe left/right)
 const TABS = [
@@ -34,12 +35,19 @@ const TABS = [
     iconOutline: "home-outline",
     component: Home,
   },
+  // {
+  //   key: "Date Ideas",
+  //   title: "Date Ideas",
+  //   icon: "compass",
+  //   iconOutline: "compass-outline",
+  //   component: DateIdeas,
+  // },
   {
-    key: "Date Ideas",
-    title: "Date Ideas",
-    icon: "compass",
-    iconOutline: "compass-outline",
-    component: DateIdeas,
+    key: "Date History",
+    title: "Date History",
+    icon: "time",
+    iconOutline: "time-outline",
+    component: DateHistory,
   },
   {
     key: "Date Planner",
@@ -69,7 +77,7 @@ const TABS = [
   //   iconOutline: "information-circle-outline",
   //   component: Info,
   // },
-];
+]
 
 export default function App() {
   return (
@@ -97,28 +105,29 @@ export default function App() {
         </Stack.Navigator>
       </NavigationContainer>
     </GestureHandlerRootView>
-  );
+  )
 }
 
 function MainTabs({ navigation }: { navigation: AppNavigation }) {
-  const pagerRef = useRef<PagerView | null>(null);
-  const [currentPage, setCurrentPage] = useState(0);
+  const pagerRef = useRef<PagerView | null>(null)
+  const [currentPage, setCurrentPage] = useState(0)
 
   const handlePageSelected = useCallback((e: any) => {
-    setCurrentPage(e.nativeEvent.position);
-  }, []);
+    setCurrentPage(e.nativeEvent.position)
+  }, [])
 
   const handleTabPress = useCallback((index: number) => {
-    pagerRef.current?.setPage(index);
-  }, []);
+    setCurrentPage(index)
+    pagerRef.current?.setPage(index)
+  }, [])
 
   const goToTab = useCallback((tabKey: string) => {
-    const tabIndex = TABS.findIndex((tab) => tab.key === tabKey);
+    const tabIndex = TABS.findIndex((tab) => tab.key === tabKey)
     if (tabIndex >= 0) {
-      pagerRef.current?.setPage(tabIndex);
-      setCurrentPage(tabIndex);
+      pagerRef.current?.setPage(tabIndex)
+      setCurrentPage(tabIndex)
     }
-  }, []);
+  }, [])
 
   return (
     <>
@@ -133,23 +142,23 @@ function MainTabs({ navigation }: { navigation: AppNavigation }) {
           overdrag={true}
         >
           {TABS.map((tab, index) => {
-            const Component = tab.component;
+            const Component = tab.component
             return (
               <View key={index} style={styles.page}>
                 <Component navigation={navigation} goToTab={goToTab} />
               </View>
-            );
+            )
           })}
         </PagerView>
 
         {/* Custom Bottom Tab Bar */}
         <View style={styles.tabBar}>
           {TABS.map((tab, index) => {
-            const isActive = currentPage === index;
-            const iconName = isActive ? tab.icon : tab.iconOutline;
-            const isCenterTab = tab.key === "Date Planner";
-            const color = isActive ? "#1e90ff" : "#8e8e93";
-            const centerButtonColor = isActive ? "#e63f67" : "#f05a7e";
+            const isActive = currentPage === index
+            const iconName = isActive ? tab.icon : tab.iconOutline
+            const isCenterTab = tab.key === "Date Planner"
+            const color = isActive ? "#1e90ff" : "#8e8e93"
+            const centerButtonColor = isActive ? "#e63f67" : "#f05a7e"
 
             return (
               <TouchableOpacity
@@ -188,12 +197,12 @@ function MainTabs({ navigation }: { navigation: AppNavigation }) {
                   </Text> */}
                 </View>
               </TouchableOpacity>
-            );
+            )
           })}
         </View>
       </View>
     </>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -248,4 +257,4 @@ const styles = StyleSheet.create({
     color: "#ffffff",
     textAlign: "center",
   },
-});
+})
