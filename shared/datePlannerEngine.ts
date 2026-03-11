@@ -1,83 +1,86 @@
 export type PlannerPlace = {
-  id: string;
-  types?: string[];
-  formattedAddress?: string;
-  googleMapsUri?: string;
-  rating?: number;
-  location?: { latitude?: number; longitude?: number };
-  businessStatus?: string;
-  displayName?: { text?: string };
+  id: string
+  types?: string[]
+  formattedAddress?: string
+  googleMapsUri?: string
+  rating?: number
+  priceLevel?: string
+  location?: { latitude?: number; longitude?: number }
+  businessStatus?: string
+  displayName?: { text?: string }
   regularOpeningHours?: {
     periods?: Array<{
-      open?: { day?: number; hour?: number; minute?: number };
-      close?: { day?: number; hour?: number; minute?: number };
-    }>;
-  };
-};
+      open?: { day?: number; hour?: number; minute?: number }
+      close?: { day?: number; hour?: number; minute?: number }
+    }>
+  }
+}
 
 export type ResponsePlace = {
-  id: string;
-  name: string;
-  address: string;
-  types: string[];
-  googleMapsUri: string;
-  rating: number | null;
+  id: string
+  name: string
+  address: string
+  types: string[]
+  googleMapsUri: string
+  rating: number | null
   location: {
-    latitude: number | null;
-    longitude: number | null;
-  };
-};
+    latitude: number | null
+    longitude: number | null
+  }
+}
 
 export type ScheduledStep = {
-  title: string;
-  slot: string;
-  startTime: string;
-  endTime: string;
-  durationMinutes: number;
-  place: ResponsePlace | null;
-  travelToNextMinutes: number | null;
-};
+  title: string
+  slot: string
+  startTime: string
+  endTime: string
+  durationMinutes: number
+  place: ResponsePlace | null
+  travelToNextMinutes: number | null
+}
 
 export type PlannerTemplate = {
-  template: string;
-  slots: string[];
-};
+  template: string
+  slots: string[]
+}
 
 type CategoryTemplateSet = {
-  short: PlannerTemplate[];
-  standard: PlannerTemplate[];
-  long: PlannerTemplate[];
-};
+  short: PlannerTemplate[]
+  standard: PlannerTemplate[]
+  long: PlannerTemplate[]
+}
 
 type UserLocation = {
-  latitude: number;
-  longitude: number;
-};
+  latitude: number
+  longitude: number
+}
 
 export type GenerateDatePlannerIdeasRequest = {
-  categories: string[];
-  date: string;
-  startHour: number;
-  endHour: number;
-  ideaCount: number;
-  userLatitude?: number;
-  userLongitude?: number;
-};
+  categories: string[]
+  date: string
+  startHour: number
+  endHour: number
+  ideaCount: number
+  maxPrice?: number
+  maxDistanceMiles?: number
+  userLatitude?: number
+  userLongitude?: number
+}
 
 export type GenerateDatePlannerIdeasResult = {
-  sourceFile: string;
-  totalMatches: number;
-  matchedPlaces: ResponsePlace[];
-  templates: PlannerTemplate[];
+  sourceFile: string
+  totalMatches: number
+  matchedPlaces: ResponsePlace[]
+  templates: PlannerTemplate[]
   ideas: Array<{
-    template: string;
-    filledTemplate: string;
-    commuteToFirstMinutes: number | null;
-    commuteFromLastMinutes: number | null;
-    places: Record<string, ResponsePlace | null>;
-    schedule: ScheduledStep[];
-  }>;
-};
+    template: string
+    filledTemplate: string
+    commuteToFirstMinutes: number | null
+    commuteFromLastMinutes: number | null
+    places: Record<string, ResponsePlace | null>
+    schedule: ScheduledStep[]
+  }>
+}
 
 const CATEGORY_TYPE_MAP: Record<string, string[]> = {
   Food: [
@@ -138,7 +141,7 @@ const CATEGORY_TYPE_MAP: Record<string, string[]> = {
     "playground",
     "campground",
   ],
-};
+}
 
 const SLOT_TYPE_MAP: Record<string, string[]> = {
   dessert: ["bakery", "ice_cream_shop", "cafe", "dessert_restaurant"],
@@ -156,7 +159,7 @@ const SLOT_TYPE_MAP: Record<string, string[]> = {
   ],
   sports: ["gym", "sports_club", "sports_complex", "golf_course"],
   scenic: ["scenic_spot", "park", "river", "lake", "mountain_peak"],
-};
+}
 
 const CATEGORY_SLOT_MAP: Record<string, string[]> = {
   Food: ["meal", "dessert"],
@@ -166,14 +169,14 @@ const CATEGORY_SLOT_MAP: Record<string, string[]> = {
   Learning: ["learningSpot"],
   Shopping: ["shop"],
   Recreation: ["activity"],
-};
+}
 
 const SHORT_DATE_TEMPLATES: PlannerTemplate[] = [
   { template: "Get a quick dessert at {dessert}", slots: ["dessert"] },
   { template: "Take a short walk at {park}", slots: ["park"] },
   { template: "Grab a bite at {meal}", slots: ["meal"] },
   { template: "Do a quick activity at {activity}", slots: ["activity"] },
-];
+]
 
 const STANDARD_DATE_TEMPLATES: PlannerTemplate[] = [
   {
@@ -209,7 +212,7 @@ const STANDARD_DATE_TEMPLATES: PlannerTemplate[] = [
       "Eat at {meal}, spend time at {activity}, then get dessert at {dessert}",
     slots: ["meal", "activity", "dessert"],
   },
-];
+]
 
 const LONG_DATE_TEMPLATES: PlannerTemplate[] = [
   {
@@ -232,7 +235,7 @@ const LONG_DATE_TEMPLATES: PlannerTemplate[] = [
       "Start with shopping at {shop}, then {activity}, dinner at {meal}, and a final stop at {park}",
     slots: ["shop", "activity", "meal", "park"],
   },
-];
+]
 
 const CATEGORY_SPECIFIC_TEMPLATES: Record<string, CategoryTemplateSet> = {
   Food: {
@@ -475,7 +478,7 @@ const CATEGORY_SPECIFIC_TEMPLATES: Record<string, CategoryTemplateSet> = {
       },
     ],
   },
-};
+}
 
 const DATE_TEMPLATES: PlannerTemplate[] = [
   ...SHORT_DATE_TEMPLATES,
@@ -486,76 +489,121 @@ const DATE_TEMPLATES: PlannerTemplate[] = [
     ...templateSet.standard,
     ...templateSet.long,
   ]),
-];
+]
 
 const FALLBACK_TEMPLATE: PlannerTemplate = {
   template: "Spend time at {activity}",
   slots: ["activity"],
-};
+}
+
+const PAID_WHEN_NO_PRICE_TYPES = new Set([
+  "restaurant",
+  "meal_takeaway",
+  "cafe",
+  "bakery",
+  "ice_cream_shop",
+  "dessert_restaurant",
+  "coffee_shop",
+  "pizza_restaurant",
+  "sandwich_shop",
+  "movie_theater",
+  "video_arcade",
+  "amusement_park",
+  "gym",
+  "sports_club",
+  "sports_complex",
+  "sports_activity_location",
+  "golf_course",
+])
+
+const PRICE_LEVEL_TO_ESTIMATED_SPEND: Record<string, number> = {
+  PRICE_LEVEL_FREE: 0,
+  PRICE_LEVEL_INEXPENSIVE: 15,
+  PRICE_LEVEL_MODERATE: 35,
+  PRICE_LEVEL_EXPENSIVE: 70,
+  PRICE_LEVEL_VERY_EXPENSIVE: 110,
+  PRICE_LEVEL_UNSPECIFIED: 15,
+}
 
 function toMinuteOfWeek(day: number, hour = 0, minute = 0): number {
-  return day * 1440 + hour * 60 + minute;
+  return day * 1440 + hour * 60 + minute
+}
+
+function minuteOfWeekFromDate(date: Date, minuteOfDay: number): number {
+  const normalized = ((minuteOfDay % 1440) + 1440) % 1440
+  const hour = Math.floor(normalized / 60)
+  const minute = normalized % 60
+  return toMinuteOfWeek(date.getDay(), hour, minute)
 }
 
 function isOpenForWindow(
   place: PlannerPlace,
   date: Date,
-  startHour24: number,
-  endHour24: number,
+  startMinuteOfDay: number,
+  endMinuteOfDay: number,
 ): boolean {
-  const periods = place.regularOpeningHours?.periods || [];
-  if (!periods.length) return false;
+  const periods = place.regularOpeningHours?.periods || []
+  if (!periods.length) return false
 
-  const targetDay = date.getDay();
-  const startMinuteOfDay = startHour24 * 60;
-  const endMinuteOfDay = endHour24 * 60;
-  const windowStart = toMinuteOfWeek(targetDay, startHour24, 0);
-  const windowEndRaw = toMinuteOfWeek(targetDay, endHour24, 0);
+  const windowStart = minuteOfWeekFromDate(date, startMinuteOfDay)
+  const windowEndRaw = minuteOfWeekFromDate(date, endMinuteOfDay)
   const windowEnd =
-    endMinuteOfDay <= startMinuteOfDay ? windowEndRaw + 1440 : windowEndRaw;
+    endMinuteOfDay <= startMinuteOfDay ? windowEndRaw + 1440 : windowEndRaw
 
   for (const period of periods) {
-    const open = period.open;
-    const close = period.close;
+    const open = period.open
+    const close = period.close
     if (
       typeof open?.day !== "number" ||
       typeof open?.hour !== "number" ||
       typeof close?.day !== "number" ||
       typeof close?.hour !== "number"
     ) {
-      continue;
+      continue
     }
 
-    const periodStart = toMinuteOfWeek(open.day, open.hour, open.minute || 0);
-    let periodEnd = toMinuteOfWeek(close.day, close.hour, close.minute || 0);
-    if (periodEnd <= periodStart) periodEnd += 10080;
+    const periodStart = toMinuteOfWeek(open.day, open.hour, open.minute || 0)
+    let periodEnd = toMinuteOfWeek(close.day, close.hour, close.minute || 0)
+    if (periodEnd <= periodStart) periodEnd += 10080
 
     for (const shift of [0, 10080, -10080]) {
-      const shiftedStart = periodStart + shift;
-      const shiftedEnd = periodEnd + shift;
+      const shiftedStart = periodStart + shift
+      const shiftedEnd = periodEnd + shift
       if (windowStart >= shiftedStart && windowEnd <= shiftedEnd) {
-        return true;
+        return true
       }
     }
   }
 
-  return false;
+  return false
+}
+
+function isOpenAtAbsoluteMinute(
+  place: PlannerPlace,
+  startDate: Date,
+  absoluteMinute: number,
+): boolean {
+  const dayOffset = Math.floor(absoluteMinute / 1440)
+  const minuteOfDay = ((absoluteMinute % 1440) + 1440) % 1440
+  const targetDate = new Date(startDate)
+  targetDate.setDate(startDate.getDate() + dayOffset)
+  return isOpenForWindow(place, targetDate, minuteOfDay, minuteOfDay + 1)
 }
 
 function normalizeCategoryTypes(categories: string[]): Set<string> {
   const mapped = categories.flatMap(
     (category) => CATEGORY_TYPE_MAP[category] || [],
-  );
-  return new Set(mapped);
+  )
+  return new Set(mapped)
 }
 
 function matchesSelectedCategory(
   place: PlannerPlace,
   categoryTypes: Set<string>,
 ): boolean {
-  if (!categoryTypes.size) return true;
-  const placeTypes = place.types || [];
-  return placeTypes.some((type) => categoryTypes.has(type));
+  if (!categoryTypes.size) return true
+  const placeTypes = place.types || []
+  return placeTypes.some((type) => categoryTypes.has(type))
 }
 
 function toResponsePlace(place: PlannerPlace): ResponsePlace {
@@ -570,23 +618,117 @@ function toResponsePlace(place: PlannerPlace): ResponsePlace {
       latitude: place.location?.latitude ?? null,
       longitude: place.location?.longitude ?? null,
     },
-  };
+  }
 }
 
 function toRadians(value: number) {
-  return (value * Math.PI) / 180;
+  return (value * Math.PI) / 180
+}
+
+function distanceMilesBetween(
+  latitude1: number,
+  longitude1: number,
+  latitude2: number,
+  longitude2: number,
+) {
+  const earthRadiusMiles = 3958.8
+  const dLat = toRadians(latitude2 - latitude1)
+  const dLon = toRadians(longitude2 - longitude1)
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRadians(latitude1)) *
+      Math.cos(toRadians(latitude2)) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2)
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+  return earthRadiusMiles * c
+}
+
+function distanceMilesFromUser(
+  userLocation: UserLocation | null,
+  place: PlannerPlace,
+): number | null {
+  if (!userLocation) return null
+
+  const lat = place.location?.latitude
+  const lon = place.location?.longitude
+  if (typeof lat !== "number" || typeof lon !== "number") return null
+
+  return distanceMilesBetween(
+    userLocation.latitude,
+    userLocation.longitude,
+    lat,
+    lon,
+  )
+}
+
+function estimatePlaceSpend(place: PlannerPlace): number | null {
+  const rawLevel = (place.priceLevel || "").trim()
+  if (rawLevel) {
+    if (
+      Object.prototype.hasOwnProperty.call(
+        PRICE_LEVEL_TO_ESTIMATED_SPEND,
+        rawLevel,
+      )
+    ) {
+      return PRICE_LEVEL_TO_ESTIMATED_SPEND[rawLevel]
+    }
+
+    const types = place.types || []
+    if (types.some((type) => PAID_WHEN_NO_PRICE_TYPES.has(type))) {
+      return 15
+    }
+
+    return 0
+  }
+
+  const types = place.types || []
+  if (types.some((type) => PAID_WHEN_NO_PRICE_TYPES.has(type))) {
+    return 15
+  }
+
+  return 0
+}
+
+function matchesBudget(place: PlannerPlace, maxPrice?: number): boolean {
+  if (typeof maxPrice !== "number" || Number.isNaN(maxPrice)) {
+    return true
+  }
+
+  const estimatedSpend = estimatePlaceSpend(place)
+  if (estimatedSpend === null) return true
+
+  return estimatedSpend <= maxPrice
+}
+
+function matchesDistance(
+  place: PlannerPlace,
+  userLocation: UserLocation | null,
+  maxDistanceMiles?: number,
+): boolean {
+  if (
+    typeof maxDistanceMiles !== "number" ||
+    Number.isNaN(maxDistanceMiles) ||
+    !userLocation
+  ) {
+    return true
+  }
+
+  const miles = distanceMilesFromUser(userLocation, place)
+  if (miles === null) return true
+  return miles <= maxDistanceMiles
 }
 
 function estimateTravelMinutes(
   fromPlace: ResponsePlace | null,
   toPlace: ResponsePlace | null,
 ) {
-  if (!fromPlace || !toPlace) return null;
+  if (!fromPlace || !toPlace) return null
 
-  const lat1 = fromPlace.location?.latitude;
-  const lon1 = fromPlace.location?.longitude;
-  const lat2 = toPlace.location?.latitude;
-  const lon2 = toPlace.location?.longitude;
+  const lat1 = fromPlace.location?.latitude
+  const lon1 = fromPlace.location?.longitude
+  const lat2 = toPlace.location?.latitude
+  const lon2 = toPlace.location?.longitude
 
   if (
     typeof lat1 !== "number" ||
@@ -594,41 +736,41 @@ function estimateTravelMinutes(
     typeof lat2 !== "number" ||
     typeof lon2 !== "number"
   ) {
-    return null;
+    return null
   }
 
-  const earthRadiusMiles = 3958.8;
-  const dLat = toRadians(lat2 - lat1);
-  const dLon = toRadians(lon2 - lon1);
+  const earthRadiusMiles = 3958.8
+  const dLat = toRadians(lat2 - lat1)
+  const dLon = toRadians(lon2 - lon1)
   const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
     Math.cos(toRadians(lat1)) *
       Math.cos(toRadians(lat2)) *
       Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  const straightLineMiles = earthRadiusMiles * c;
+      Math.sin(dLon / 2)
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+  const straightLineMiles = earthRadiusMiles * c
 
-  const estimatedRoadMiles = straightLineMiles * 1.25;
-  const averageCityMph = 25;
-  const minutes = (estimatedRoadMiles / averageCityMph) * 60;
-  const buffered = minutes + 5;
+  const estimatedRoadMiles = straightLineMiles * 1.25
+  const averageCityMph = 25
+  const minutes = (estimatedRoadMiles / averageCityMph) * 60
+  const buffered = minutes + 5
 
-  return Math.max(5, Math.min(60, Math.round(buffered)));
+  return Math.max(5, Math.min(60, Math.round(buffered)))
 }
 
 function estimateTravelMinutesFromLocation(
   fromLocation: UserLocation | null,
   toPlace: ResponsePlace | null,
 ) {
-  if (!fromLocation) return null;
+  if (!fromLocation) return null
   const pseudoFromPlace = {
     location: {
       latitude: fromLocation.latitude,
       longitude: fromLocation.longitude,
     },
-  } as ResponsePlace;
-  return estimateTravelMinutes(pseudoFromPlace, toPlace);
+  } as ResponsePlace
+  return estimateTravelMinutes(pseudoFromPlace, toPlace)
 }
 
 function buildBuckets(places: PlannerPlace[]) {
@@ -641,69 +783,69 @@ function buildBuckets(places: PlannerPlace[]) {
     activity: [],
     sports: [],
     scenic: [],
-  };
+  }
 
   for (const place of places) {
-    const responsePlace = toResponsePlace(place);
-    const types = responsePlace.types || [];
+    const responsePlace = toResponsePlace(place)
+    const types = responsePlace.types || []
     for (const [slot, mappedTypes] of Object.entries(SLOT_TYPE_MAP)) {
       if (types.some((type) => mappedTypes.includes(type))) {
-        buckets[slot].push(responsePlace);
+        buckets[slot].push(responsePlace)
       }
     }
   }
 
-  return buckets;
+  return buckets
 }
 
 function shuffleArray<T>(items: T[]): T[] {
-  const arr = [...items];
+  const arr = [...items]
   for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[arr[i], arr[j]] = [arr[j], arr[i]]
   }
-  return arr;
+  return arr
 }
 
 function computeWindowDurationMinutes(startHour: number, endHour: number) {
-  const start = startHour * 60;
-  let end = endHour * 60;
-  if (end <= start) end += 24 * 60;
-  return end - start;
+  const start = startHour * 60
+  let end = endHour * 60
+  if (end <= start) end += 24 * 60
+  return end - start
 }
 
 function distributeMinutes(total: number, count: number) {
-  if (count <= 0) return [] as number[];
-  const base = Math.floor(total / count);
-  const remainder = total % count;
+  if (count <= 0) return [] as number[]
+  const base = Math.floor(total / count)
+  const remainder = total % count
   return Array.from(
     { length: count },
     (_, index) => base + (index < remainder ? 1 : 0),
-  );
+  )
 }
 
 function formatMinutesTo12Hour(totalMinutes: number) {
-  const normalized = ((totalMinutes % (24 * 60)) + 24 * 60) % (24 * 60);
-  const hour24 = Math.floor(normalized / 60);
-  const minute = normalized % 60;
-  const period = hour24 < 12 ? "AM" : "PM";
-  const hour12 = hour24 % 12 === 0 ? 12 : hour24 % 12;
-  const minuteText = String(minute).padStart(2, "0");
-  return `${hour12}:${minuteText} ${period}`;
+  const normalized = ((totalMinutes % (24 * 60)) + 24 * 60) % (24 * 60)
+  const hour24 = Math.floor(normalized / 60)
+  const minute = normalized % 60
+  const period = hour24 < 12 ? "AM" : "PM"
+  const hour12 = hour24 % 12 === 0 ? 12 : hour24 % 12
+  const minuteText = String(minute).padStart(2, "0")
+  return `${hour12}:${minuteText} ${period}`
 }
 
 function getStepCountByDuration(totalMinutes: number) {
-  if (totalMinutes <= 90) return 1;
-  if (totalMinutes <= 180) return 2;
-  if (totalMinutes <= 300) return 3;
-  if (totalMinutes <= 420) return 4;
-  return 5;
+  if (totalMinutes <= 90) return 1
+  if (totalMinutes <= 180) return 2
+  if (totalMinutes <= 300) return 3
+  if (totalMinutes <= 420) return 4
+  return 5
 }
 
 function getTemplatePoolByDuration(totalMinutes: number): PlannerTemplate[] {
-  if (totalMinutes <= 90) return SHORT_DATE_TEMPLATES;
-  if (totalMinutes >= 330) return LONG_DATE_TEMPLATES;
-  return STANDARD_DATE_TEMPLATES;
+  if (totalMinutes <= 90) return SHORT_DATE_TEMPLATES
+  if (totalMinutes >= 330) return LONG_DATE_TEMPLATES
+  return STANDARD_DATE_TEMPLATES
 }
 
 function chooseTemplateByDuration(
@@ -715,11 +857,11 @@ function chooseTemplateByDuration(
   const filterTemplatesByAllowedSlots = (templates: PlannerTemplate[]) =>
     templates.filter((template) =>
       template.slots.every((slot) => allowedSlots.has(slot)),
-    );
+    )
 
   if (selectedCategories.length === 1) {
-    const categoryName = selectedCategories[0];
-    const categoryTemplates = CATEGORY_SPECIFIC_TEMPLATES[categoryName];
+    const categoryName = selectedCategories[0]
+    const categoryTemplates = CATEGORY_SPECIFIC_TEMPLATES[categoryName]
 
     if (categoryTemplates) {
       const categoryPool =
@@ -727,41 +869,41 @@ function chooseTemplateByDuration(
           ? categoryTemplates.short
           : totalMinutes >= 330
             ? categoryTemplates.long
-            : categoryTemplates.standard;
+            : categoryTemplates.standard
 
-      const filteredCategoryPool = filterTemplatesByAllowedSlots(categoryPool);
+      const filteredCategoryPool = filterTemplatesByAllowedSlots(categoryPool)
       if (filteredCategoryPool.length) {
-        return filteredCategoryPool[indexSeed % filteredCategoryPool.length];
+        return filteredCategoryPool[indexSeed % filteredCategoryPool.length]
       }
     }
   }
 
   const pool = filterTemplatesByAllowedSlots(
     getTemplatePoolByDuration(totalMinutes),
-  );
+  )
   if (!pool.length) {
-    const allowedSlot = Array.from(allowedSlots)[0];
+    const allowedSlot = Array.from(allowedSlots)[0]
     if (allowedSlot) {
       return {
         template: `Spend time at {${allowedSlot}}`,
         slots: [allowedSlot],
-      };
+      }
     }
-    return FALLBACK_TEMPLATE;
+    return FALLBACK_TEMPLATE
   }
 
-  return pool[indexSeed % pool.length];
+  return pool[indexSeed % pool.length]
 }
 
 function fillTemplateText(
   template: string,
   placesBySlot: Record<string, ResponsePlace | null>,
 ) {
-  let text = template;
+  let text = template
   for (const [slot, place] of Object.entries(placesBySlot)) {
-    text = text.replace(`{${slot}}`, place?.name || "a local spot");
+    text = text.replace(`{${slot}}`, place?.name || "a local spot")
   }
-  return text;
+  return text
 }
 
 function normalizeTemplateSlots(
@@ -772,23 +914,23 @@ function normalizeTemplateSlots(
 ) {
   const filteredTemplateSlots = templateSlots.filter((slot) =>
     allSlots.includes(slot),
-  );
+  )
   const slotPool = filteredTemplateSlots.length
     ? filteredTemplateSlots
     : allSlots.length
       ? shuffleArray(allSlots)
-      : ["activity"];
+      : ["activity"]
 
   const targetStepCount = Math.max(
     1,
     Math.min(maxStepCount, Math.max(minStepCount, slotPool.length)),
-  );
+  )
 
-  const expandedSlots: string[] = [];
+  const expandedSlots: string[] = []
   for (let i = 0; i < targetStepCount; i++) {
-    expandedSlots.push(slotPool[i % slotPool.length]);
+    expandedSlots.push(slotPool[i % slotPool.length])
   }
-  return expandedSlots;
+  return expandedSlots
 }
 
 function pickPlaceForSlot(
@@ -796,30 +938,72 @@ function pickPlaceForSlot(
   buckets: Record<string, ResponsePlace[]>,
   usedPlaceIds: Set<string>,
 ) {
-  const choices = shuffleArray(buckets[slot] || []);
-  const unused = choices.find((place) => !usedPlaceIds.has(place.id));
-  const picked = unused || choices[0] || null;
-  if (picked) usedPlaceIds.add(picked.id);
-  return picked;
+  const choices = shuffleArray(buckets[slot] || [])
+  const unused = choices.find((place) => !usedPlaceIds.has(place.id))
+  const picked = unused || choices[0] || null
+  if (picked) usedPlaceIds.add(picked.id)
+  return picked
+}
+
+function ensurePlaceOpenAtMinute(
+  place: ResponsePlace | null,
+  placeById: Record<string, PlannerPlace>,
+  requestedDate: Date,
+  absoluteMinute: number,
+) {
+  if (!place) return false
+  const source = placeById[place.id]
+  if (!source) return false
+  return isOpenAtAbsoluteMinute(source, requestedDate, absoluteMinute)
+}
+
+function pickReplacementOpenAtMinute(
+  slot: string,
+  buckets: Record<string, ResponsePlace[]>,
+  usedPlaceIds: Set<string>,
+  placeById: Record<string, PlannerPlace>,
+  requestedDate: Date,
+  absoluteMinute: number,
+) {
+  const candidates = shuffleArray(buckets[slot] || [])
+  const viable = candidates.filter((candidate) => {
+    if (usedPlaceIds.has(candidate.id)) {
+      return false
+    }
+    return ensurePlaceOpenAtMinute(
+      candidate,
+      placeById,
+      requestedDate,
+      absoluteMinute,
+    )
+  })
+
+  const replacement = viable[0] || null
+  if (replacement) {
+    usedPlaceIds.add(replacement.id)
+  }
+  return replacement
 }
 
 function buildScheduleIdea(
   buckets: Record<string, ResponsePlace[]>,
+  placeById: Record<string, PlannerPlace>,
+  requestedDate: Date,
   startHour: number,
   endHour: number,
   indexSeed: number,
   selectedCategories: string[],
   userLocation: UserLocation | null,
 ) {
-  const totalMinutes = computeWindowDurationMinutes(startHour, endHour);
-  const maxStepCount = getStepCountByDuration(totalMinutes);
-  const minStepCount = totalMinutes >= 330 ? 3 : totalMinutes >= 180 ? 2 : 1;
+  const totalMinutes = computeWindowDurationMinutes(startHour, endHour)
+  const maxStepCount = getStepCountByDuration(totalMinutes)
+  const minStepCount = totalMinutes >= 330 ? 3 : totalMinutes >= 180 ? 2 : 1
 
   const allowedSlots = new Set(
     selectedCategories.flatMap((category) => CATEGORY_SLOT_MAP[category] || []),
-  );
+  )
   if (!allowedSlots.size) {
-    Object.keys(SLOT_TYPE_MAP).forEach((slot) => allowedSlots.add(slot));
+    Object.keys(SLOT_TYPE_MAP).forEach((slot) => allowedSlots.add(slot))
   }
 
   const selectedTemplate = chooseTemplateByDuration(
@@ -827,64 +1011,64 @@ function buildScheduleIdea(
     indexSeed,
     selectedCategories,
     allowedSlots,
-  );
+  )
 
   const allSlots = Object.keys(buckets).filter(
     (slot) => allowedSlots.has(slot) && buckets[slot].length > 0,
-  );
+  )
 
   const slotPool = normalizeTemplateSlots(
     selectedTemplate.slots,
     allSlots,
     maxStepCount,
     minStepCount,
-  );
+  )
 
-  const stepCount = Math.max(minStepCount, slotPool.length);
-  const selectedSlots: string[] = [];
+  const stepCount = Math.max(minStepCount, slotPool.length)
+  const selectedSlots: string[] = []
   for (let i = 0; i < stepCount; i++) {
-    selectedSlots.push(slotPool[i % slotPool.length]);
+    selectedSlots.push(slotPool[i % slotPool.length])
   }
 
-  const usedPlaceIds = new Set<string>();
+  const usedPlaceIds = new Set<string>()
   const selectedPlaces = selectedSlots.map((slot) =>
     pickPlaceForSlot(slot, buckets, usedPlaceIds),
-  );
+  )
 
   const commuteToFirstMinutes = estimateTravelMinutesFromLocation(
     userLocation,
     selectedPlaces[0] || null,
-  );
+  )
   const commuteFromLastMinutes = estimateTravelMinutesFromLocation(
     userLocation,
     selectedPlaces[selectedPlaces.length - 1] || null,
-  );
-  const edgeTravelMinutes = commuteFromLastMinutes || 0;
+  )
+  const edgeTravelMinutes = commuteFromLastMinutes || 0
 
   const rawTravelMinutes = Array.from(
     { length: Math.max(0, stepCount - 1) },
     (_, index) =>
       estimateTravelMinutes(selectedPlaces[index], selectedPlaces[index + 1]) ??
       12,
-  );
+  )
 
-  let adjustedTravelMinutes = [...rawTravelMinutes];
+  let adjustedTravelMinutes = [...rawTravelMinutes]
   let totalTravelMinutes = adjustedTravelMinutes.reduce(
     (sum, minutes) => sum + minutes,
     0,
-  );
+  )
 
   const totalAvailableMinutes = Math.max(
     stepCount,
     totalMinutes - edgeTravelMinutes,
-  );
+  )
 
-  let minActivityMinutes = 20;
+  let minActivityMinutes = 20
   if (
     totalTravelMinutes + minActivityMinutes * stepCount >
     totalAvailableMinutes
   ) {
-    minActivityMinutes = 10;
+    minActivityMinutes = 10
   }
 
   if (
@@ -894,53 +1078,77 @@ function buildScheduleIdea(
     const allowedTravel = Math.max(
       0,
       totalAvailableMinutes - minActivityMinutes * stepCount,
-    );
+    )
 
     if (totalTravelMinutes > 0) {
       const scaled = adjustedTravelMinutes.map((minutes) =>
         Math.floor((minutes * allowedTravel) / totalTravelMinutes),
-      );
+      )
       let leftover =
-        allowedTravel - scaled.reduce((sum, minutes) => sum + minutes, 0);
+        allowedTravel - scaled.reduce((sum, minutes) => sum + minutes, 0)
 
       for (let i = 0; i < scaled.length && leftover > 0; i++) {
-        scaled[i] += 1;
-        leftover -= 1;
+        scaled[i] += 1
+        leftover -= 1
       }
 
-      adjustedTravelMinutes = scaled;
+      adjustedTravelMinutes = scaled
       totalTravelMinutes = adjustedTravelMinutes.reduce(
         (sum, minutes) => sum + minutes,
         0,
-      );
+      )
     }
   }
 
   const totalActivityMinutes = Math.max(
     stepCount,
     totalAvailableMinutes - totalTravelMinutes,
-  );
-  const activityDurations = distributeMinutes(totalActivityMinutes, stepCount);
+  )
+  const activityDurations = distributeMinutes(totalActivityMinutes, stepCount)
 
-  let cursor = startHour * 60 + (commuteToFirstMinutes || 0);
+  let validationCursor = startHour * 60 + (commuteToFirstMinutes || 0)
+  for (let stepIndex = 0; stepIndex < selectedSlots.length; stepIndex++) {
+    const currentPlace = selectedPlaces[stepIndex]
+    const isOpen = ensurePlaceOpenAtMinute(
+      currentPlace,
+      placeById,
+      requestedDate,
+      validationCursor,
+    )
+
+    if (!isOpen) {
+      if (currentPlace) {
+        usedPlaceIds.delete(currentPlace.id)
+      }
+      selectedPlaces[stepIndex] = pickReplacementOpenAtMinute(
+        selectedSlots[stepIndex],
+        buckets,
+        usedPlaceIds,
+        placeById,
+        requestedDate,
+        validationCursor,
+      )
+    }
+
+    const travelToNext = adjustedTravelMinutes[stepIndex] || 0
+    validationCursor += (activityDurations[stepIndex] || 1) + travelToNext
+  }
+
+  let cursor = startHour * 60 + (commuteToFirstMinutes || 0)
   const schedule: ScheduledStep[] = selectedSlots.map((slot, stepIndex) => {
-    const durationMinutes = activityDurations[stepIndex] || 1;
-    const startMinute = cursor;
-    const endMinute = startMinute + durationMinutes;
-    const place = selectedPlaces[stepIndex];
-    const isLastStep = stepIndex === selectedSlots.length - 1;
+    const durationMinutes = activityDurations[stepIndex] || 1
+    const startMinute = cursor
+    const endMinute = startMinute + durationMinutes
+    const place = selectedPlaces[stepIndex]
 
     const travelToNextMinutes =
       stepIndex < adjustedTravelMinutes.length
         ? adjustedTravelMinutes[stepIndex]
-        : null;
+        : null
 
-    const displayedEndMinute =
-      isLastStep && commuteFromLastMinutes
-        ? endMinute + commuteFromLastMinutes
-        : endMinute;
+    const displayedEndMinute = endMinute
 
-    cursor = endMinute + (travelToNextMinutes || 0);
+    cursor = endMinute + (travelToNextMinutes || 0)
 
     return {
       title: `Spend time at ${place?.name || "a local spot"}`,
@@ -950,12 +1158,12 @@ function buildScheduleIdea(
       durationMinutes,
       place,
       travelToNextMinutes,
-    };
-  });
+    }
+  })
 
   const placesBySlot = Object.fromEntries(
     schedule.map((step) => [step.slot, step.place]),
-  ) as Record<string, ResponsePlace | null>;
+  ) as Record<string, ResponsePlace | null>
 
   return {
     template: selectedTemplate.template,
@@ -964,60 +1172,73 @@ function buildScheduleIdea(
     commuteFromLastMinutes,
     places: placesBySlot,
     schedule,
-  };
+  }
 }
 
 export function generateDatePlannerIdeasFromPlaces(input: {
-  places: PlannerPlace[];
-  request: GenerateDatePlannerIdeasRequest;
-  sourceFile: string;
+  places: PlannerPlace[]
+  request: GenerateDatePlannerIdeasRequest
+  sourceFile: string
 }): GenerateDatePlannerIdeasResult {
-  const { places, request, sourceFile } = input;
+  const { places, request, sourceFile } = input
 
-  const requestedDate = new Date(`${request.date}T12:00:00`);
+  const requestedDate = new Date(`${request.date}T12:00:00`)
   if (Number.isNaN(requestedDate.getTime())) {
-    throw new Error("Invalid date format. Use YYYY-MM-DD.");
+    throw new Error("Invalid date format. Use YYYY-MM-DD.")
   }
 
-  const categoryTypes = normalizeCategoryTypes(request.categories);
-
-  const filtered = places.filter((place) => {
-    if (place.businessStatus && place.businessStatus !== "OPERATIONAL") {
-      return false;
-    }
-
-    if (!matchesSelectedCategory(place, categoryTypes)) {
-      return false;
-    }
-
-    return isOpenForWindow(
-      place,
-      requestedDate,
-      request.startHour,
-      request.endHour,
-    );
-  });
-
-  const shuffled = shuffleArray(filtered);
-  const limitedPlaces = shuffled.slice(0, 250);
-  const buckets = buildBuckets(limitedPlaces);
+  const categoryTypes = normalizeCategoryTypes(request.categories)
 
   const userLocation: UserLocation | null =
     typeof request.userLatitude === "number" &&
     typeof request.userLongitude === "number"
       ? { latitude: request.userLatitude, longitude: request.userLongitude }
-      : null;
+      : null
+
+  const filtered = places.filter((place) => {
+    if (place.businessStatus && place.businessStatus !== "OPERATIONAL") {
+      return false
+    }
+
+    if (!matchesSelectedCategory(place, categoryTypes)) {
+      return false
+    }
+
+    if (!matchesBudget(place, request.maxPrice)) {
+      return false
+    }
+
+    if (!matchesDistance(place, userLocation, request.maxDistanceMiles)) {
+      return false
+    }
+
+    return isOpenForWindow(
+      place,
+      requestedDate,
+      request.startHour * 60,
+      request.endHour * 60,
+    )
+  })
+
+  const shuffled = shuffleArray(filtered)
+  const limitedPlaces = shuffled.slice(0, 250)
+  const buckets = buildBuckets(limitedPlaces)
+  const placeById = Object.fromEntries(
+    limitedPlaces.map((place) => [place.id, place]),
+  ) as Record<string, PlannerPlace>
 
   const ideas = Array.from({ length: request.ideaCount }, (_, index) =>
     buildScheduleIdea(
       buckets,
+      placeById,
+      requestedDate,
       request.startHour,
       request.endHour,
       index,
       request.categories,
       userLocation,
     ),
-  );
+  )
 
   return {
     sourceFile,
@@ -1025,5 +1246,5 @@ export function generateDatePlannerIdeasFromPlaces(input: {
     matchedPlaces: limitedPlaces.map(toResponsePlace),
     templates: DATE_TEMPLATES,
     ideas,
-  };
+  }
 }

@@ -1,4 +1,4 @@
-import React from "react";
+import React from "react"
 import {
   ActivityIndicator,
   Linking,
@@ -6,9 +6,9 @@ import {
   Text,
   TouchableOpacity,
   View,
-} from "react-native";
-import type { AppScreenProps } from "../types/navigation";
-import useDatePlannerIdeas from "../hooks/useDatePlannerIdeas";
+} from "react-native"
+import type { AppScreenProps } from "../types/navigation"
+import useDatePlannerIdeas from "../hooks/useDatePlannerIdeas"
 
 export default function PlannedDateResults({
   route,
@@ -21,17 +21,17 @@ export default function PlannedDateResults({
     maxDistance,
     hasStarvingStudentCard,
     categories,
-  } = route.params;
+  } = route.params
 
   const { ideas, totalMatches, sourceFile, isLoading, error, refetch } =
-    useDatePlannerIdeas(route.params);
+    useDatePlannerIdeas(route.params)
 
   const formatHour = (hour24: number) => {
-    const normalized = ((hour24 % 24) + 24) % 24;
-    const period = normalized < 12 ? "AM" : "PM";
-    const hour12 = normalized % 12 === 0 ? 12 : normalized % 12;
-    return `${hour12}:00 ${period}`;
-  };
+    const normalized = ((hour24 % 24) + 24) % 24
+    const period = normalized < 12 ? "AM" : "PM"
+    const hour12 = normalized % 12 === 0 ? 12 : normalized % 12
+    return `${hour12}:00 ${period}`
+  }
 
   return (
     <ScrollView
@@ -175,8 +175,8 @@ export default function PlannedDateResults({
 
       {!isLoading && !error
         ? ideas.map((idea, index) => {
-            const places = Object.values(idea.places || {}).filter(Boolean);
-            const schedule = idea.schedule || [];
+            const places = Object.values(idea.places || {}).filter(Boolean)
+            const schedule = idea.schedule || []
 
             return (
               <View
@@ -243,7 +243,7 @@ export default function PlannedDateResults({
                         <Text style={{ fontSize: 14, color: "#2c3e50" }}>
                           {step.title}
                         </Text>
-                        {step.place?.googleMapsUri ? (
+                        {/* {step.place?.googleMapsUri ? (
                           <TouchableOpacity
                             style={{ marginTop: 4 }}
                             onPress={() =>
@@ -260,7 +260,7 @@ export default function PlannedDateResults({
                               {step.place.name}
                             </Text>
                           </TouchableOpacity>
-                        ) : null}
+                        ) : null} */}
 
                         {step.travelToNextMinutes !== null ? (
                           <Text
@@ -299,7 +299,7 @@ export default function PlannedDateResults({
                   <View style={{ marginTop: 12 }}>
                     {places.map((place, placeIndex) => {
                       if (!place) {
-                        return null;
+                        return null
                       }
 
                       return (
@@ -309,7 +309,7 @@ export default function PlannedDateResults({
                           disabled={!place.googleMapsUri}
                           onPress={() => {
                             if (place.googleMapsUri) {
-                              Linking.openURL(place.googleMapsUri);
+                              Linking.openURL(place.googleMapsUri)
                             }
                           }}
                         >
@@ -331,14 +331,14 @@ export default function PlannedDateResults({
                             </Text>
                           ) : null}
                         </TouchableOpacity>
-                      );
+                      )
                     })}
                   </View>
                 ) : null}
               </View>
-            );
+            )
           })
         : null}
     </ScrollView>
-  );
+  )
 }
