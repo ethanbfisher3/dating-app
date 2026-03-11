@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react"
+import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -7,8 +7,11 @@ import {
   TextInput,
   Animated,
   Platform,
-} from "react-native"
-import DateTimePicker from "@react-native-community/datetimepicker"
+  KeyboardAvoidingView,
+} from "react-native";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import * as Location from "expo-location";
+import type { AppNavigation } from "../types/navigation";
 
 const dateCategories = [
   "Food",
@@ -18,29 +21,65 @@ const dateCategories = [
   "Learning",
   "Shopping",
   "Recreation",
-]
-const questionCount = 6
+];
+const questionCount = 6;
 
-export default function PlanADate({ navigation }: { navigation: any }) {
-  const [maxPrice, setMaxPrice] = useState(50)
-  const [hasStarvingStudentCard, setHasStarvingStudentCard] = useState(false)
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null)
-  const [showDatePicker, setShowDatePicker] = useState(false)
-  const [startHour, setStartHour] = useState(12)
-  const [endHour, setEndHour] = useState(18)
-  const [maxDistance, setMaxDistance] = useState(10)
-  const [currentQuestion, setCurrentQuestion] = useState(1)
-  const [showDateError, setShowDateError] = useState(false)
-  const [isAnimating, setIsAnimating] = useState(false)
+export default function PlanADate({
+  navigation,
+}: {
+  navigation: AppNavigation;
+}) {
+  const [maxPrice, setMaxPrice] = useState<string>("50");
+  const [hasStarvingStudentCard, setHasStarvingStudentCard] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [startHour12, setStartHour12] = useState<string>("12");
+  const [startPeriod, setStartPeriod] = useState<"AM" | "PM">("PM");
+  const [endHour12, setEndHour12] = useState<string>("6");
+  const [endPeriod, setEndPeriod] = useState<"AM" | "PM">("PM");
+  const [maxDistance, setMaxDistance] = useState<string>("10");
+  const [currentQuestion, setCurrentQuestion] = useState(1);
+  const [showDateError, setShowDateError] = useState(false);
+  const [showPriceError, setShowPriceError] = useState(false);
+  const [showTimeError, setShowTimeError] = useState(false);
+  const [showDistanceError, setShowDistanceError] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [userLocation, setUserLocation] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
   const [categoriesChecked, setCategoriesChecked] = useState(
     Array(dateCategories.length).fill(true),
-  )
-  const questionTranslateX = useRef(new Animated.Value(0)).current
+  );
+  const scrollViewRef = useRef<ScrollView>(null);
+  const questionTranslateX = useRef(new Animated.Value(0)).current;
   const questionOpacity = questionTranslateX.interpolate({
     inputRange: [-80, 0, 80],
     outputRange: [0.75, 1, 0.75],
     extrapolate: "clamp",
-  })
+  });
+
+  useEffect(() => {
+    const loadLocation = async () => {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== "granted") {
+          return;
+        }
+
+        const position = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        });
+
+        setUserLocation({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        });
+      } catch {}
+    };
+
+    loadLocation();
+  }, []);
 
   const transitionToQuestion = (nextQuestion: number, direction: number) => {
     if (
@@ -49,82 +88,125 @@ export default function PlanADate({ navigation }: { navigation: any }) {
       nextQuestion > questionCount ||
       nextQuestion === currentQuestion
     ) {
-      return
+      return;
     }
 
-    setIsAnimating(true)
+    setIsAnimating(true);
     Animated.timing(questionTranslateX, {
       toValue: direction * -80,
       duration: 120,
       useNativeDriver: true,
     }).start(() => {
-      setCurrentQuestion(nextQuestion)
-      questionTranslateX.setValue(direction * 80)
+      setCurrentQuestion(nextQuestion);
+      questionTranslateX.setValue(direction * 80);
       Animated.timing(questionTranslateX, {
         toValue: 0,
         duration: 180,
         useNativeDriver: true,
       }).start(() => {
-        setIsAnimating(false)
-      })
-    })
-  }
+        setIsAnimating(false);
+      });
+    });
+  };
 
-  const clampHour = (value: number) => {
-    if (Number.isNaN(value)) return 0
-    if (value < 0) return 0
-    if (value > 23) return 23
-    return value
-  }
+  const clampHour12 = (value: number) => {
+    if (Number.isNaN(value)) return 1;
+    if (value < 1) return 1;
+    if (value > 12) return 12;
+    return value;
+  };
+
+  const convertTo24Hour = (hour12: number, period: "AM" | "PM") => {
+    let hour24 = hour12;
+    if (period === "AM") {
+      hour24 = hour12 === 12 ? 0 : hour12;
+    } else {
+      hour24 = hour12 === 12 ? 12 : hour12 + 12;
+    }
+    return hour24;
+  };
 
   const formatHour = (hour: number) => {
-    const normalized = ((hour % 24) + 24) % 24
-    const period = normalized < 12 ? "AM" : "PM"
-    const display = normalized % 12 === 0 ? 12 : normalized % 12
-    return `${display} ${period}`
-  }
+    const normalized = ((hour % 24) + 24) % 24;
+    const period = normalized < 12 ? "AM" : "PM";
+    const display = normalized % 12 === 0 ? 12 : normalized % 12;
+    return `${display} ${period}`;
+  };
 
   const toggleCategory = (index: number) => {
-    const newChecked = [...categoriesChecked]
-    newChecked[index] = !newChecked[index]
-    setCategoriesChecked(newChecked)
-  }
+    const newChecked = [...categoriesChecked];
+    newChecked[index] = !newChecked[index];
+    setCategoriesChecked(newChecked);
+  };
+
+  const handleInputFocus = () => {
+    setTimeout(() => {
+      scrollViewRef.current?.scrollToEnd({ animated: true });
+    }, 100);
+  };
 
   const handleNextQuestion = () => {
-    if (isAnimating) return
+    if (isAnimating) return;
     if (currentQuestion === 2 && !selectedDate) {
-      setShowDateError(true)
-      return
+      setShowDateError(true);
+      return;
     }
-    setShowDateError(false)
+    if (
+      currentQuestion === 1 &&
+      (Number.isNaN(parseInt(maxPrice)) || parseInt(maxPrice) < 0)
+    ) {
+      setShowPriceError(true);
+      return;
+    }
+    if (
+      currentQuestion === 3 &&
+      (Number.isNaN(parseInt(startHour12)) || Number.isNaN(parseInt(endHour12)))
+    ) {
+      setShowTimeError(true);
+      return;
+    }
+    if (currentQuestion === 4 && Number.isNaN(parseInt(maxDistance))) {
+      setShowDistanceError(true);
+      return;
+    }
+    setShowDateError(false);
+    setShowPriceError(false);
+    setShowTimeError(false);
+    setShowDistanceError(false);
     if (currentQuestion < questionCount) {
-      transitionToQuestion(currentQuestion + 1, 1)
+      transitionToQuestion(currentQuestion + 1, 1);
     } else {
-      handleGenerateIdeas()
+      handleGenerateIdeas();
     }
-  }
+  };
 
   const handlePreviousQuestion = () => {
-    if (isAnimating) return
+    if (isAnimating) return;
     if (currentQuestion > 1) {
-      transitionToQuestion(currentQuestion - 1, -1)
+      transitionToQuestion(currentQuestion - 1, -1);
     }
-  }
+  };
 
   const handleGenerateIdeas = () => {
     const selectedCategories = dateCategories.filter(
       (_, i) => categoriesChecked[i],
-    )
+    );
+    const start24 = convertTo24Hour(parseInt(startHour12), startPeriod);
+    const end24 = convertTo24Hour(parseInt(endHour12), endPeriod);
+    const selectedDateIso = selectedDate
+      ? selectedDate.toISOString().slice(0, 10)
+      : "";
     navigation.navigate("PlannedDateResults", {
-      maxPrice,
+      maxPrice: parseInt(maxPrice),
       hasStarvingStudentCard,
-      selectedDate: selectedDate ? selectedDate.toLocaleDateString() : "",
-      startHour,
-      endHour,
-      maxDistance,
+      selectedDate: selectedDateIso,
+      startHour: start24,
+      endHour: end24,
+      maxDistance: parseInt(maxDistance),
       categories: selectedCategories,
-    })
-  }
+      userLocation,
+    });
+  };
 
   const renderQuestion = () => {
     switch (currentQuestion) {
@@ -149,7 +231,7 @@ export default function PlanADate({ navigation }: { navigation: any }) {
                 color: "#2c3e50",
               }}
             >
-              Up to ${maxPrice} {maxPrice === 0 ? "(Free Only)" : ""}
+              Up to ${maxPrice} {parseInt(maxPrice) === 0 ? "(Free Only)" : ""}
             </Text>
             <TextInput
               style={{
@@ -162,14 +244,17 @@ export default function PlanADate({ navigation }: { navigation: any }) {
                 fontSize: 18,
                 backgroundColor: "#fff",
               }}
-              keyboardType="numeric"
+              keyboardType="number-pad"
               value={String(maxPrice)}
-              onChangeText={(text) => {
-                const num = parseInt(text) || 0
-                setMaxPrice(num)
-              }}
+              onChangeText={(text) => setMaxPrice(text)}
+              onFocus={handleInputFocus}
               placeholder="Enter your budget (0-100)"
             />
+            {showPriceError && (
+              <Text style={{ color: "red", fontSize: 16, marginBottom: 12 }}>
+                Please enter a valid budget.
+              </Text>
+            )}
             <TouchableOpacity
               style={{
                 backgroundColor: "#1e90ff",
@@ -190,7 +275,7 @@ export default function PlanADate({ navigation }: { navigation: any }) {
               </Text>
             </TouchableOpacity>
           </View>
-        )
+        );
       case 2:
         return (
           <View style={{ marginBottom: 30 }}>
@@ -221,7 +306,9 @@ export default function PlanADate({ navigation }: { navigation: any }) {
                   color: selectedDate ? "#1a1a1a" : "#999",
                 }}
               >
-                {selectedDate ? selectedDate.toLocaleDateString() : "Select a date"}
+                {selectedDate
+                  ? selectedDate.toLocaleDateString()
+                  : "Select a date"}
               </Text>
             </TouchableOpacity>
             {showDatePicker && (
@@ -239,10 +326,10 @@ export default function PlanADate({ navigation }: { navigation: any }) {
                   themeVariant={Platform.OS === "ios" ? "light" : undefined}
                   onChange={(event, date) => {
                     const isConfirmed =
-                      Platform.OS === "ios" || event.type === "set"
-                    setShowDatePicker(false)
+                      Platform.OS === "ios" || event.type === "set";
+                    setShowDatePicker(false);
                     if (isConfirmed && date) {
-                      setSelectedDate(date)
+                      setSelectedDate(date);
                     }
                   }}
                 />
@@ -302,7 +389,7 @@ export default function PlanADate({ navigation }: { navigation: any }) {
               </TouchableOpacity>
             </View>
           </View>
-        )
+        );
       case 3:
         return (
           <View style={{ marginBottom: 30 }}>
@@ -323,8 +410,8 @@ export default function PlanADate({ navigation }: { navigation: any }) {
                 fontWeight: "600",
                 color: "#2c3e50",
               }}
-            >{`${formatHour(startHour)} - ${formatHour(endHour)}`}</Text>
-            <View style={{ flexDirection: "row", gap: 12, marginBottom: 8 }}>
+            >{`${startHour12} ${startPeriod} - ${endHour12} ${endPeriod}`}</Text>
+            <View style={{ flexDirection: "row", gap: 12, marginBottom: 16 }}>
               <View style={{ flex: 1 }}>
                 <Text
                   style={{
@@ -334,25 +421,66 @@ export default function PlanADate({ navigation }: { navigation: any }) {
                     marginBottom: 6,
                   }}
                 >
-                  Start Time (0-23)
+                  Start Time
                 </Text>
-                <TextInput
-                  style={{
-                    borderWidth: 2,
-                    borderColor: "#1e90ff",
-                    borderRadius: 10,
-                    padding: 14,
-                    fontSize: 18,
-                    backgroundColor: "#fff",
-                  }}
-                  keyboardType="numeric"
-                  value={String(startHour)}
-                  onChangeText={(text) => {
-                    const num = clampHour(parseInt(text) || 0)
-                    setStartHour(num)
-                  }}
-                  placeholder="e.g. 17"
-                />
+                <View style={{ flexDirection: "row", gap: 8 }}>
+                  <TextInput
+                    style={{
+                      flex: 1,
+                      borderWidth: 2,
+                      borderColor: "#1e90ff",
+                      borderRadius: 10,
+                      padding: 12,
+                      fontSize: 18,
+                      backgroundColor: "#fff",
+                      textAlign: "center",
+                    }}
+                    keyboardType="numeric"
+                    value={startHour12}
+                    onChangeText={(text) => {
+                      if (text.trim() === "") {
+                        setStartHour12("")
+                        return
+                      }
+
+                      const parsed = parseInt(text, 10)
+                      if (Number.isNaN(parsed)) {
+                        setStartHour12("")
+                        return
+                      }
+
+                      const num = clampHour12(parsed)
+                      setStartHour12(String(num))
+                    }}
+                    onFocus={handleInputFocus}
+                    placeholder="1-12"
+                  />
+                  <TouchableOpacity
+                    onPress={() =>
+                      setStartPeriod(startPeriod === "AM" ? "PM" : "AM")
+                    }
+                    style={{
+                      width: 60,
+                      borderWidth: 2,
+                      borderColor: "#1e90ff",
+                      borderRadius: 10,
+                      justifyContent: "center",
+                      alignItems: "center",
+                      backgroundColor:
+                        startPeriod === "AM" ? "#1e90ff" : "#fff",
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 16,
+                        fontWeight: "700",
+                        color: startPeriod === "AM" ? "#fff" : "#1e90ff",
+                      }}
+                    >
+                      {startPeriod}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
               </View>
               <View style={{ flex: 1 }}>
                 <Text
@@ -363,27 +491,72 @@ export default function PlanADate({ navigation }: { navigation: any }) {
                     marginBottom: 6,
                   }}
                 >
-                  End Time (0-23)
+                  End Time
                 </Text>
-                <TextInput
-                  style={{
-                    borderWidth: 2,
-                    borderColor: "#1e90ff",
-                    borderRadius: 10,
-                    padding: 14,
-                    fontSize: 18,
-                    backgroundColor: "#fff",
-                  }}
-                  keyboardType="numeric"
-                  value={String(endHour)}
-                  onChangeText={(text) => {
-                    const num = clampHour(parseInt(text) || 0)
-                    setEndHour(num)
-                  }}
-                  placeholder="e.g. 20"
-                />
+                <View style={{ flexDirection: "row", gap: 8 }}>
+                  <TextInput
+                    style={{
+                      flex: 1,
+                      borderWidth: 2,
+                      borderColor: "#1e90ff",
+                      borderRadius: 10,
+                      padding: 12,
+                      fontSize: 18,
+                      backgroundColor: "#fff",
+                      textAlign: "center",
+                    }}
+                    keyboardType="numeric"
+                    value={endHour12}
+                    onChangeText={(text) => {
+                      if (text.trim() === "") {
+                        setEndHour12("")
+                        return
+                      }
+
+                      const parsed = parseInt(text, 10)
+                      if (Number.isNaN(parsed)) {
+                        setEndHour12("")
+                        return
+                      }
+
+                      const num = clampHour12(parsed)
+                      setEndHour12(String(num))
+                    }}
+                    onFocus={handleInputFocus}
+                    placeholder="1-12"
+                  />
+                  <TouchableOpacity
+                    onPress={() =>
+                      setEndPeriod(endPeriod === "AM" ? "PM" : "AM")
+                    }
+                    style={{
+                      width: 60,
+                      borderWidth: 2,
+                      borderColor: "#1e90ff",
+                      borderRadius: 10,
+                      justifyContent: "center",
+                      alignItems: "center",
+                      backgroundColor: endPeriod === "AM" ? "#1e90ff" : "#fff",
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 16,
+                        fontWeight: "700",
+                        color: endPeriod === "AM" ? "#fff" : "#1e90ff",
+                      }}
+                    >
+                      {endPeriod}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             </View>
+            {showTimeError && (
+              <Text style={{ color: "red", fontSize: 16, marginBottom: 12 }}>
+                Please enter valid start and end times.
+              </Text>
+            )}
             <View
               style={{
                 flexDirection: "row",
@@ -433,7 +606,7 @@ export default function PlanADate({ navigation }: { navigation: any }) {
               </TouchableOpacity>
             </View>
           </View>
-        )
+        );
       case 4:
         return (
           <View style={{ marginBottom: 30 }}>
@@ -455,7 +628,7 @@ export default function PlanADate({ navigation }: { navigation: any }) {
                 color: "#2c3e50",
               }}
             >
-              Up to {maxDistance} miles from BYU Campus
+              Up to {maxDistance} miles away
             </Text>
             <TextInput
               style={{
@@ -469,13 +642,16 @@ export default function PlanADate({ navigation }: { navigation: any }) {
                 backgroundColor: "#fff",
               }}
               keyboardType="numeric"
-              value={String(maxDistance)}
-              onChangeText={(text) => {
-                const num = parseInt(text) || 1
-                setMaxDistance(num)
-              }}
+              value={maxDistance}
+              onChangeText={(text) => setMaxDistance(text)}
+              onFocus={handleInputFocus}
               placeholder="Enter max distance (1-30)"
             />
+            {showDistanceError && (
+              <Text style={{ color: "red", fontSize: 16, marginBottom: 12 }}>
+                Please enter a valid distance.
+              </Text>
+            )}
             <View
               style={{
                 flexDirection: "row",
@@ -525,7 +701,7 @@ export default function PlanADate({ navigation }: { navigation: any }) {
               </TouchableOpacity>
             </View>
           </View>
-        )
+        );
       case 5:
         return (
           <View style={{ marginBottom: 30 }}>
@@ -565,7 +741,9 @@ export default function PlanADate({ navigation }: { navigation: any }) {
                 }}
               >
                 {hasStarvingStudentCard ? (
-                  <Text style={{ color: "#fff", fontSize: 18, fontWeight: "900" }}>
+                  <Text
+                    style={{ color: "#fff", fontSize: 18, fontWeight: "900" }}
+                  >
                     ✓
                   </Text>
                 ) : null}
@@ -578,7 +756,7 @@ export default function PlanADate({ navigation }: { navigation: any }) {
                   color: "#1f2d3d",
                 }}
               >
-                Yes, I have a Starving Student Card
+                I have a Starving Student Card
               </Text>
             </View>
             <Text
@@ -590,7 +768,7 @@ export default function PlanADate({ navigation }: { navigation: any }) {
               }}
             >
               {hasStarvingStudentCard
-                ? "Great! We'll include date ideas that offer discounts with the Starving Student Card, even if they're above your budget."
+                ? "Great! We'll include date ideas that offer discounts to give you more value for your money."
                 : "If you have a Starving Student Card, check this box to see more discounted options!"}
             </Text>
             <View
@@ -642,7 +820,7 @@ export default function PlanADate({ navigation }: { navigation: any }) {
               </TouchableOpacity>
             </View>
           </View>
-        )
+        );
       case 6:
         return (
           <View style={{ marginBottom: 30 }}>
@@ -665,7 +843,7 @@ export default function PlanADate({ navigation }: { navigation: any }) {
               }}
             >
               {dateCategories.map((category, index) => {
-                const isSelected = categoriesChecked[index]
+                const isSelected = categoriesChecked[index];
                 return (
                   <TouchableOpacity
                     key={index}
@@ -689,7 +867,7 @@ export default function PlanADate({ navigation }: { navigation: any }) {
                       {category}
                     </Text>
                   </TouchableOpacity>
-                )
+                );
               })}
             </View>
             {categoriesChecked.every((checked) => !checked) && (
@@ -745,84 +923,98 @@ export default function PlanADate({ navigation }: { navigation: any }) {
                 <Text
                   style={{ color: "#fff", fontSize: 18, fontWeight: "700" }}
                 >
-                  Generate Date Ideas
+                  Finish
                 </Text>
               </TouchableOpacity>
             </View>
           </View>
-        )
+        );
       default:
-        return null
+        return null;
     }
-  }
+  };
 
   return (
-    <ScrollView
-      contentContainerStyle={{ padding: 24, backgroundColor: "#fafbfc" }}
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 24}
     >
-      <Text
-        style={{
-          fontWeight: "900",
-          fontSize: 36,
-          marginVertical: 24,
-          color: "#1a1a1a",
+      <ScrollView
+        ref={scrollViewRef}
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={{
+          padding: 24,
+          paddingTop: 36,
+          paddingBottom: 48,
+          backgroundColor: "#fafbfc",
+          flexGrow: 1,
         }}
       >
-        Plan a Date
-      </Text>
-      <Text
-        style={{
-          marginBottom: 20,
-          fontSize: 17,
-          lineHeight: 26,
-          color: "#555",
-        }}
-      >
-        Let's find the perfect date idea for you! We'll ask a few questions to
-        personalize your experience.
-      </Text>
-      <View style={{ marginBottom: 40, alignItems: "center" }}>
-        <View
+        <Text
           style={{
-            flexDirection: "row",
-            justifyContent: "center",
-            marginBottom: 10,
+            fontWeight: "900",
+            fontSize: 36,
+            marginVertical: 24,
+            color: "#1a1a1a",
           }}
         >
-          {Array.from({ length: questionCount }, (_, i) => i + 1).map(
-            (question) => (
-              <View
-                key={question}
-                style={{
-                  width: 16,
-                  height: 16,
-                  borderRadius: 8,
-                  backgroundColor:
-                    question <= currentQuestion ? "#1e90ff" : "#e0e0e0",
-                  marginHorizontal: 5,
-                  shadowColor:
-                    question <= currentQuestion ? "#1e90ff" : "transparent",
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.3,
-                  shadowRadius: 4,
-                  elevation: question <= currentQuestion ? 2 : 0,
-                }}
-              />
-            ),
-          )}
-        </View>
-        <Text style={{ fontSize: 16, color: "#666", fontWeight: "600" }}>
-          Question {currentQuestion} of {questionCount}
+          Plan a Date
         </Text>
-      </View>
-      <Animated.View
-        style={{
-          transform: [{ translateX: questionTranslateX }],
-          opacity: questionOpacity,
-        }}
-      >
-        {renderQuestion()}
-      </Animated.View>
-    </ScrollView>
-  )
+        <Text
+          style={{
+            marginBottom: 20,
+            fontSize: 17,
+            lineHeight: 26,
+            color: "#555",
+          }}
+        >
+          Let's find the perfect date idea for you! We'll ask a few questions to
+          personalize your experience.
+        </Text>
+        <View style={{ marginBottom: 24, alignItems: "center" }}>
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "center",
+              marginBottom: 10,
+            }}
+          >
+            {Array.from({ length: questionCount }, (_, i) => i + 1).map(
+              (question) => (
+                <View
+                  key={question}
+                  style={{
+                    width: 16,
+                    height: 16,
+                    borderRadius: 8,
+                    backgroundColor:
+                      question <= currentQuestion ? "#1e90ff" : "#e0e0e0",
+                    marginHorizontal: 5,
+                    shadowColor:
+                      question <= currentQuestion ? "#1e90ff" : "transparent",
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.3,
+                    shadowRadius: 4,
+                    elevation: question <= currentQuestion ? 2 : 0,
+                  }}
+                />
+              ),
+            )}
+          </View>
+          <Text style={{ fontSize: 16, color: "#666", fontWeight: "600" }}>
+            Question {currentQuestion} of {questionCount}
+          </Text>
+        </View>
+        <Animated.View
+          style={{
+            transform: [{ translateX: questionTranslateX }],
+            opacity: questionOpacity,
+          }}
+        >
+          {renderQuestion()}
+        </Animated.View>
+      </ScrollView>
+    </KeyboardAvoidingView>
+  );
 }

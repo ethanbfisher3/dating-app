@@ -1,6 +1,7 @@
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native'
+import type { AppNavigation } from "./types/navigation"
 
-export default function Home({ navigation }) {
+export default function Home({ navigation }: { navigation: AppNavigation }) {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Provo Date Planner</Text>

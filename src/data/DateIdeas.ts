@@ -1,41 +1,104 @@
-import config from "../config"
-import burgers_and_sandwiches from "./ssc_deals/burgers_and_sandwiches"
-import entertainment from "./ssc_deals/entertainment"
-import free_deals from "./ssc_deals/free_deals"
-import pizza from "./ssc_deals/pizza"
-import restaurants from "./ssc_deals/restaurants"
-import treats_and_drinks from "./ssc_deals/treats_and_drinks"
-import { sanitizeUri } from "../utils/imageUtils"
-import { findAssetForPath } from "../assets/imageMap"
+import config from "../config";
+import burgers_and_sandwiches from "./ssc_deals/burgers_and_sandwiches";
+import entertainment from "./ssc_deals/entertainment";
+import free_deals from "./ssc_deals/free_deals";
+import pizza from "./ssc_deals/pizza";
+import restaurants from "./ssc_deals/restaurants";
+import treats_and_drinks from "./ssc_deals/treats_and_drinks";
+import { sanitizeUri } from "../utils/utils";
+import { findAssetForPath } from "../assets/imageMap";
+
+export function toRadians(value: number) {
+  return (value * Math.PI) / 180;
+}
+
+export function milesBetween(a: GeoLocation, b: GeoLocation) {
+  const earthRadiusMiles = 3958.8;
+  const dLat = toRadians(b.latitude - a.latitude);
+  const dLon = toRadians(b.longitude - a.longitude);
+
+  const lat1 = toRadians(a.latitude);
+  const lat2 = toRadians(b.latitude);
+
+  const haversine =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) ** 2;
+
+  const arc = 2 * Math.atan2(Math.sqrt(haversine), Math.sqrt(1 - haversine));
+  return earthRadiusMiles * arc;
+}
+
+export function getDistanceText(
+  idea: DateIdea,
+  userLocation?: GeoLocation | null,
+) {
+  if (!userLocation) return null;
+
+  const validIdeaLocations = (idea.locations || [])
+    .map((l) => l.location)
+    .filter(
+      (location) =>
+        location &&
+        Number.isFinite(location.latitude) &&
+        Number.isFinite(location.longitude) &&
+        !(location.latitude === 0 && location.longitude === 0),
+    );
+
+  if (!validIdeaLocations.length) return null;
+
+  const closestDistance = Math.min(
+    ...validIdeaLocations.map((location) =>
+      milesBetween(userLocation, location),
+    ),
+  );
+
+  return `${closestDistance.toFixed(1)} mi`;
+}
+
+export function getSeasonText(idea: DateIdea) {
+  const months =
+    idea.seasonalTimeframe?.months || idea.seasonalTimeframe?.months;
+  if (!months || !months.length) return null;
+  if (months.length >= 11) return "All year";
+  const first = months[0];
+  const last = months[months.length - 1];
+  return first === last ? first : `${first}–${last}`;
+}
+
+export interface GeoLocation {
+  latitude: number;
+  longitude: number;
+}
 
 export interface DateIdea {
-  name: string
-  mapSrc?: string
-  description: string
-  image?: any
-  website?: string
-  rating?: string
-  pricing?: string
-  free?: boolean
-  hours?: string
-  categories: string[]
-  minDateNumber: number
-  distanceFromCampus?: number
-  timeOfDay: string[]
+  id?: number;
+  name: string;
+  mapSrc?: string;
+  description: string;
+  image?: any;
+  website?: string;
+  rating?: string;
+  pricing?: string;
+  free?: boolean;
+  hours?: string;
+  categories: string[];
+  minDateNumber: number;
+  timeOfDay: string[];
   seasonalTimeframe: {
-    months: string[]
-  }
-  CanUseSSC: boolean
-  locations?: {
-    name: string
-    src: string
-    distanceFromCampus: number | string
-  }[]
+    months: string[];
+  };
+  CanUseSSC: boolean;
+  locations: {
+    name: string;
+    src: string;
+    address: string;
+    location: GeoLocation;
+  }[];
   link?: {
-    text: string
-    url: string
-  }
-  majorRizz?: boolean
+    text: string;
+    url: string;
+  };
+  majorRizz?: boolean;
 }
 
 const dateideas: DateIdea[] = [
@@ -53,7 +116,17 @@ const dateideas: DateIdea[] = [
     description:
       "Great for buying fresh produce and spending time with a girl!",
     minDateNumber: 1,
-    distanceFromCampus: 3,
+    locations: [
+      {
+        name: "Provo Farmers Market",
+        src: "http://www.provofarmersmarket.com/",
+        address: "Provo Farmers Market, 500 W, Center Street, Provo, UT 84601",
+        location: {
+          latitude: 40.2334346,
+          longitude: -111.6684277,
+        },
+      },
+    ],
     timeOfDay: ["morning", "afternoon"],
     seasonalTimeframe: {
       months: ["June", "July", "August", "September", "October"],
@@ -72,12 +145,20 @@ const dateideas: DateIdea[] = [
       {
         name: "Rotary Park",
         src: "https://maps.app.goo.gl/xP4Y9eaGmFHBozMv7",
-        distanceFromCampus: 2,
+        address: "Rotary Park, Provo, UT",
+        location: {
+          latitude: 40.2544291,
+          longitude: -111.6862891,
+        },
       },
       {
         name: "Kiwanis Park Tennis Courts",
         src: "https://maps.app.goo.gl/1LmnH1zszKEH137p8",
-        distanceFromCampus: "<1 mile",
+        address: "",
+        location: {
+          latitude: 0,
+          longitude: 0,
+        },
       },
     ],
     timeOfDay: ["morning", "afternoon", "evening"],
@@ -105,17 +186,29 @@ const dateideas: DateIdea[] = [
       {
         name: "Provo River Walk",
         src: "https://maps.app.goo.gl/PV5H1gpabcbpGDbeA",
-        distanceFromCampus: 3,
+        address: "",
+        location: {
+          latitude: 0,
+          longitude: 0,
+        },
       },
       {
         name: "Lakeshore Bridge Trailhead",
         src: "https://maps.app.goo.gl/XmaKap2qKnrDyw7x6",
-        distanceFromCampus: 4,
+        address: "Lakeshore Bridge Trailhead, Provo, UT",
+        location: {
+          latitude: 40.2398903,
+          longitude: -111.7118939,
+        },
       },
       {
         name: "The Y Hike",
         src: "https://www.hikethey.com/hike-the-y-trail/",
-        distanceFromCampus: 1.5,
+        address: "Y Mountain Trailhead, Provo, UT",
+        location: {
+          latitude: 40.2448143,
+          longitude: -111.627158,
+        },
       },
     ],
     free: true,
@@ -149,6 +242,17 @@ const dateideas: DateIdea[] = [
     },
     pricing: "$0-$20",
     majorRizz: true,
+    locations: [
+      {
+        name: "Cook at Home",
+        src: "",
+        address: "",
+        location: {
+          latitude: 0,
+          longitude: 0,
+        },
+      },
+    ],
     timeOfDay: ["afternoon", "evening", "night"],
     seasonalTimeframe: {
       months: [
@@ -181,12 +285,20 @@ const dateideas: DateIdea[] = [
       {
         name: "Peaks Ice Arena",
         src: "https://www.provo.org/community/peaks-ice-arena",
-        distanceFromCampus: 1.5,
+        address: "Peaks Ice Arena, 100 N 7th E, Provo, UT 84606",
+        location: {
+          latitude: 40.2349916,
+          longitude: -111.6380973,
+        },
       },
       {
         name: "Classic Skating",
         src: "https://classicfun.com/",
-        distanceFromCampus: 4,
+        address: "",
+        location: {
+          latitude: 0,
+          longitude: 0,
+        },
       },
     ],
     timeOfDay: ["afternoon", "evening", "night"],
@@ -218,7 +330,17 @@ const dateideas: DateIdea[] = [
     categories: ["Recreation"],
     website:
       "https://www.provo.org/community/covey-center-for-the-arts/what-s-happening/events",
-    distanceFromCampus: 1,
+    locations: [
+      {
+        name: "Covey Center for the Arts",
+        src: "https://www.provo.org/community/covey-center-for-the-arts/what-s-happening/events",
+        address: "425 W Center St, Provo, UT 84601",
+        location: {
+          latitude: 40.2333568,
+          longitude: -111.6663126,
+        },
+      },
+    ],
     timeOfDay: ["afternoon", "evening", "night"],
     seasonalTimeframe: {
       months: [
@@ -247,6 +369,17 @@ const dateideas: DateIdea[] = [
     pricing: "$10-$20",
     image:
       "https://img.freepik.com/premium-photo/serious-young-multiethnic-couple-sitting-table-preparing-pumpkins-carving_622301-3359.jpg",
+    locations: [
+      {
+        name: "Pumpkin Patch / Home",
+        src: "",
+        address: "",
+        location: {
+          latitude: 0,
+          longitude: 0,
+        },
+      },
+    ],
     timeOfDay: ["afternoon", "evening"],
     seasonalTimeframe: {
       months: ["October"],
@@ -266,7 +399,11 @@ const dateideas: DateIdea[] = [
       {
         name: "The Quarry",
         src: "https://quarryclimbing.com/",
-        distanceFromCampus: 2.5,
+        address: "",
+        location: {
+          latitude: 0,
+          longitude: 0,
+        },
       },
     ],
     majorRizz: false,
@@ -302,12 +439,20 @@ const dateideas: DateIdea[] = [
       {
         name: "Redline Racing",
         src: "https://redlineracingusa.com/",
-        distanceFromCampus: 8,
+        address: "",
+        location: {
+          latitude: 0,
+          longitude: 0,
+        },
       },
       {
         name: "The Grid Racing",
         src: "https://thegrid.com/",
-        distanceFromCampus: 11,
+        address: "",
+        location: {
+          latitude: 0,
+          longitude: 0,
+        },
       },
     ],
     majorRizz: false,
@@ -343,17 +488,29 @@ const dateideas: DateIdea[] = [
       {
         name: "Provo Town Center",
         src: "https://www.provotownecentre.com/",
-        distanceFromCampus: 3,
+        address: "Provo Towne Centre, Provo, UT",
+        location: {
+          latitude: 40.2165855,
+          longitude: -111.6632659,
+        },
       },
       {
         name: "University Place",
         src: "https://universityplaceorem.com/?utm_source=GMB&utm_medium=organic&utm_campaign=1SEO_SM",
-        distanceFromCampus: 2,
+        address: "University Place, Orem, UT",
+        location: {
+          latitude: 40.2776322,
+          longitude: -111.6787917,
+        },
       },
       {
         name: "IKEA",
         src: "https://www.ikea.com/us/en/stores/draper/",
-        distanceFromCampus: 28,
+        address: "67 Pony Express Rd, Draper, UT 84020",
+        location: {
+          latitude: 40.5087046,
+          longitude: -111.8931305,
+        },
       },
     ],
     timeOfDay: ["morning", "afternoon", "evening"],
@@ -389,37 +546,65 @@ const dateideas: DateIdea[] = [
       {
         name: "BYU Museum of Paleontology",
         src: "https://geology.byu.edu/museum-of-paleontology",
-        distanceFromCampus: "<1 mile",
+        address: "1683 N Canyon Rd, Provo, UT 84602",
+        location: {
+          latitude: 40.2565126,
+          longitude: -111.6570411,
+        },
       },
       {
         name: "Bean Life Science Museum",
         src: "https://lsm.byu.edu/",
-        distanceFromCampus: -1,
+        address: "645 E 1430 N, Provo, UT 84602",
+        location: {
+          latitude: 40.2534258,
+          longitude: -111.6473256,
+        },
       },
       {
         name: "Museum of Mormon Mexican History",
         src: "https://museumofmormonmexicanhistory.com/",
-        distanceFromCampus: "<1 mile",
+        address: "1501 N Canyon Rd, Provo, UT 84604",
+        location: {
+          latitude: 40.2538325,
+          longitude: -111.656401,
+        },
       },
       {
         name: "Museum of Ancient Life",
         src: "https://thanksgivingpoint.org/attractions-tickets/museum-of-ancient-life/",
-        distanceFromCampus: 20,
+        address: "2929 N Thanksgiving Way, Lehi, UT 84043",
+        location: {
+          latitude: 40.4246615,
+          longitude: -111.8859583,
+        },
       },
       {
         name: "BYU Museum of Art",
         src: "http://moa.byu.edu/",
-        distanceFromCampus: -1,
+        address: "BYU Museum of Art, Provo, UT",
+        location: {
+          latitude: 40.25077,
+          longitude: -111.6480018,
+        },
       },
       {
         name: "BYU Museum of Peoples and Cultures",
         src: "http://mpc.byu.edu/",
-        distanceFromCampus: -1,
+        address: "2201 N Canyon Rd, Provo, UT 84602",
+        location: {
+          latitude: 40.2629943,
+          longitude: -111.6578206,
+        },
       },
       {
         name: "Education in Zion in the JFSB",
         src: "https://educationinzion.byu.edu/",
-        distanceFromCampus: -1,
+        address: "",
+        location: {
+          latitude: 0,
+          longitude: 0,
+        },
       },
     ],
     majorRizz: false,
@@ -455,12 +640,20 @@ const dateideas: DateIdea[] = [
       {
         name: "Nielsen's Grove Park",
         src: "https://orem.org/nielsens-grove-park/",
-        distanceFromCampus: 3.5,
+        address: "Nielsen's Grove Park, Orem, UT",
+        location: {
+          latitude: 40.2623435,
+          longitude: -111.7034054,
+        },
       },
       {
         name: "Bridal Veil Picnic Area",
         src: "https://g.co/kgs/M1pt4hX",
-        distanceFromCampus: 7.5,
+        address: "",
+        location: {
+          latitude: 0,
+          longitude: 0,
+        },
       },
     ],
     majorRizz: false,
@@ -487,7 +680,17 @@ const dateideas: DateIdea[] = [
     minDateNumber: 1,
     categories: ["Recreation"],
     website: "https://topgolf.com/us/vineyard/",
-    distanceFromCampus: 7,
+    locations: [
+      {
+        name: "Topgolf Vineyard",
+        src: "https://topgolf.com/us/vineyard/",
+        address: "Topgolf, Vineyard, UT",
+        location: {
+          latitude: 40.3059234,
+          longitude: -111.7356302,
+        },
+      },
+    ],
     timeOfDay: ["afternoon", "evening", "night"],
     seasonalTimeframe: {
       months: [
@@ -520,17 +723,29 @@ const dateideas: DateIdea[] = [
       {
         name: "Dry Bar Comedy",
         src: "https://www.drybarcomedy.com/",
-        distanceFromCampus: "<1 mile",
+        address: "295 W Center St, Provo, UT 84601",
+        location: {
+          latitude: 40.2334032,
+          longitude: -111.6636734,
+        },
       },
       {
         name: "ComedyBox Utah",
         src: "https://comedyboxutah.com/",
-        distanceFromCampus: "<1 mile",
+        address: "",
+        location: {
+          latitude: 0,
+          longitude: 0,
+        },
       },
       {
         name: "Improv Broadway",
         src: "https://improvbroadway.com/",
-        distanceFromCampus: 1.5,
+        address: "",
+        location: {
+          latitude: 0,
+          longitude: 0,
+        },
       },
     ],
     timeOfDay: ["evening", "night"],
@@ -565,12 +780,20 @@ const dateideas: DateIdea[] = [
       {
         name: "Salsa at Southworth",
         src: "https://salsaatsouthworth.com/",
-        distanceFromCampus: "<1 mile",
+        address: "",
+        location: {
+          latitude: 0,
+          longitude: 0,
+        },
       },
       {
         name: "Utah Country Dance",
         src: "https://utahcountrydance.com/",
-        distanceFromCampus: "<1 mile",
+        address: "",
+        location: {
+          latitude: 0,
+          longitude: 0,
+        },
       },
     ],
     timeOfDay: ["evening", "night"],
@@ -605,17 +828,29 @@ const dateideas: DateIdea[] = [
       {
         name: "Utah Center for the Ceramic Arts",
         src: "https://utahceramics.org/",
-        distanceFromCampus: "<1 mile",
+        address: "",
+        location: {
+          latitude: 0,
+          longitude: 0,
+        },
       },
       {
         name: "Kreative Kiln",
         src: "https://kreativekiln.com/",
-        distanceFromCampus: 1.5,
+        address: "",
+        location: {
+          latitude: 0,
+          longitude: 0,
+        },
       },
       {
         name: "Tilted Kiln",
         src: "https://tiltedkiln.com/",
-        distanceFromCampus: 9,
+        address: "",
+        location: {
+          latitude: 0,
+          longitude: 0,
+        },
       },
     ],
     timeOfDay: ["afternoon", "evening"],
@@ -650,17 +885,29 @@ const dateideas: DateIdea[] = [
       {
         name: "Fat Cats",
         src: "https://fatcatsfun.com/",
-        distanceFromCampus: 1,
+        address: "1200 N University Ave, Provo, UT 84604",
+        location: {
+          latitude: 40.2500202,
+          longitude: -111.6578089,
+        },
       },
       {
         name: "Miracle Bowl",
         src: "https://miraclebowl.com/",
-        distanceFromCampus: 2.5,
+        address: "1600 S State St, Orem, UT 84097",
+        location: {
+          latitude: 40.2685022,
+          longitude: -111.6812849,
+        },
       },
       {
         name: "Jack & Jill Lanes",
         src: "https://jackandjilllanes.com/",
-        distanceFromCampus: 11.5,
+        address: "",
+        location: {
+          latitude: 0,
+          longitude: 0,
+        },
       },
     ],
     timeOfDay: ["afternoon", "evening", "night"],
@@ -682,22 +929,33 @@ const dateideas: DateIdea[] = [
     },
     CanUseSSC: true,
   },
-]
+];
+
+export type DateIdeaWithId = DateIdea & { id: number };
+
+const dateideasWithIds: DateIdeaWithId[] = dateideas.map((idea, index) => ({
+  ...idea,
+  id: index + 1,
+}));
+
+export function getDateIdeaById(id: number | string) {
+  return dateideasWithIds.find((idea) => String(idea.id) === String(id));
+}
 
 // Helper: parse SSC distance strings (e.g., "0.31Mi", "<1 mile") into numeric miles
 const parseSSCDistance = (d) => {
-  if (d === undefined || d === null) return undefined
-  if (typeof d === "number") return d
-  const s = String(d).trim()
-  if (!s) return undefined
+  if (d === undefined || d === null) return undefined;
+  if (typeof d === "number") return d;
+  const s = String(d).trim();
+  if (!s) return undefined;
   if (s.includes("Mi") || s.toLowerCase().includes("mi")) {
-    const num = parseFloat(s.replace(/[^0-9.]/g, ""))
-    return isNaN(num) ? undefined : num
+    const num = parseFloat(s.replace(/[^0-9.]/g, ""));
+    return isNaN(num) ? undefined : num;
   }
-  if (s.includes("<1") || s.toLowerCase().includes("<1 mile")) return 0.5
-  const num = parseFloat(s.replace(/[^0-9.]/g, ""))
-  return isNaN(num) ? undefined : num
-}
+  if (s.includes("<1") || s.toLowerCase().includes("<1 mile")) return 0.5;
+  const num = parseFloat(s.replace(/[^0-9.]/g, ""));
+  return isNaN(num) ? undefined : num;
+};
 
 // Build a combined list of SSC items with source category tags
 const sscSources = [
@@ -707,48 +965,48 @@ const sscSources = [
   { list: pizza, category: "Food" },
   { list: restaurants, category: "Food" },
   { list: treats_and_drinks, category: "Food" },
-]
+];
 
 const allSSC = sscSources.flatMap((s) =>
   s.list.map((it) => ({ ...it, _category: s.category })),
-)
+);
 
 // Group by normalized lower-case name
 const grouped = allSSC.reduce((acc, item) => {
-  const key = (item.name || "").trim().toLowerCase()
-  if (!acc[key]) acc[key] = []
-  acc[key].push(item)
-  return acc
-}, {})
+  const key = (item.name || "").trim().toLowerCase();
+  if (!acc[key]) acc[key] = [];
+  acc[key].push(item);
+  return acc;
+}, {});
 
 const normalizedFromGroups = Object.keys(grouped).map((key) => {
-  const group = grouped[key]
+  const group = grouped[key];
   // choose the first non-empty image, else fallback
   const img =
     group.find((g) => g.image && g.image !== "data:,")?.image ||
-    require("../../assets/images/ssc.png")
+    require("../../assets/images/ssc.png");
   // parse distances and pick the minimum (closest)
   const distances = group
     .map((g) => parseSSCDistance(g.distance))
-    .filter((d) => d !== undefined)
-  const minDistance = distances.length ? Math.min(...distances) : undefined
+    .filter((d) => d !== undefined);
+  const minDistance = distances.length ? Math.min(...distances) : undefined;
   // count number of deals (each item has a 'deal' attribute)
-  const dealsCount = group.length
+  const dealsCount = group.length;
   // pick pricing/free heuristics
   const anyFree = group.some(
     (g) => g.free === true || (g.pricing && /free/i.test(g.pricing)),
-  )
+  );
   const pricing =
     group.find((g) => g.pricing && !/free/i.test(g.pricing))?.pricing ||
-    (anyFree ? "Free" : undefined)
+    (anyFree ? "Free" : undefined);
   // collect categories (dedupe)
   const categories = Array.from(
     new Set(group.map((g) => g._category).filter(Boolean)),
-  )
+  );
 
   const uniqueDeals = Array.from(
     new Set(group.map((g) => g.deal).filter(Boolean)),
-  )
+  );
   return {
     name: group[0].name,
     imgSrc: img,
@@ -764,7 +1022,7 @@ const normalizedFromGroups = Object.keys(grouped).map((key) => {
     categories: categories.length ? categories : ["Food"],
     dealsCount: uniqueDeals.length,
     deals: uniqueDeals,
-  }
-})
+  };
+});
 
-export default dateideas
+export default dateideasWithIds;

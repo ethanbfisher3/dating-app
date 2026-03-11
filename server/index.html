@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Server</title>
+  </head>
+  <body>
+    <h1>Dating App Server</h1>
+    <p>Available endpoints:</p>
+    <ul>
+      <li><a href="/" target="_blank">GET /</a> - This page</li>
+      <li>
+        <a href="/eventbrite/authorize" target="_blank"
+          >GET /eventbrite/authorize</a
+        >
+        - Start Eventbrite OAuth flow
+      </li>
+      <li>
+        <a href="/eventbrite/config" target="_blank">GET /eventbrite/config</a>
+        - Show exact redirect URI, hostname, and authorize URL being used
+      </li>
+      <li>
+        <a href="/eventbrite/callback" target="_blank"
+          >GET /eventbrite/callback</a
+        >
+        - OAuth redirect endpoint (expects ?code=...)
+      </li>
+      <li>
+        <a href="/eventbrite/categories" target="_blank"
+          >GET /eventbrite/categories</a
+        >
+        - Fetch all Eventbrite categories
+      </li>
+      <li>
+        <a href="/eventbrite/events" target="_blank">GET /eventbrite/events</a>
+        - Fetch events by category and date range (supports page + pageSize)
+      </li>
+    </ul>
+
+    <h2>Find Events by Category</h2>
+    <p id="categoriesStatus"></p>
+
+    <form
+      id="eventsForm"
+      action="/eventbrite/events"
+      method="get"
+      target="_blank"
+    >
+      <label for="categoryId">Category</label>
+      <select id="categoryId" name="categoryId" required>
+        <option value="">Loading categories...</option>
+      </select>
+      <br />
+
+      <label for="rangeStart">Range Start (UTC ISO)</label>
+      <input
+        id="rangeStart"
+        name="rangeStart"
+        type="text"
+        required
+        value="2026-03-01T00:00:00Z"
+      />
+      <br />
+
+      <label for="rangeEnd">Range End (UTC ISO)</label>
+      <input
+        id="rangeEnd"
+        name="rangeEnd"
+        type="text"
+        required
+        value="2026-03-31T23:59:59Z"
+      />
+      <br />
+
+      <label for="page">Page</label>
+      <input id="page" name="page" type="number" min="1" value="1" />
+      <br />
+
+      <label for="pageSize">Page Size</label>
+      <input
+        id="pageSize"
+        name="pageSize"
+        type="number"
+        min="1"
+        max="100"
+        value="20"
+      />
+      <br />
+
+      <button type="submit">Get Events</button>
+    </form>
+
+    <script defer>
+      const categoriesStatus = document.getElementById("categoriesStatus");
+      const categorySelect = document.getElementById("categoryId");
+
+      async function loadCategories() {
+        categoriesStatus.textContent = "Loading categories...";
+
+        try {
+          const response = await fetch("/eventbrite/categories");
+          const data = await response.json();
+
+          if (!response.ok) {
+            categoriesStatus.textContent =
+              data.error || "Failed to load categories.";
+            categorySelect.innerHTML =
+              '<option value="">Failed to load categories</option>';
+            return;
+          }
+
+          const categories = Array.isArray(data.categories)
+            ? data.categories
+            : [];
+
+          categorySelect.innerHTML = "";
+          const placeholderOption = document.createElement("option");
+          placeholderOption.value = "";
+          placeholderOption.textContent = "Select a category";
+          categorySelect.appendChild(placeholderOption);
+
+          categories.forEach((category) => {
+            const option = document.createElement("option");
+            option.value = category.id;
+            option.textContent = `${category.name} (${category.id})`;
+            categorySelect.appendChild(option);
+          });
+
+          categoriesStatus.textContent = `Loaded ${categories.length} categories.`;
+        } catch (error) {
+          categoriesStatus.textContent = "Failed to load categories.";
+          categorySelect.innerHTML =
+            '<option value="">Failed to load categories</option>';
+        }
+      }
+
+      loadCategories();
+    </script>
+  </body>
+</html>

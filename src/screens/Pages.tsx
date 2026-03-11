@@ -1,7 +1,8 @@
 import React from "react"
 import { View, Text, ScrollView, TouchableOpacity } from "react-native"
+import type { AppNavigation } from "../types/navigation"
 
-export default function Pages({ navigation }) {
+export default function Pages({ navigation }: { navigation: AppNavigation }) {
   return (
     <ScrollView contentContainerStyle={{ padding: 20 }}>
       <Text style={{ fontSize: 18, fontWeight: "700", marginBottom: 10 }}>

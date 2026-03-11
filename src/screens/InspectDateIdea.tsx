@@ -1,4 +1,4 @@
-import React from "react"
+import React, { useLayoutEffect } from "react";
 import {
   View,
   Text,
@@ -7,32 +7,47 @@ import {
   StyleSheet,
   Linking,
   TouchableOpacity,
-} from "react-native"
-import { getDateIdeaById } from "../data/DateIdeas"
-import { findDealsForName } from "../data/sscIndex"
-import { sanitizeUri } from "../utils/imageUtils"
+} from "react-native";
+import { getDateIdeaById, milesBetween } from "../data/DateIdeas";
+import { findDealsForName } from "../data/sscIndex";
+import { openWebsite } from "../utils/utils";
+import type { AppScreenProps } from "../types/navigation";
 
-export default function InspectDateIdea({ route }) {
-  const { id } = route.params || {}
-  const idea = getDateIdeaById(id)
+export default function InspectDateIdea({
+  route,
+  navigation,
+}: AppScreenProps<"InspectDateIdea">) {
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerBackTitle: "Back",
+    });
+  }, [navigation]);
+
+  const { id, userLocation } = route.params || {};
+  const idea = getDateIdeaById(id);
+
+  const getLocationDistanceText = (location: {
+    location: { latitude: number; longitude: number };
+  }) => {
+    if (!userLocation) return "";
+    if (location.location.latitude === 0 && location.location.longitude === 0) {
+      return "";
+    }
+    const miles = milesBetween(userLocation, location.location);
+    return `· ${miles.toFixed(1)} mi`;
+  };
+
   if (!idea)
     return (
       <View style={{ padding: 20 }}>
         <Text>Not found</Text>
       </View>
-    )
-  const imageUri = sanitizeUri(
-    idea.image || idea.image || idea.img || idea.photo || idea.image_url,
-  )
-  const sscDeals = idea.CanUseSSC
-    ? findDealsForName(idea.name || idea.title || "")
-    : []
+    );
+  const sscDeals = idea.CanUseSSC ? findDealsForName(idea.name || "") : [];
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      {imageUri ? (
-        <Image source={{ uri: imageUri }} style={styles.image} />
-      ) : null}
+      {idea.image ? <Image source={idea.image} style={styles.image} /> : null}
       <Text style={styles.title}>{idea.name}</Text>
       <Text style={styles.description}>{idea.description}</Text>
       {idea.website ? (
@@ -50,7 +65,7 @@ export default function InspectDateIdea({ route }) {
             shadowRadius: 4,
             elevation: 3,
           }}
-          onPress={() => Linking.openURL(idea.website)}
+          onPress={() => openWebsite(idea.website)}
         >
           <Text style={{ color: "#fff", fontSize: 18, fontWeight: "700" }}>
             Open website
@@ -81,14 +96,23 @@ export default function InspectDateIdea({ route }) {
           >
             Locations
           </Text>
-          {idea.locations.map((l, i) => (
+          {idea.locations.map((location, index) => (
             <TouchableOpacity
-              key={i}
-              onPress={() => l.src && Linking.openURL(l.src)}
+              key={index}
+              onPress={() => location.src && openWebsite(location.src)}
+              style={{
+                display: "flex",
+                flexDirection: "row",
+                alignItems: "center",
+              }}
             >
+              <Text
+                style={[styles.location, { textDecorationLine: "underline" }]}
+              >
+                {location.name}{" "}
+              </Text>
               <Text style={styles.location}>
-                {l.name}{" "}
-                {l.distanceFromCampus ? `· ${l.distanceFromCampus}` : ""}
+                {getLocationDistanceText(location)}
               </Text>
             </TouchableOpacity>
           ))}
@@ -120,7 +144,7 @@ export default function InspectDateIdea({ route }) {
           </Text>
           {sscDeals.map((d, i) =>
             (() => {
-              const dealImage = (d as any).image || (d as any).imgSrc
+              const dealImage = (d as any).image || (d as any).imgSrc;
               return (
                 <View
                   key={i}
@@ -180,9 +204,9 @@ export default function InspectDateIdea({ route }) {
                     onPress={() => {
                       const q = encodeURIComponent(
                         `${d.name} starving student card deal`,
-                      )
-                      const url = `https://www.google.com/search?q=${q}`
-                      Linking.openURL(url).catch(() => {})
+                      );
+                      const url = `https://www.google.com/search?q=${q}`;
+                      Linking.openURL(url).catch(() => {});
                     }}
                   >
                     <Text
@@ -192,13 +216,13 @@ export default function InspectDateIdea({ route }) {
                     </Text>
                   </TouchableOpacity>
                 </View>
-              )
+              );
             })(),
           )}
         </View>
       ) : null}
     </ScrollView>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
@@ -213,4 +237,4 @@ const styles = StyleSheet.create({
   description: { fontSize: 17, color: "#555", lineHeight: 26 },
   link: { color: "#1e90ff", marginTop: 16, fontSize: 18, fontWeight: "600" },
   location: { color: "#444", marginTop: 8, fontSize: 16 },
-})
+});

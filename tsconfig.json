@@ -6,7 +6,8 @@
     "skipLibCheck": true,
     "allowJs": false,
     "jsx": "react-jsx",
-    "baseUrl": "."
+    "baseUrl": ".",
+    "allowImportingTsExtensions": true
   },
   "include": ["**/*.ts", "**/*.tsx", "**/*.d.ts"],
   "exclude": ["node_modules"]

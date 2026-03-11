@@ -10,13 +10,13 @@ import {
 } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import recipes, { Recipe } from "../data/Recipes"
-import { sanitizeUri } from "../utils/imageUtils"
+import type { AppNavigation } from "../types/navigation"
 
-export default function RecipesPage({ navigation }: { navigation: any }) {
+export default function RecipesPage({ navigation }: { navigation: AppNavigation }) {
   const [budget, setBudget] = useState("")
   const [mealType, setMealType] = useState("")
   const [time, setTime] = useState("")
-  const [filtersExpanded, setFiltersExpanded] = useState(true)
+  const [filtersExpanded, setFiltersExpanded] = useState(false)
 
   const mealTypes = ["Breakfast", "Lunch", "Dinner", "Dessert", "Snack"]
 
@@ -44,7 +44,7 @@ export default function RecipesPage({ navigation }: { navigation: any }) {
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={{ paddingTop: 24, paddingBottom: 24 }}
+      contentContainerStyle={{ paddingTop: 36, paddingBottom: 24 }}
     >
       <View style={styles.header}>
         <Text style={styles.title}>Recipe Ideas</Text>
