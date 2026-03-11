@@ -15,13 +15,13 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import PagerView from "react-native-pager-view";
 import Home from "./src/screens/Home";
 import PlanADate from "./src/screens/PlanADate";
-import Tips from "./src/screens/Tips";
 import Info from "./src/screens/Info";
 import DateIdeas from "./src/screens/DateIdeas";
 import RecipesPage from "./src/screens/RecipesPage";
 import RecipeDetail from "./src/screens/RecipeDetail";
 import InspectDateIdea from "./src/screens/InspectDateIdea";
 import PlannedDateResults from "./src/screens/PlannedDateResults";
+import SavedIdeas from "./src/screens/SavedIdeas";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -56,11 +56,11 @@ const TABS = [
     component: RecipesPage,
   },
   {
-    key: "Tips",
-    title: "Tips",
-    icon: "bulb",
-    iconOutline: "bulb-outline",
-    component: Tips,
+    key: "Saved Ideas",
+    title: "Saved Ideas",
+    icon: "bookmark",
+    iconOutline: "bookmark-outline",
+    component: SavedIdeas,
   },
   // {
   //   key: "Info",
@@ -87,6 +87,7 @@ export default function App() {
           <Stack.Screen name="DateIdeas" component={DateIdeas} />
           <Stack.Screen name="PlanADate" component={PlanADate} />
           <Stack.Screen name="RecipesPage" component={RecipesPage} />
+          <Stack.Screen name="SavedIdeas" component={SavedIdeas} />
           <Stack.Screen name="RecipeDetail" component={RecipeDetail} />
           <Stack.Screen name="InspectDateIdea" component={InspectDateIdea} />
           <Stack.Screen
@@ -176,7 +177,7 @@ function MainTabs({ navigation }: { navigation: AppNavigation }) {
                     size={isCenterTab ? 30 : 28}
                     color={isCenterTab ? "#ffffff" : color}
                   />
-                  <Text
+                  {/* <Text
                     style={
                       isCenterTab
                         ? styles.centerTabLabel
@@ -184,7 +185,7 @@ function MainTabs({ navigation }: { navigation: AppNavigation }) {
                     }
                   >
                     {tab.title}
-                  </Text>
+                  </Text> */}
                 </View>
               </TouchableOpacity>
             );
@@ -209,7 +210,7 @@ const styles = StyleSheet.create({
     borderTopColor: "#e0e0e0",
     paddingBottom: 12,
     paddingTop: 8,
-    height: 86,
+    height: 72,
   },
   tabButton: {
     flex: 1,
@@ -223,10 +224,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   centerTabCircle: {
-    width: 88,
-    height: 88,
+    width: 72,
+    height: 72,
     borderRadius: 44,
-    marginTop: -28,
+    marginTop: -16,
     alignItems: "center",
     justifyContent: "center",
     shadowColor: "#000",

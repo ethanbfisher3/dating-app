@@ -1,6 +1,6 @@
-import React from "react"
-import { View, Text, ScrollView, TouchableOpacity } from "react-native"
-import type { AppNavigation } from "../types/navigation"
+import React from "react";
+import { View, Text, ScrollView, TouchableOpacity } from "react-native";
+import type { AppNavigation } from "../types/navigation";
 
 export default function Pages({ navigation }: { navigation: AppNavigation }) {
   return (
@@ -40,9 +40,9 @@ export default function Pages({ navigation }: { navigation: AppNavigation }) {
       </TouchableOpacity>
       <TouchableOpacity
         style={{ marginVertical: 5 }}
-        onPress={() => navigation.navigate("Tips")}
+        onPress={() => navigation.navigate("SavedIdeas")}
       >
-        <Text style={{ color: "#007AFF", fontSize: 16 }}>Tips</Text>
+        <Text style={{ color: "#007AFF", fontSize: 16 }}>Saved Ideas</Text>
       </TouchableOpacity>
       <TouchableOpacity
         style={{ marginVertical: 5 }}
@@ -51,5 +51,5 @@ export default function Pages({ navigation }: { navigation: AppNavigation }) {
         <Text style={{ color: "#007AFF", fontSize: 16 }}>Contact</Text>
       </TouchableOpacity>
     </ScrollView>
-  )
+  );
 }

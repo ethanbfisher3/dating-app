@@ -1,12 +1,12 @@
 export interface Recipe {
-  name: string
-  description: string
-  ingredients: { [key: string]: string }
-  steps: string[]
-  estimatedPrice: number
-  estimatedTime: number
-  categories: string[]
-  image: any
+  name: string;
+  description: string;
+  ingredients: { [key: string]: string };
+  steps: string[];
+  estimatedPrice: number;
+  estimatedTime: number;
+  categories: string[];
+  image: any;
 }
 
 const recipes: Recipe[] = [
@@ -801,28 +801,6 @@ const recipes: Recipe[] = [
       "A crunchy, spicy taco-inspired salad that comes together quickly.",
     image: require("../../assets/images/recipes/taco_salad.png"),
   },
-  // {
-  //   name: "Overnight Oats",
-  //   ingredients: {
-  //     Oats: "1/2 cup",
-  //     Milk: "1/2 cup",
-  //     Yogurt: "1/4 cup",
-  //     "Chia Seeds": "1 tsp (optional)",
-  //     "Honey or Maple Syrup": "1 tbsp",
-  //     "Fruit Topping": "1/4 cup",
-  //   },
-  //   steps: [
-  //     "Mix oats, milk, yogurt, chia seeds, and sweetener in a jar.",
-  //     "Refrigerate overnight.",
-  //     "Top with fruit in the morning and enjoy.",
-  //   ],
-  //   estimatedPrice: 3,
-  //   estimatedTime: 5,
-  //   categories: ["Breakfast"],
-  //   description:
-  //     "Healthy and convenient make-ahead breakfast loaded with nutrients.",
-  //   image: require("../../assets/images/recipes/overnight_oats.png"),
-  // },
   {
     name: "Stuffed Bell Peppers",
     ingredients: {
@@ -897,10 +875,10 @@ const recipes: Recipe[] = [
       "Crispy zucchini fritters make a tasty side or vegetarian main dish.",
     image: require("../../assets/images/recipes/zucchini_fritters.png"),
   },
-]
+];
 
 export function getRecipeByIndex(index: number) {
-  return recipes[index]
+  return recipes[index];
 }
 
-export default recipes
+export default recipes;

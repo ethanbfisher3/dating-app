@@ -24,6 +24,7 @@ export type RootStackParamList = {
   Home: undefined;
   Info: undefined;
   Tips: undefined;
+  SavedIdeas: undefined;
   Contact: undefined;
   Clubs: undefined;
   EventsPage: undefined;

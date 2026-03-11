@@ -1,5 +1,6 @@
-import React from "react"
-import { ScrollView, Text, View, TouchableOpacity } from "react-native"
+import { Ionicons } from "@expo/vector-icons";
+import React from "react";
+import { ScrollView, Text, View, TouchableOpacity } from "react-native";
 
 export default function Info({ goToTab }) {
   return (
@@ -209,7 +210,7 @@ export default function Info({ goToTab }) {
           </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
+        {/* <TouchableOpacity
           style={{ marginBottom: 12 }}
           activeOpacity={0.8}
           onPress={() => goToTab?.("Tips")}
@@ -246,6 +247,46 @@ export default function Info({ goToTab }) {
             }}
           >
             Is dating tough for you? Here's some motivation!
+          </Text>
+        </TouchableOpacity> */}
+
+        <TouchableOpacity
+          style={{ marginBottom: 12 }}
+          activeOpacity={0.8}
+          onPress={() => goToTab?.("Saved Ideas")}
+        >
+          <View style={{ flexDirection: "row" }}>
+            <Text
+              style={{
+                fontSize: 18,
+                fontWeight: "700",
+                color: "#1a1a1a",
+                marginBottom: 6,
+              }}
+            >
+              <Ionicons name="bookmark" size={24} color="#f05a7e" />
+            </Text>
+            <Text
+              style={{
+                fontSize: 18,
+                fontWeight: "700",
+                color: "#1a1a1a",
+                marginBottom: 6,
+                textDecorationLine: "underline",
+              }}
+            >
+              Save Your Favorite Ideas
+            </Text>
+          </View>
+          <Text
+            style={{
+              fontSize: 16,
+              lineHeight: 24,
+              color: "#555",
+              marginLeft: 12,
+            }}
+          >
+            Do you like some of the date ideas? Save them and view them here!
           </Text>
         </TouchableOpacity>
       </View>
@@ -321,5 +362,5 @@ export default function Info({ goToTab }) {
         </Text>
       </View>
     </ScrollView>
-  )
+  );
 }

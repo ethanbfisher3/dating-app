@@ -439,18 +439,18 @@ export default function PlanADate({
                     value={startHour12}
                     onChangeText={(text) => {
                       if (text.trim() === "") {
-                        setStartHour12("")
-                        return
+                        setStartHour12("");
+                        return;
                       }
 
-                      const parsed = parseInt(text, 10)
+                      const parsed = parseInt(text, 10);
                       if (Number.isNaN(parsed)) {
-                        setStartHour12("")
-                        return
+                        setStartHour12("");
+                        return;
                       }
 
-                      const num = clampHour12(parsed)
-                      setStartHour12(String(num))
+                      const num = clampHour12(parsed);
+                      setStartHour12(String(num));
                     }}
                     onFocus={handleInputFocus}
                     placeholder="1-12"
@@ -509,18 +509,18 @@ export default function PlanADate({
                     value={endHour12}
                     onChangeText={(text) => {
                       if (text.trim() === "") {
-                        setEndHour12("")
-                        return
+                        setEndHour12("");
+                        return;
                       }
 
-                      const parsed = parseInt(text, 10)
+                      const parsed = parseInt(text, 10);
                       if (Number.isNaN(parsed)) {
-                        setEndHour12("")
-                        return
+                        setEndHour12("");
+                        return;
                       }
 
-                      const num = clampHour12(parsed)
-                      setEndHour12(String(num))
+                      const num = clampHour12(parsed);
+                      setEndHour12(String(num));
                     }}
                     onFocus={handleInputFocus}
                     placeholder="1-12"
