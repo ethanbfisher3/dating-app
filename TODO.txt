@@ -6,9 +6,9 @@ New images
 the user currently can't delete the mile on the distance from you questions
 it should scroll down automatically on the date planner
 What to do if someone is not in utah planning a date?
-Replace the 'Date Ideas' page with something else
 Check if BYU Events are included
 Come up with a better name for the app
+Fix the scrolling to an input in a modal when the user focuses on the input
 
 Maybe do:
 Date history/Journaling page?

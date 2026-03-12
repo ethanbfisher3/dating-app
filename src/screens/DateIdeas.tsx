@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -6,6 +6,8 @@ import {
   StyleSheet,
   TouchableOpacity,
   TextInput,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import * as ExpoLocation from "expo-location";
 import { Ionicons } from "@expo/vector-icons";
@@ -24,6 +26,22 @@ export default function DateIdeasScreen({
   const [maxDistance, setMaxDistance] = useState("");
   const [category, setCategory] = useState("");
   const [filtersExpanded, setFiltersExpanded] = useState(false);
+  const scrollRef = useRef<ScrollView>(null);
+
+  const handleFilterInputFocus = (event: any) => {
+    const target = event?.target;
+    if (!target) {
+      return;
+    }
+
+    setTimeout(() => {
+      (scrollRef.current as any)?.scrollResponderScrollNativeHandleToKeyboard?.(
+        target,
+        120,
+        true,
+      );
+    }, 120);
+  };
 
   useEffect(() => {
     const loadUserLocation = async () => {
@@ -100,8 +118,17 @@ export default function DateIdeasScreen({
   }, [category, maxDistance, maxMoney, userLocation]);
 
   return (
-    <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 24 : 0}
+    >
+      <ScrollView
+        ref={scrollRef}
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+      >
         <View style={styles.header}>
           <Text style={styles.title}>Date Ideas</Text>
         </View>
@@ -130,6 +157,7 @@ export default function DateIdeasScreen({
                   keyboardType="decimal-pad"
                   value={maxMoney}
                   onChangeText={setMaxMoney}
+                  onFocus={handleFilterInputFocus}
                 />
               </View>
 
@@ -142,6 +170,7 @@ export default function DateIdeasScreen({
                   keyboardType="decimal-pad"
                   value={maxDistance}
                   onChangeText={setMaxDistance}
+                  onFocus={handleFilterInputFocus}
                 />
               </View>
 
@@ -212,7 +241,7 @@ export default function DateIdeasScreen({
           />
         ))}
       </ScrollView>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

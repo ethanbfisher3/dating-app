@@ -2,9 +2,11 @@ import fs from "fs/promises";
 import path from "path";
 import { fileURLToPath } from "url";
 import {
+  convertActivitiesToPlannerPlaces,
   generateDatePlannerIdeasFromPlaces,
   type GenerateDatePlannerIdeasRequest,
 } from "../shared/datePlannerEngine";
+import activities from "../src/data/activities";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -29,9 +31,13 @@ export async function getDatePlannerIdeas(
   const filePath = await getLatestPlacesFilePath();
   const raw = await fs.readFile(filePath, "utf8");
   const places = JSON.parse(raw);
+  const plannerCandidates = [
+    ...places,
+    ...convertActivitiesToPlannerPlaces(activities),
+  ];
 
   return generateDatePlannerIdeasFromPlaces({
-    places,
+    places: plannerCandidates,
     request: params,
     sourceFile: path.basename(filePath),
   });

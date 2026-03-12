@@ -12,24 +12,16 @@ import {
 import DateTimePicker from "@react-native-community/datetimepicker";
 import * as Location from "expo-location";
 import type { AppNavigation } from "../types/navigation";
+import { DATE_CATEGORIES, timesAreInvalid } from "src/utils/utils";
 
-const dateCategories = [
-  "Food",
-  "Outdoors",
-  "Sports",
-  "Nature",
-  "Learning",
-  "Shopping",
-  "Recreation",
-];
-const questionCount = 6;
+const questionCount = 5;
 
 export default function PlanADate({
   navigation,
 }: {
   navigation: AppNavigation;
 }) {
-  const [maxPrice, setMaxPrice] = useState<string>("50");
+  const [maxPrice, setMaxPrice] = useState<string>("20");
   const [hasStarvingStudentCard, setHasStarvingStudentCard] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -49,7 +41,7 @@ export default function PlanADate({
     longitude: number;
   } | null>(null);
   const [categoriesChecked, setCategoriesChecked] = useState(
-    Array(dateCategories.length).fill(true),
+    Array(DATE_CATEGORIES.length).fill(true),
   );
   const scrollViewRef = useRef<ScrollView>(null);
   const questionTranslateX = useRef(new Animated.Value(0)).current;
@@ -160,7 +152,9 @@ export default function PlanADate({
     }
     if (
       currentQuestion === 3 &&
-      (Number.isNaN(parseInt(startHour12)) || Number.isNaN(parseInt(endHour12)))
+      (Number.isNaN(parseInt(startHour12)) ||
+        Number.isNaN(parseInt(endHour12)) ||
+        timesAreInvalid(startHour12, endHour12, startPeriod, endPeriod))
     ) {
       setShowTimeError(true);
       return;
@@ -188,7 +182,7 @@ export default function PlanADate({
   };
 
   const handleGenerateIdeas = () => {
-    const selectedCategories = dateCategories.filter(
+    const selectedCategories = DATE_CATEGORIES.filter(
       (_, i) => categoriesChecked[i],
     );
     const start24 = convertTo24Hour(parseInt(startHour12), startPeriod);
@@ -435,7 +429,7 @@ export default function PlanADate({
                       backgroundColor: "#fff",
                       textAlign: "center",
                     }}
-                    keyboardType="numeric"
+                    keyboardType="number-pad"
                     value={startHour12}
                     onChangeText={(text) => {
                       if (text.trim() === "") {
@@ -505,7 +499,7 @@ export default function PlanADate({
                       backgroundColor: "#fff",
                       textAlign: "center",
                     }}
-                    keyboardType="numeric"
+                    keyboardType="number-pad"
                     value={endHour12}
                     onChangeText={(text) => {
                       if (text.trim() === "") {
@@ -628,7 +622,8 @@ export default function PlanADate({
                 color: "#2c3e50",
               }}
             >
-              Up to {maxDistance} miles away
+              Up to {maxDistance} mile{parseInt(maxDistance) !== 1 ? "s" : ""}{" "}
+              away {parseInt(maxDistance) === 0 ? "(Staying at Home)" : ""}
             </Text>
             <TextInput
               style={{
@@ -703,125 +698,125 @@ export default function PlanADate({
           </View>
         );
       case 5:
-        return (
-          <View style={{ marginBottom: 30 }}>
-            <Text
-              style={{
-                fontWeight: "800",
-                fontSize: 26,
-                marginBottom: 12,
-                color: "#1a1a1a",
-              }}
-            >
-              Starving Student Card?
-            </Text>
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                marginVertical: 20,
-                backgroundColor: "#eaf4ff",
-                padding: 16,
-                borderRadius: 10,
-              }}
-            >
-              <TouchableOpacity
-                onPress={() => setHasStarvingStudentCard((prev) => !prev)}
-                style={{
-                  width: 28,
-                  height: 28,
-                  borderRadius: 6,
-                  borderWidth: 2,
-                  borderColor: hasStarvingStudentCard ? "#1e90ff" : "#7a8a99",
-                  backgroundColor: hasStarvingStudentCard
-                    ? "#1e90ff"
-                    : "#ffffff",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                {hasStarvingStudentCard ? (
-                  <Text
-                    style={{ color: "#fff", fontSize: 18, fontWeight: "900" }}
-                  >
-                    ✓
-                  </Text>
-                ) : null}
-              </TouchableOpacity>
-              <Text
-                style={{
-                  marginLeft: 14,
-                  fontSize: 17,
-                  fontWeight: "600",
-                  color: "#1f2d3d",
-                }}
-              >
-                I have a Starving Student Card
-              </Text>
-            </View>
-            <Text
-              style={{
-                fontSize: 16,
-                color: "#666",
-                marginTop: 10,
-                lineHeight: 24,
-              }}
-            >
-              {hasStarvingStudentCard
-                ? "Great! We'll include date ideas that offer discounts to give you more value for your money."
-                : "If you have a Starving Student Card, check this box to see more discounted options!"}
-            </Text>
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                marginTop: 20,
-                gap: 12,
-              }}
-            >
-              <TouchableOpacity
-                style={{
-                  flex: 1,
-                  backgroundColor: "#6c757d",
-                  paddingVertical: 16,
-                  paddingHorizontal: 20,
-                  borderRadius: 10,
-                  alignItems: "center",
-                }}
-                onPress={handlePreviousQuestion}
-              >
-                <Text
-                  style={{ color: "#fff", fontSize: 18, fontWeight: "700" }}
-                >
-                  Back
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={{
-                  flex: 1,
-                  backgroundColor: "#1e90ff",
-                  paddingVertical: 16,
-                  paddingHorizontal: 20,
-                  borderRadius: 10,
-                  alignItems: "center",
-                  shadowColor: "#000",
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.2,
-                  shadowRadius: 4,
-                  elevation: 3,
-                }}
-                onPress={handleNextQuestion}
-              >
-                <Text
-                  style={{ color: "#fff", fontSize: 18, fontWeight: "700" }}
-                >
-                  Next
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        );
-      case 6:
+        // return (
+        //   <View style={{ marginBottom: 30 }}>
+        //     <Text
+        //       style={{
+        //         fontWeight: "800",
+        //         fontSize: 26,
+        //         marginBottom: 12,
+        //         color: "#1a1a1a",
+        //       }}
+        //     >
+        //       Starving Student Card?
+        //     </Text>
+        //     <View
+        //       style={{
+        //         flexDirection: "row",
+        //         alignItems: "center",
+        //         marginVertical: 20,
+        //         backgroundColor: "#eaf4ff",
+        //         padding: 16,
+        //         borderRadius: 10,
+        //       }}
+        //     >
+        //       <TouchableOpacity
+        //         onPress={() => setHasStarvingStudentCard((prev) => !prev)}
+        //         style={{
+        //           width: 28,
+        //           height: 28,
+        //           borderRadius: 6,
+        //           borderWidth: 2,
+        //           borderColor: hasStarvingStudentCard ? "#1e90ff" : "#7a8a99",
+        //           backgroundColor: hasStarvingStudentCard
+        //             ? "#1e90ff"
+        //             : "#ffffff",
+        //           alignItems: "center",
+        //           justifyContent: "center",
+        //         }}
+        //       >
+        //         {hasStarvingStudentCard ? (
+        //           <Text
+        //             style={{ color: "#fff", fontSize: 18, fontWeight: "900" }}
+        //           >
+        //             ✓
+        //           </Text>
+        //         ) : null}
+        //       </TouchableOpacity>
+        //       <Text
+        //         style={{
+        //           marginLeft: 14,
+        //           fontSize: 17,
+        //           fontWeight: "600",
+        //           color: "#1f2d3d",
+        //         }}
+        //       >
+        //         I have a Starving Student Card
+        //       </Text>
+        //     </View>
+        //     <Text
+        //       style={{
+        //         fontSize: 16,
+        //         color: "#666",
+        //         marginTop: 10,
+        //         lineHeight: 24,
+        //       }}
+        //     >
+        //       {hasStarvingStudentCard
+        //         ? "Great! We'll include date ideas that offer discounts to give you more value for your money."
+        //         : "If you have a Starving Student Card, check this box to see more discounted options!"}
+        //     </Text>
+        //     <View
+        //       style={{
+        //         flexDirection: "row",
+        //         justifyContent: "space-between",
+        //         marginTop: 20,
+        //         gap: 12,
+        //       }}
+        //     >
+        //       <TouchableOpacity
+        //         style={{
+        //           flex: 1,
+        //           backgroundColor: "#6c757d",
+        //           paddingVertical: 16,
+        //           paddingHorizontal: 20,
+        //           borderRadius: 10,
+        //           alignItems: "center",
+        //         }}
+        //         onPress={handlePreviousQuestion}
+        //       >
+        //         <Text
+        //           style={{ color: "#fff", fontSize: 18, fontWeight: "700" }}
+        //         >
+        //           Back
+        //         </Text>
+        //       </TouchableOpacity>
+        //       <TouchableOpacity
+        //         style={{
+        //           flex: 1,
+        //           backgroundColor: "#1e90ff",
+        //           paddingVertical: 16,
+        //           paddingHorizontal: 20,
+        //           borderRadius: 10,
+        //           alignItems: "center",
+        //           shadowColor: "#000",
+        //           shadowOffset: { width: 0, height: 2 },
+        //           shadowOpacity: 0.2,
+        //           shadowRadius: 4,
+        //           elevation: 3,
+        //         }}
+        //         onPress={handleNextQuestion}
+        //       >
+        //         <Text
+        //           style={{ color: "#fff", fontSize: 18, fontWeight: "700" }}
+        //         >
+        //           Next
+        //         </Text>
+        //       </TouchableOpacity>
+        //     </View>
+        //   </View>
+        // );
+        // case 6:
         return (
           <View style={{ marginBottom: 30 }}>
             <Text
@@ -842,7 +837,7 @@ export default function PlanADate({
                 marginBottom: 8,
               }}
             >
-              {dateCategories.map((category, index) => {
+              {DATE_CATEGORIES.map((category, index) => {
                 const isSelected = categoriesChecked[index];
                 return (
                   <TouchableOpacity

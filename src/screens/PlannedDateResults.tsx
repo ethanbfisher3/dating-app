@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
   Linking,
   Modal,
   Platform,
@@ -69,9 +70,34 @@ export default function PlannedDateResults({
       route.params.categories.includes(category),
     ),
   );
+  const [expandedIdeas, setExpandedIdeas] = useState<Set<number>>(new Set());
+  const [showDevMatches, setShowDevMatches] = useState(false);
+  const [showDevPlaces, setShowDevPlaces] = useState(false);
+  const [showDevActivities, setShowDevActivities] = useState(false);
+  const [showDevRecipes, setShowDevRecipes] = useState(false);
+  const editModalScrollRef = useRef<ScrollView>(null);
 
-  const { ideas, totalMatches, sourceFile, isLoading, error, refetch } =
-    useDatePlannerIdeas(plannerParams);
+  const toggleIdeaExpanded = (index: number) => {
+    setExpandedIdeas((prev) => {
+      const next = new Set(prev);
+      if (next.has(index)) {
+        next.delete(index);
+      } else {
+        next.add(index);
+      }
+      return next;
+    });
+  };
+
+  const {
+    ideas,
+    totalMatches,
+    matchedPlaces,
+    sourceFile,
+    isLoading,
+    error,
+    refetch,
+  } = useDatePlannerIdeas(plannerParams);
 
   const {
     selectedDate,
@@ -82,6 +108,14 @@ export default function PlannedDateResults({
     hasStarvingStudentCard,
     categories,
   } = plannerParams;
+
+  const devPlaces = matchedPlaces.filter((item) => item.sourceKind === "place");
+  const devActivities = matchedPlaces.filter(
+    (item) => item.sourceKind === "activity",
+  );
+  const devRecipes = matchedPlaces.filter(
+    (item) => item.sourceKind === "recipe",
+  );
 
   const formatHour = (hour24: number) => {
     const normalized = ((hour24 % 24) + 24) % 24;
@@ -195,6 +229,19 @@ export default function PlannedDateResults({
     return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
   })();
 
+  const handleEditInputFocus = (event: any) => {
+    const target = event?.target;
+    if (!target) {
+      return;
+    }
+
+    setTimeout(() => {
+      (
+        editModalScrollRef.current as any
+      )?.scrollResponderScrollNativeHandleToKeyboard?.(target, 120, true);
+    }, 120);
+  };
+
   return (
     <ScrollView
       contentContainerStyle={{
@@ -275,11 +322,11 @@ export default function PlannedDateResults({
           Budget: ${maxPrice}
         </Text>
         <Text style={{ color: "#4b5b6b", marginBottom: 4 }}>
-          Distance: {maxDistance} miles
+          Distance: {maxDistance} mile{maxDistance !== 1 ? "s" : ""}
         </Text>
-        <Text style={{ color: "#4b5b6b", marginBottom: 4 }}>
+        {/* <Text style={{ color: "#4b5b6b", marginBottom: 4 }}>
           Starving Student Card: {hasStarvingStudentCard ? "Yes" : "No"}
-        </Text>
+        </Text> */}
         <Text style={{ color: "#4b5b6b" }}>
           Categories: {categories.join(", ")}
         </Text>
@@ -311,13 +358,15 @@ export default function PlannedDateResults({
           setIsEditModalVisible(false);
         }}
       >
-        <View
+        <KeyboardAvoidingView
           style={{
             flex: 1,
             backgroundColor: "rgba(0,0,0,0.35)",
             justifyContent: "center",
             padding: 20,
           }}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 24 : 0}
         >
           <View
             style={{
@@ -330,8 +379,11 @@ export default function PlannedDateResults({
             }}
           >
             <ScrollView
+              ref={editModalScrollRef}
               showsVerticalScrollIndicator
               contentContainerStyle={{ padding: 16 }}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="interactive"
             >
               <Text
                 style={{
@@ -411,6 +463,7 @@ export default function PlannedDateResults({
                         setDraftStartHour12(String(clampHour12(parsed)));
                       }}
                       placeholder="1-12"
+                      onFocus={handleEditInputFocus}
                     />
                     <TouchableOpacity
                       onPress={() =>
@@ -482,6 +535,7 @@ export default function PlannedDateResults({
                         setDraftEndHour12(String(clampHour12(parsed)));
                       }}
                       placeholder="1-12"
+                      onFocus={handleEditInputFocus}
                     />
                     <TouchableOpacity
                       onPress={() =>
@@ -517,6 +571,7 @@ export default function PlannedDateResults({
                 value={draftMaxPrice}
                 onChangeText={setDraftMaxPrice}
                 keyboardType="number-pad"
+                onFocus={handleEditInputFocus}
                 style={{
                   borderWidth: 1,
                   borderColor: "#cdd9e5",
@@ -534,6 +589,7 @@ export default function PlannedDateResults({
                 value={draftMaxDistance}
                 onChangeText={setDraftMaxDistance}
                 keyboardType="number-pad"
+                onFocus={handleEditInputFocus}
                 style={{
                   borderWidth: 1,
                   borderColor: "#cdd9e5",
@@ -591,7 +647,7 @@ export default function PlannedDateResults({
                 })}
               </View>
 
-              <TouchableOpacity
+              {/* <TouchableOpacity
                 onPress={() => setDraftHasStarvingStudentCard((prev) => !prev)}
                 style={{
                   flexDirection: "row",
@@ -636,7 +692,7 @@ export default function PlannedDateResults({
                 >
                   I have a Starving Student Card
                 </Text>
-              </TouchableOpacity>
+              </TouchableOpacity> */}
 
               {editError ? (
                 <Text style={{ color: "#b42318", marginBottom: 10 }}>
@@ -749,12 +805,182 @@ export default function PlannedDateResults({
               </View>
             </View>
           ) : null}
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
 
-      <Text style={{ marginBottom: 16, fontSize: 15, color: "#4b5b6b" }}>
-        Matching open places: {totalMatches}
-      </Text>
+      {__DEV__ ? (
+        <View
+          style={{
+            backgroundColor: "#ffffff",
+            borderWidth: 1,
+            borderColor: "#dce6ef",
+            borderRadius: 12,
+            marginBottom: 16,
+            overflow: "hidden",
+          }}
+        >
+          <TouchableOpacity
+            onPress={() => setShowDevMatches((prev) => !prev)}
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+              paddingHorizontal: 14,
+              paddingVertical: 12,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 15,
+                fontWeight: "800",
+                color: "#1f2d3d",
+              }}
+            >
+              Dev: Returned items ({matchedPlaces.length})
+            </Text>
+            <Text style={{ color: "#1e90ff", fontWeight: "700" }}>
+              {showDevMatches ? "Hide" : "Show"}
+            </Text>
+          </TouchableOpacity>
+
+          {showDevMatches ? (
+            <View
+              style={{
+                borderTopWidth: 1,
+                borderTopColor: "#e8eef5",
+                paddingVertical: 4,
+              }}
+            >
+              <TouchableOpacity
+                onPress={() => setShowDevPlaces((prev) => !prev)}
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  paddingHorizontal: 14,
+                  paddingVertical: 10,
+                }}
+              >
+                <Text
+                  style={{ fontSize: 14, fontWeight: "700", color: "#2c3e50" }}
+                >
+                  Places ({devPlaces.length})
+                </Text>
+                <Text style={{ color: "#1e90ff", fontWeight: "700" }}>
+                  {showDevPlaces ? "Hide" : "Show"}
+                </Text>
+              </TouchableOpacity>
+
+              {showDevPlaces ? (
+                <View
+                  style={{ paddingHorizontal: 14, paddingBottom: 10, gap: 6 }}
+                >
+                  {devPlaces.length ? (
+                    devPlaces.map((place) => (
+                      <Text
+                        key={place.id}
+                        style={{ fontSize: 14, color: "#2c3e50" }}
+                      >
+                        • {place.name}
+                      </Text>
+                    ))
+                  ) : (
+                    <Text style={{ fontSize: 14, color: "#667788" }}>
+                      No places.
+                    </Text>
+                  )}
+                </View>
+              ) : null}
+
+              <TouchableOpacity
+                onPress={() => setShowDevActivities((prev) => !prev)}
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  paddingHorizontal: 14,
+                  paddingVertical: 10,
+                  borderTopWidth: 1,
+                  borderTopColor: "#eef2f7",
+                }}
+              >
+                <Text
+                  style={{ fontSize: 14, fontWeight: "700", color: "#2c3e50" }}
+                >
+                  Activities ({devActivities.length})
+                </Text>
+                <Text style={{ color: "#1e90ff", fontWeight: "700" }}>
+                  {showDevActivities ? "Hide" : "Show"}
+                </Text>
+              </TouchableOpacity>
+
+              {showDevActivities ? (
+                <View
+                  style={{ paddingHorizontal: 14, paddingBottom: 10, gap: 6 }}
+                >
+                  {devActivities.length ? (
+                    devActivities.map((activity) => (
+                      <Text
+                        key={activity.id}
+                        style={{ fontSize: 14, color: "#2c3e50" }}
+                      >
+                        • {activity.name}
+                      </Text>
+                    ))
+                  ) : (
+                    <Text style={{ fontSize: 14, color: "#667788" }}>
+                      No activities.
+                    </Text>
+                  )}
+                </View>
+              ) : null}
+
+              <TouchableOpacity
+                onPress={() => setShowDevRecipes((prev) => !prev)}
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  paddingHorizontal: 14,
+                  paddingVertical: 10,
+                  borderTopWidth: 1,
+                  borderTopColor: "#eef2f7",
+                }}
+              >
+                <Text
+                  style={{ fontSize: 14, fontWeight: "700", color: "#2c3e50" }}
+                >
+                  Recipes ({devRecipes.length})
+                </Text>
+                <Text style={{ color: "#1e90ff", fontWeight: "700" }}>
+                  {showDevRecipes ? "Hide" : "Show"}
+                </Text>
+              </TouchableOpacity>
+
+              {showDevRecipes ? (
+                <View
+                  style={{ paddingHorizontal: 14, paddingBottom: 10, gap: 6 }}
+                >
+                  {devRecipes.length ? (
+                    devRecipes.map((recipe) => (
+                      <Text
+                        key={recipe.id}
+                        style={{ fontSize: 14, color: "#2c3e50" }}
+                      >
+                        • {recipe.name}
+                      </Text>
+                    ))
+                  ) : (
+                    <Text style={{ fontSize: 14, color: "#667788" }}>
+                      No recipes.
+                    </Text>
+                  )}
+                </View>
+              ) : null}
+            </View>
+          ) : null}
+        </View>
+      ) : null}
 
       {sourceFile ? (
         <Text style={{ marginBottom: 16, fontSize: 13, color: "#7a8a99" }}>
@@ -808,6 +1034,7 @@ export default function PlannedDateResults({
         ? ideas.map((idea, index) => {
             const places = Object.values(idea.places || {}).filter(Boolean);
             const schedule = idea.schedule || [];
+            const isExpanded = expandedIdeas.has(index);
 
             return (
               <View
@@ -868,29 +1095,22 @@ export default function PlannedDateResults({
                   {idea.filledTemplate}
                 </Text>
 
-                {typeof idea.recipeIndex === "number" ? (
-                  <TouchableOpacity
-                    onPress={() =>
-                      navigation.navigate("RecipeDetail", {
-                        index: idea.recipeIndex,
-                      })
-                    }
-                    style={{ marginTop: 8 }}
+                <TouchableOpacity
+                  onPress={() => toggleIdeaExpanded(index)}
+                  style={{ marginTop: 10, alignSelf: "flex-start" }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      color: "#1e90ff",
+                      fontWeight: "700",
+                    }}
                   >
-                    <Text
-                      style={{
-                        fontSize: 15,
-                        color: "#1e90ff",
-                        textDecorationLine: "underline",
-                        fontWeight: "700",
-                      }}
-                    >
-                      View recipe details
-                    </Text>
-                  </TouchableOpacity>
-                ) : null}
+                    {isExpanded ? "▲ Hide details" : "▼ Show details"}
+                  </Text>
+                </TouchableOpacity>
 
-                {schedule.length ? (
+                {isExpanded && schedule.length ? (
                   <View style={{ marginTop: 12 }}>
                     <Text
                       style={{
@@ -978,7 +1198,29 @@ export default function PlannedDateResults({
                   </View>
                 ) : null}
 
-                {places.length ? (
+                {isExpanded && typeof idea.recipeIndex === "number" ? (
+                  <TouchableOpacity
+                    onPress={() =>
+                      navigation.navigate("RecipeDetail", {
+                        index: idea.recipeIndex,
+                      })
+                    }
+                    style={{ marginTop: 8 }}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 15,
+                        color: "#1e90ff",
+                        textDecorationLine: "underline",
+                        fontWeight: "700",
+                      }}
+                    >
+                      View recipe details
+                    </Text>
+                  </TouchableOpacity>
+                ) : null}
+
+                {isExpanded && places.length ? (
                   <View style={{ marginTop: 12 }}>
                     {places.map((place, placeIndex) => {
                       if (!place) {

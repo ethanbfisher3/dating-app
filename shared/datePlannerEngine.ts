@@ -14,6 +14,29 @@ export type PlannerPlace = {
       close?: { day?: number; hour?: number; minute?: number };
     }>;
   };
+  sourceKind?: "place" | "activity";
+  activeMonths?: string[];
+  activityMinDurationMinutes?: number;
+};
+
+export type PlannerActivityInput = {
+  id: string;
+  name: string;
+  categories: string[];
+  description?: string;
+  cost: number;
+  durationMinutes?: {
+    min?: number;
+    max?: number;
+  };
+  bestMonthsOfYear?: string[];
+  bestDaysOfWeek?: string[];
+  bestTimesOfDay?: Array<{
+    startHour12: string;
+    endHour12: string;
+    startPeriod: string;
+    endPeriod: string;
+  }>;
 };
 
 export type ResponsePlace = {
@@ -23,6 +46,7 @@ export type ResponsePlace = {
   types: string[];
   googleMapsUri: string;
   rating: number | null;
+  sourceKind: "place" | "activity" | "recipe";
   location: {
     latitude: number | null;
     longitude: number | null;
@@ -352,12 +376,11 @@ const CATEGORY_SPECIFIC_TEMPLATES: Record<string, CategoryTemplateSet> = {
   Sports: {
     short: [
       { template: "Get active at {sports}", slots: ["sports"] },
-      { template: "Do a quick activity at {activity}", slots: ["activity"] },
+      { template: "{activity}", slots: ["activity"] },
     ],
     standard: [
       {
-        template:
-          "Start with a workout at {sports} then do something fun at {activity}",
+        template: "Start with a workout at {sports}, and then {activity}",
         slots: ["sports", "activity"],
       },
       {
@@ -583,6 +606,130 @@ const PRICE_LEVEL_TO_ESTIMATED_SPEND: Record<string, number> = {
   PRICE_LEVEL_UNSPECIFIED: 15,
 };
 
+const MAX_MATCHED_CANDIDATES = 250;
+
+const DAY_NAME_TO_INDEX: Record<string, number> = {
+  Sunday: 0,
+  Monday: 1,
+  Tuesday: 2,
+  Wednesday: 3,
+  Thursday: 4,
+  Friday: 5,
+  Saturday: 6,
+};
+
+const CATEGORY_TO_ACTIVITY_TYPES: Record<string, string[]> = {
+  Food: ["restaurant", "dessert_restaurant", "cafe"],
+  Outdoors: ["park", "scenic_spot", "tourist_attraction"],
+  Sports: ["sports_activity_location", "gym", "sports_club"],
+  Nature: ["park", "scenic_spot", "nature_preserve"],
+  Learning: ["museum", "library", "book_store"],
+  Shopping: ["shopping_mall", "store", "gift_shop"],
+  Recreation: ["video_arcade", "movie_theater", "tourist_attraction"],
+};
+
+function to24Hour(hour12Text: string | undefined, period: string | undefined) {
+  const hour12 = Number.parseInt(hour12Text || "", 10);
+  if (Number.isNaN(hour12) || hour12 < 1 || hour12 > 12) {
+    return null;
+  }
+
+  const normalizedPeriod = (period || "").toUpperCase();
+  if (normalizedPeriod !== "AM" && normalizedPeriod !== "PM") {
+    return null;
+  }
+
+  if (normalizedPeriod === "AM") {
+    return hour12 === 12 ? 0 : hour12;
+  }
+
+  return hour12 === 12 ? 12 : hour12 + 12;
+}
+
+function toPriceLevelFromCost(maxCost?: number) {
+  if (typeof maxCost !== "number" || Number.isNaN(maxCost)) {
+    return "PRICE_LEVEL_UNSPECIFIED";
+  }
+
+  if (maxCost <= 0) return "PRICE_LEVEL_FREE";
+  if (maxCost <= 20) return "PRICE_LEVEL_INEXPENSIVE";
+  if (maxCost <= 50) return "PRICE_LEVEL_MODERATE";
+  if (maxCost <= 100) return "PRICE_LEVEL_EXPENSIVE";
+  return "PRICE_LEVEL_VERY_EXPENSIVE";
+}
+
+function buildActivityPeriods(activity: PlannerActivityInput) {
+  const selectedDays = (activity.bestDaysOfWeek || [])
+    .map((dayName) => DAY_NAME_TO_INDEX[dayName])
+    .filter((day): day is number => typeof day === "number");
+  const days = selectedDays.length ? selectedDays : [0, 1, 2, 3, 4, 5, 6];
+  const timeWindows = activity.bestTimesOfDay || [];
+
+  if (!timeWindows.length) {
+    return [] as NonNullable<PlannerPlace["regularOpeningHours"]>["periods"];
+  }
+
+  return days.flatMap((day) =>
+    timeWindows.flatMap((timeWindow) => {
+      const startHour = to24Hour(
+        timeWindow.startHour12,
+        timeWindow.startPeriod,
+      );
+      const endHour = to24Hour(timeWindow.endHour12, timeWindow.endPeriod);
+
+      if (startHour === null || endHour === null) {
+        return [];
+      }
+
+      const crossesMidnight = endHour <= startHour;
+      return [
+        {
+          open: { day, hour: startHour, minute: 0 },
+          close: {
+            day: crossesMidnight ? (day + 1) % 7 : day,
+            hour: endHour,
+            minute: 0,
+          },
+        },
+      ];
+    }),
+  );
+}
+
+export function convertActivitiesToPlannerPlaces(
+  activities: PlannerActivityInput[],
+): PlannerPlace[] {
+  return activities.map((activity) => {
+    const mappedTypes = Array.from(
+      new Set(
+        activity.categories.flatMap(
+          (category) =>
+            CATEGORY_TO_ACTIVITY_TYPES[category] || ["tourist_attraction"],
+        ),
+      ),
+    );
+    const periods = buildActivityPeriods(activity);
+    return {
+      id: activity.id,
+      types: mappedTypes,
+      formattedAddress: activity.description || "At-home activity",
+      googleMapsUri: "",
+      rating: undefined,
+      priceLevel: toPriceLevelFromCost(activity.cost),
+      location: undefined,
+      businessStatus: "OPERATIONAL",
+      displayName: { text: activity.name },
+      regularOpeningHours: periods.length ? { periods } : undefined,
+      sourceKind: "activity",
+      activeMonths: activity.bestMonthsOfYear || [],
+      activityMinDurationMinutes:
+        typeof activity.durationMinutes?.min === "number"
+          ? activity.durationMinutes.min
+          : undefined,
+    };
+  });
+}
+
 function toMinuteOfWeek(day: number, hour = 0, minute = 0): number {
   return day * 1440 + hour * 60 + minute;
 }
@@ -636,6 +783,53 @@ function isOpenForWindow(
   return false;
 }
 
+function hasMinimumOverlapForWindow(
+  place: PlannerPlace,
+  date: Date,
+  startMinuteOfDay: number,
+  endMinuteOfDay: number,
+  minimumMinutes: number,
+): boolean {
+  const periods = place.regularOpeningHours?.periods || [];
+  if (!periods.length) return false;
+
+  const windowStart = minuteOfWeekFromDate(date, startMinuteOfDay);
+  const windowEndRaw = minuteOfWeekFromDate(date, endMinuteOfDay);
+  const windowEnd =
+    endMinuteOfDay <= startMinuteOfDay ? windowEndRaw + 1440 : windowEndRaw;
+
+  const requiredMinutes = Math.max(1, minimumMinutes);
+
+  for (const period of periods) {
+    const open = period.open;
+    const close = period.close;
+    if (
+      typeof open?.day !== "number" ||
+      typeof open?.hour !== "number" ||
+      typeof close?.day !== "number" ||
+      typeof close?.hour !== "number"
+    ) {
+      continue;
+    }
+
+    const periodStart = toMinuteOfWeek(open.day, open.hour, open.minute || 0);
+    let periodEnd = toMinuteOfWeek(close.day, close.hour, close.minute || 0);
+    if (periodEnd <= periodStart) periodEnd += 10080;
+
+    for (const shift of [0, 10080, -10080]) {
+      const shiftedStart = periodStart + shift;
+      const shiftedEnd = periodEnd + shift;
+      const overlapStart = Math.max(windowStart, shiftedStart);
+      const overlapEnd = Math.min(windowEnd, shiftedEnd);
+      if (overlapEnd - overlapStart >= requiredMinutes) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
 function isOpenAtAbsoluteMinute(
   place: PlannerPlace,
   startDate: Date,
@@ -664,6 +858,23 @@ function matchesSelectedCategory(
   return placeTypes.some((type) => categoryTypes.has(type));
 }
 
+function matchesRequestedMonth(
+  place: PlannerPlace,
+  requestedDate: Date,
+): boolean {
+  if (place.sourceKind !== "activity") {
+    return true;
+  }
+
+  const months = place.activeMonths || [];
+  if (!months.length) {
+    return true;
+  }
+
+  const monthName = requestedDate.toLocaleString("en-US", { month: "long" });
+  return months.includes(monthName);
+}
+
 function toResponsePlace(place: PlannerPlace): ResponsePlace {
   return {
     id: place.id,
@@ -672,6 +883,7 @@ function toResponsePlace(place: PlannerPlace): ResponsePlace {
     types: place.types || [],
     googleMapsUri: place.googleMapsUri || "",
     rating: place.rating || null,
+    sourceKind: place.sourceKind || "place",
     location: {
       latitude: place.location?.latitude ?? null,
       longitude: place.location?.longitude ?? null,
@@ -1022,6 +1234,7 @@ function ensurePlaceOpenAtMinute(
   if (!place) return false;
   const source = placeById[place.id];
   if (!source) return false;
+
   return isOpenAtAbsoluteMinute(source, requestedDate, absoluteMinute);
 }
 
@@ -1273,6 +1486,10 @@ export function generateDatePlannerIdeasFromPlaces(input: {
       return false;
     }
 
+    if (!matchesRequestedMonth(place, requestedDate)) {
+      return false;
+    }
+
     if (!matchesSelectedCategory(place, categoryTypes)) {
       return false;
     }
@@ -1285,16 +1502,46 @@ export function generateDatePlannerIdeasFromPlaces(input: {
       return false;
     }
 
-    return isOpenForWindow(
-      place,
-      requestedDate,
-      request.startHour * 60,
-      request.endHour * 60,
-    );
+    const startMinute = request.startHour * 60;
+    const endMinute = request.endHour * 60;
+
+    if (place.sourceKind === "activity") {
+      const minDuration =
+        typeof place.activityMinDurationMinutes === "number"
+          ? place.activityMinDurationMinutes
+          : 30;
+
+      return hasMinimumOverlapForWindow(
+        place,
+        requestedDate,
+        startMinute,
+        endMinute,
+        minDuration,
+      );
+    }
+
+    return isOpenForWindow(place, requestedDate, startMinute, endMinute);
   });
 
-  const shuffled = shuffleArray(filtered);
-  const limitedPlaces = shuffled.slice(0, 250);
+  const filteredActivities = filtered.filter(
+    (place) => place.sourceKind === "activity",
+  );
+  const filteredPlaces = filtered.filter(
+    (place) => place.sourceKind !== "activity",
+  );
+
+  const shuffledActivities = shuffleArray(filteredActivities);
+  const shuffledPlaces = shuffleArray(filteredPlaces);
+
+  const remainingCapacity = Math.max(
+    0,
+    MAX_MATCHED_CANDIDATES - shuffledActivities.length,
+  );
+
+  const limitedPlaces = [
+    ...shuffledActivities,
+    ...shuffledPlaces.slice(0, remainingCapacity),
+  ].slice(0, MAX_MATCHED_CANDIDATES);
   const buckets = buildBuckets(limitedPlaces);
   const placeById = Object.fromEntries(
     limitedPlaces.map((place) => [place.id, place]),
@@ -1316,7 +1563,7 @@ export function generateDatePlannerIdeasFromPlaces(input: {
   return {
     sourceFile,
     totalMatches: filtered.length,
-    matchedPlaces: limitedPlaces.map(toResponsePlace),
+    matchedPlaces: filtered.map(toResponsePlace),
     templates: DATE_TEMPLATES,
     ideas,
   };

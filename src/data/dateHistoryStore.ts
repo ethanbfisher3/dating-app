@@ -1,22 +1,24 @@
 export type RecordedDate = {
-  id: string
-  dateOfDate: string // ISO date string
-  whatYouDid: string
-  moneySpent: number
-  whatYouLiked: string
-  whatYouLearned: string
-  recordedAt: string // ISO timestamp
-}
+  id: string;
+  dateOfDate: string; // ISO date string
+  whoWentWith: string;
+  whatYouDid: string;
+  moneySpent: number;
+  rating: number | null;
+  whatYouLiked: string;
+  whatYouLearned: string;
+  recordedAt: string; // ISO timestamp
+};
 
-let recordedDates: RecordedDate[] = []
-const listeners = new Set<() => void>()
+let recordedDates: RecordedDate[] = [];
+const listeners = new Set<() => void>();
 
 function notifyListeners() {
-  listeners.forEach((listener) => listener())
+  listeners.forEach((listener) => listener());
 }
 
 export function getRecordedDates(): RecordedDate[] {
-  return [...recordedDates]
+  return [...recordedDates];
 }
 
 export function addRecordedDate(
@@ -26,49 +28,49 @@ export function addRecordedDate(
     ...date,
     id: `${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
     recordedAt: new Date().toISOString(),
-  }
+  };
 
-  recordedDates = [recordedDate, ...recordedDates]
-  notifyListeners()
-  return recordedDate
+  recordedDates = [recordedDate, ...recordedDates];
+  notifyListeners();
+  return recordedDate;
 }
 
 export function removeRecordedDate(id: string): void {
-  const nextRecordedDates = recordedDates.filter((date) => date.id !== id)
+  const nextRecordedDates = recordedDates.filter((date) => date.id !== id);
   if (nextRecordedDates.length === recordedDates.length) {
-    return
+    return;
   }
 
-  recordedDates = nextRecordedDates
-  notifyListeners()
+  recordedDates = nextRecordedDates;
+  notifyListeners();
 }
 
 export function updateRecordedDate(
   id: string,
   updates: Omit<RecordedDate, "id" | "recordedAt">,
 ): void {
-  const recordIndex = recordedDates.findIndex((date) => date.id === id)
+  const recordIndex = recordedDates.findIndex((date) => date.id === id);
   if (recordIndex === -1) {
-    return
+    return;
   }
 
   const updatedDate: RecordedDate = {
     ...recordedDates[recordIndex],
     ...updates,
-  }
+  };
 
   recordedDates = [
     ...recordedDates.slice(0, recordIndex),
     updatedDate,
     ...recordedDates.slice(recordIndex + 1),
-  ]
+  ];
 
-  notifyListeners()
+  notifyListeners();
 }
 
 export function subscribeRecordedDates(listener: () => void): () => void {
-  listeners.add(listener)
+  listeners.add(listener);
   return () => {
-    listeners.delete(listener)
-  }
+    listeners.delete(listener);
+  };
 }
