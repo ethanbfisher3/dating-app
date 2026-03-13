@@ -1,4 +1,4 @@
-import type { FilledIdea } from "../hooks/useDatePlannerIdeas";
+import type { FilledIdea } from "../hooks/useFilledIdeas";
 
 export type SavedDateIdea = FilledIdea & {
   id: string;

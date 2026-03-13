@@ -210,12 +210,11 @@ export default function RecipesPage({
                     <Text style={styles.meta}>💰 ${recipe.estimatedPrice}</Text>
                   </View>
                   <View style={styles.categoriesContainer}>
-                    {recipe.categories &&
-                      recipe.categories.slice(0, 2).map((cat, i) => (
-                        <View key={i} style={styles.categoryTag}>
-                          <Text style={styles.categoryText}>{cat}</Text>
-                        </View>
-                      ))}
+                    {recipe.categories.map((cat, i) => (
+                      <View key={i} style={styles.categoryTag}>
+                        <Text style={styles.categoryText}>{cat}</Text>
+                      </View>
+                    ))}
                   </View>
                 </View>
               </TouchableOpacity>

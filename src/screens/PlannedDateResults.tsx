@@ -18,7 +18,9 @@ import type {
   PlannedDateResultsParams,
 } from "../types/navigation";
 import useDatePlannerIdeas from "../hooks/useDatePlannerIdeas";
+import useFilledIdeas from "../hooks/useFilledIdeas";
 import { saveDateIdea } from "../data/savedIdeasStore";
+import recipes from "src/data/Recipes";
 
 const DATE_CATEGORIES = [
   "Food",
@@ -89,15 +91,15 @@ export default function PlannedDateResults({
     });
   };
 
-  const {
-    ideas,
-    totalMatches,
-    matchedPlaces,
-    sourceFile,
-    isLoading,
-    error,
-    refetch,
-  } = useDatePlannerIdeas(plannerParams);
+  const { places, recipes, activities, sourceFile, isLoading, error, refetch } =
+    useDatePlannerIdeas(plannerParams);
+
+  const filledIdeas = useFilledIdeas({
+    params: plannerParams,
+    places,
+    recipes,
+    activities,
+  });
 
   const {
     selectedDate,
@@ -108,14 +110,6 @@ export default function PlannedDateResults({
     hasStarvingStudentCard,
     categories,
   } = plannerParams;
-
-  const devPlaces = matchedPlaces.filter((item) => item.sourceKind === "place");
-  const devActivities = matchedPlaces.filter(
-    (item) => item.sourceKind === "activity",
-  );
-  const devRecipes = matchedPlaces.filter(
-    (item) => item.sourceKind === "recipe",
-  );
 
   const formatHour = (hour24: number) => {
     const normalized = ((hour24 % 24) + 24) % 24;
@@ -836,7 +830,7 @@ export default function PlannedDateResults({
                 color: "#1f2d3d",
               }}
             >
-              Dev: Returned items ({matchedPlaces.length})
+              Dev: Returned items ({places.length})
             </Text>
             <Text style={{ color: "#1e90ff", fontWeight: "700" }}>
               {showDevMatches ? "Hide" : "Show"}
@@ -864,7 +858,7 @@ export default function PlannedDateResults({
                 <Text
                   style={{ fontSize: 14, fontWeight: "700", color: "#2c3e50" }}
                 >
-                  Places ({devPlaces.length})
+                  Places ({places.length})
                 </Text>
                 <Text style={{ color: "#1e90ff", fontWeight: "700" }}>
                   {showDevPlaces ? "Hide" : "Show"}
@@ -875,8 +869,8 @@ export default function PlannedDateResults({
                 <View
                   style={{ paddingHorizontal: 14, paddingBottom: 10, gap: 6 }}
                 >
-                  {devPlaces.length ? (
-                    devPlaces.map((place) => (
+                  {places.length ? (
+                    places.map((place) => (
                       <Text
                         key={place.id}
                         style={{ fontSize: 14, color: "#2c3e50" }}
@@ -907,7 +901,7 @@ export default function PlannedDateResults({
                 <Text
                   style={{ fontSize: 14, fontWeight: "700", color: "#2c3e50" }}
                 >
-                  Activities ({devActivities.length})
+                  Activities ({activities.length})
                 </Text>
                 <Text style={{ color: "#1e90ff", fontWeight: "700" }}>
                   {showDevActivities ? "Hide" : "Show"}
@@ -918,8 +912,8 @@ export default function PlannedDateResults({
                 <View
                   style={{ paddingHorizontal: 14, paddingBottom: 10, gap: 6 }}
                 >
-                  {devActivities.length ? (
-                    devActivities.map((activity) => (
+                  {activities.length ? (
+                    activities.map((activity) => (
                       <Text
                         key={activity.id}
                         style={{ fontSize: 14, color: "#2c3e50" }}
@@ -950,7 +944,7 @@ export default function PlannedDateResults({
                 <Text
                   style={{ fontSize: 14, fontWeight: "700", color: "#2c3e50" }}
                 >
-                  Recipes ({devRecipes.length})
+                  Recipes ({recipes.length})
                 </Text>
                 <Text style={{ color: "#1e90ff", fontWeight: "700" }}>
                   {showDevRecipes ? "Hide" : "Show"}
@@ -961,10 +955,10 @@ export default function PlannedDateResults({
                 <View
                   style={{ paddingHorizontal: 14, paddingBottom: 10, gap: 6 }}
                 >
-                  {devRecipes.length ? (
-                    devRecipes.map((recipe) => (
+                  {recipes.length ? (
+                    recipes.map((recipe, index) => (
                       <Text
-                        key={recipe.id}
+                        key={index}
                         style={{ fontSize: 14, color: "#2c3e50" }}
                       >
                         • {recipe.name}
@@ -1031,7 +1025,7 @@ export default function PlannedDateResults({
       ) : null}
 
       {!isLoading && !error
-        ? ideas.map((idea, index) => {
+        ? filledIdeas.map((idea, index) => {
             const places = Object.values(idea.places || {}).filter(Boolean);
             const schedule = idea.schedule || [];
             const isExpanded = expandedIdeas.has(index);
