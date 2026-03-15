@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react"
 import {
   KeyboardAvoidingView,
   Platform,
@@ -9,59 +9,59 @@ import {
   TouchableOpacity,
   Image,
   TextInput,
-} from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import recipes, { Recipe } from "../data/Recipes";
-import type { AppNavigation } from "../types/navigation";
+} from "react-native"
+import { Ionicons } from "@expo/vector-icons"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
+import recipes from "../data/Recipes"
+import type { AppNavigation } from "../types/navigation"
 
 export default function RecipesPage({
   navigation,
 }: {
-  navigation: AppNavigation;
+  navigation: AppNavigation
 }) {
-  const [budget, setBudget] = useState("");
-  const [mealType, setMealType] = useState("");
-  const [time, setTime] = useState("");
-  const [filtersExpanded, setFiltersExpanded] = useState(false);
-  const scrollRef = useRef<ScrollView>(null);
+  const insets = useSafeAreaInsets()
+  const [budget, setBudget] = useState("")
+  const [mealType, setMealType] = useState("")
+  const [time, setTime] = useState("")
+  const [filtersExpanded, setFiltersExpanded] = useState(false)
+  const scrollRef = useRef<ScrollView>(null)
 
   const handleFilterInputFocus = (event: any) => {
-    const target = event?.target;
+    const target = event?.target
     if (!target) {
-      return;
+      return
     }
 
     setTimeout(() => {
-      (scrollRef.current as any)?.scrollResponderScrollNativeHandleToKeyboard?.(
-        target,
-        120,
-        true,
-      );
-    }, 120);
-  };
+      ;(
+        scrollRef.current as any
+      )?.scrollResponderScrollNativeHandleToKeyboard?.(target, 120, true)
+    }, 120)
+  }
 
-  const mealTypes = ["Breakfast", "Lunch", "Dinner", "Dessert", "Snack"];
+  const mealTypes = ["Breakfast", "Lunch", "Dinner", "Dessert", "Snack"]
 
   const filteredRecipes = useMemo(() => {
     return recipes.filter((recipe) => {
-      const budgetNum = budget ? parseFloat(budget) : null;
-      const timeNum = time ? parseFloat(time) : null;
+      const budgetNum = budget ? parseFloat(budget) : null
+      const timeNum = time ? parseFloat(time) : null
 
       if (budgetNum !== null && recipe.estimatedPrice > budgetNum) {
-        return false;
+        return false
       }
 
       if (timeNum !== null && recipe.estimatedTime > timeNum) {
-        return false;
+        return false
       }
 
       if (mealType && !recipe.categories?.includes(mealType)) {
-        return false;
+        return false
       }
 
-      return true;
-    });
-  }, [budget, mealType, time]);
+      return true
+    })
+  }, [budget, mealType, time])
 
   return (
     <KeyboardAvoidingView
@@ -72,7 +72,10 @@ export default function RecipesPage({
       <ScrollView
         ref={scrollRef}
         style={styles.container}
-        contentContainerStyle={{ paddingTop: 36, paddingBottom: 24 }}
+        contentContainerStyle={{
+          paddingTop: insets.top,
+          paddingBottom: 24,
+        }}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="interactive"
       >
@@ -157,9 +160,9 @@ export default function RecipesPage({
               <TouchableOpacity
                 style={styles.clearButton}
                 onPress={() => {
-                  setBudget("");
-                  setMealType("");
-                  setTime("");
+                  setBudget("")
+                  setMealType("")
+                  setTime("")
                 }}
               >
                 <Text style={styles.clearButtonText}>Clear Filters</Text>
@@ -200,9 +203,9 @@ export default function RecipesPage({
                 )}
                 <View style={styles.recipeInfo}>
                   <Text style={styles.recipeName}>{recipe.name}</Text>
-                  <Text style={styles.recipeDescription} numberOfLines={2}>
+                  {/* <Text style={styles.recipeDescription} numberOfLines={2}>
                     {recipe.description}
-                  </Text>
+                  </Text> */}
                   <View style={styles.metaContainer}>
                     <Text style={styles.meta}>
                       ⏱ {recipe.estimatedTime} min
@@ -223,7 +226,7 @@ export default function RecipesPage({
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -232,13 +235,13 @@ const styles = StyleSheet.create({
     backgroundColor: "#fafbfc",
   },
   header: {
-    padding: 24,
+    paddingHorizontal: 24,
     paddingBottom: 16,
   },
   title: {
     fontWeight: "900",
     fontSize: 36,
-    marginVertical: 0,
+    marginTop: 24,
     marginBottom: 12,
     color: "#1a1a1a",
   },
@@ -364,8 +367,8 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   recipeImage: {
-    width: 120,
-    height: 120,
+    width: "30%",
+    height: "100%",
     backgroundColor: "#f0f0f0",
   },
   recipeInfo: {
@@ -411,4 +414,4 @@ const styles = StyleSheet.create({
     color: "#007AFF",
     fontWeight: "600",
   },
-});
+})

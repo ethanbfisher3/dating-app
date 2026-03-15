@@ -1,9 +1,8 @@
-import React, { useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react"
 import {
   ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
-  Linking,
   Modal,
   Platform,
   ScrollView,
@@ -11,16 +10,16 @@ import {
   TextInput,
   TouchableOpacity,
   View,
-} from "react-native";
-import DateTimePicker from "@react-native-community/datetimepicker";
+} from "react-native"
+import DateTimePicker from "@react-native-community/datetimepicker"
 import type {
   AppScreenProps,
   PlannedDateResultsParams,
-} from "../types/navigation";
-import useDatePlannerIdeas from "../hooks/useDatePlannerIdeas";
-import useFilledIdeas from "../hooks/useFilledIdeas";
-import { saveDateIdea } from "../data/savedIdeasStore";
-import recipes from "src/data/Recipes";
+} from "../types/navigation"
+import useDatePlannerIdeas from "../hooks/useDatePlannerIdeas"
+import useFilledIdeas from "../hooks/useFilledIdeas"
+import { saveDateIdea } from "../data/savedIdeasStore"
+import IdeaPlaceLinks from "../Components/IdeaPlaceLinks"
 
 const DATE_CATEGORIES = [
   "Food",
@@ -30,76 +29,100 @@ const DATE_CATEGORIES = [
   "Learning",
   "Shopping",
   "Recreation",
-];
+]
+
+const DEV_PLACE_SLOT_TYPES: Record<string, string[]> = {
+  meal: ["restaurant", "meal_takeaway", "cafe", "pizza_restaurant"],
+  dessert: ["bakery", "ice_cream_shop", "dessert_restaurant", "cafe"],
+  park: ["park", "hiking_area", "nature_preserve", "lake", "river"],
+  learningSpot: ["museum", "library", "book_store", "art_gallery"],
+  shop: ["shopping_mall", "department_store", "clothing_store", "store"],
+}
 
 export default function PlannedDateResults({
   route,
   navigation,
 }: AppScreenProps<"PlannedDateResults">) {
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerBackTitle: "Back",
+      title: "Date Ideas",
+    })
+  }, [navigation])
+
   const [plannerParams, setPlannerParams] = useState<PlannedDateResultsParams>(
     route.params,
-  );
-  const [isEditModalVisible, setIsEditModalVisible] = useState(false);
-  const [showEditDatePicker, setShowEditDatePicker] = useState(false);
-  const [editError, setEditError] = useState<string | null>(null);
+  )
+  const [isEditModalVisible, setIsEditModalVisible] = useState(false)
+  const [showEditDatePicker, setShowEditDatePicker] = useState(false)
+  const [editError, setEditError] = useState<string | null>(null)
   const [draftSelectedDate, setDraftSelectedDate] = useState(
     route.params.selectedDate,
-  );
-  const initialStartHour24 = ((route.params.startHour % 24) + 24) % 24;
-  const initialEndHour24 = ((route.params.endHour % 24) + 24) % 24;
+  )
+  const initialStartHour24 = ((route.params.startHour % 24) + 24) % 24
+  const initialEndHour24 = ((route.params.endHour % 24) + 24) % 24
   const [draftStartHour12, setDraftStartHour12] = useState(
     String(initialStartHour24 % 12 === 0 ? 12 : initialStartHour24 % 12),
-  );
+  )
   const [draftStartPeriod, setDraftStartPeriod] = useState<"AM" | "PM">(
     initialStartHour24 < 12 ? "AM" : "PM",
-  );
+  )
   const [draftEndHour12, setDraftEndHour12] = useState(
     String(initialEndHour24 % 12 === 0 ? 12 : initialEndHour24 % 12),
-  );
+  )
   const [draftEndPeriod, setDraftEndPeriod] = useState<"AM" | "PM">(
     initialEndHour24 < 12 ? "AM" : "PM",
-  );
+  )
   const [draftMaxPrice, setDraftMaxPrice] = useState(
     String(route.params.maxPrice),
-  );
+  )
   const [draftMaxDistance, setDraftMaxDistance] = useState(
     String(route.params.maxDistance),
-  );
+  )
   const [draftHasStarvingStudentCard, setDraftHasStarvingStudentCard] =
-    useState(route.params.hasStarvingStudentCard);
+    useState(route.params.hasStarvingStudentCard)
   const [draftCategoriesChecked, setDraftCategoriesChecked] = useState(
     DATE_CATEGORIES.map((category) =>
       route.params.categories.includes(category),
     ),
-  );
-  const [expandedIdeas, setExpandedIdeas] = useState<Set<number>>(new Set());
-  const [showDevMatches, setShowDevMatches] = useState(false);
-  const [showDevPlaces, setShowDevPlaces] = useState(false);
-  const [showDevActivities, setShowDevActivities] = useState(false);
-  const [showDevRecipes, setShowDevRecipes] = useState(false);
-  const editModalScrollRef = useRef<ScrollView>(null);
+  )
+  const [expandedIdeas, setExpandedIdeas] = useState<Set<number>>(new Set())
+  const [showDevMatches, setShowDevMatches] = useState(false)
+  const [showDevPlaces, setShowDevPlaces] = useState(false)
+  const [showDevActivities, setShowDevActivities] = useState(false)
+  const [showDevRecipes, setShowDevRecipes] = useState(false)
+  const [showDevByuEvents, setShowDevByuEvents] = useState(false)
+  const editModalScrollRef = useRef<ScrollView>(null)
 
   const toggleIdeaExpanded = (index: number) => {
     setExpandedIdeas((prev) => {
-      const next = new Set(prev);
+      const next = new Set(prev)
       if (next.has(index)) {
-        next.delete(index);
+        next.delete(index)
       } else {
-        next.add(index);
+        next.add(index)
       }
-      return next;
-    });
-  };
+      return next
+    })
+  }
 
-  const { places, recipes, activities, sourceFile, isLoading, error, refetch } =
-    useDatePlannerIdeas(plannerParams);
+  const {
+    places,
+    recipes,
+    activities,
+    byuEvents,
+    sourceFile,
+    isLoading,
+    error,
+    refetch,
+  } = useDatePlannerIdeas(plannerParams)
 
   const filledIdeas = useFilledIdeas({
     params: plannerParams,
     places,
     recipes,
     activities,
-  });
+  })
 
   const {
     selectedDate,
@@ -109,99 +132,108 @@ export default function PlannedDateResults({
     maxDistance,
     hasStarvingStudentCard,
     categories,
-  } = plannerParams;
+  } = plannerParams
+
+  const devPlaceSlotCounts = Object.entries(DEV_PLACE_SLOT_TYPES).map(
+    ([slot, allowedTypes]) => ({
+      slot,
+      count: places.filter((place) =>
+        place.types.some((type) => allowedTypes.includes(type)),
+      ).length,
+    }),
+  )
 
   const formatHour = (hour24: number) => {
-    const normalized = ((hour24 % 24) + 24) % 24;
-    const period = normalized < 12 ? "AM" : "PM";
-    const hour12 = normalized % 12 === 0 ? 12 : normalized % 12;
-    return `${hour12}:00 ${period}`;
-  };
+    const normalized = ((hour24 % 24) + 24) % 24
+    const period = normalized < 12 ? "AM" : "PM"
+    const hour12 = normalized % 12 === 0 ? 12 : normalized % 12
+    return `${hour12}:00 ${period}`
+  }
 
   const clampHour12 = (value: number) => {
-    if (Number.isNaN(value)) return 1;
-    if (value < 1) return 1;
-    if (value > 12) return 12;
-    return value;
-  };
+    if (Number.isNaN(value)) return 1
+    if (value < 1) return 1
+    if (value > 12) return 12
+    return value
+  }
 
   const convertTo24Hour = (hour12: number, period: "AM" | "PM") => {
     if (period === "AM") {
-      return hour12 === 12 ? 0 : hour12;
+      return hour12 === 12 ? 0 : hour12
     }
-    return hour12 === 12 ? 12 : hour12 + 12;
-  };
+    return hour12 === 12 ? 12 : hour12 + 12
+  }
 
   const toggleDraftCategory = (index: number) => {
     setDraftCategoriesChecked((current) => {
-      const updated = [...current];
-      updated[index] = !updated[index];
-      return updated;
-    });
-  };
+      const updated = [...current]
+      updated[index] = !updated[index]
+      return updated
+    })
+  }
 
   const openEditModal = () => {
-    const startHour24 = ((plannerParams.startHour % 24) + 24) % 24;
-    const endHour24 = ((plannerParams.endHour % 24) + 24) % 24;
+    const startHour24 = ((plannerParams.startHour % 24) + 24) % 24
+    const endHour24 = ((plannerParams.endHour % 24) + 24) % 24
 
-    setDraftSelectedDate(plannerParams.selectedDate);
-    setDraftStartHour12(String(startHour24 % 12 === 0 ? 12 : startHour24 % 12));
-    setDraftStartPeriod(startHour24 < 12 ? "AM" : "PM");
-    setDraftEndHour12(String(endHour24 % 12 === 0 ? 12 : endHour24 % 12));
-    setDraftEndPeriod(endHour24 < 12 ? "AM" : "PM");
-    setDraftMaxPrice(String(plannerParams.maxPrice));
-    setDraftMaxDistance(String(plannerParams.maxDistance));
-    setDraftHasStarvingStudentCard(plannerParams.hasStarvingStudentCard);
+    setDraftSelectedDate(plannerParams.selectedDate)
+    setDraftStartHour12(String(startHour24 % 12 === 0 ? 12 : startHour24 % 12))
+    setDraftStartPeriod(startHour24 < 12 ? "AM" : "PM")
+    setDraftEndHour12(String(endHour24 % 12 === 0 ? 12 : endHour24 % 12))
+    setDraftEndPeriod(endHour24 < 12 ? "AM" : "PM")
+    setDraftMaxPrice(String(plannerParams.maxPrice))
+    setDraftMaxDistance(String(plannerParams.maxDistance))
+    setDraftHasStarvingStudentCard(plannerParams.hasStarvingStudentCard)
     setDraftCategoriesChecked(
       DATE_CATEGORIES.map((category) =>
         plannerParams.categories.includes(category),
       ),
-    );
-    setShowEditDatePicker(false);
-    setEditError(null);
-    setIsEditModalVisible(true);
-  };
+    )
+    setShowEditDatePicker(false)
+    setEditError(null)
+    setIsEditModalVisible(true)
+  }
 
   const applyEditsAndRegenerate = () => {
-    const nextStartHour12 = Number.parseInt(draftStartHour12, 10);
-    const nextEndHour12 = Number.parseInt(draftEndHour12, 10);
-    const nextMaxPrice = Number.parseInt(draftMaxPrice, 10);
-    const nextMaxDistance = Number.parseInt(draftMaxDistance, 10);
+    const nextStartHour12 = Number.parseInt(draftStartHour12, 10)
+    const nextEndHour12 = Number.parseInt(draftEndHour12, 10)
+    const nextMaxPrice = Number.parseInt(draftMaxPrice, 10)
+    const nextMaxDistance = Number.parseInt(draftMaxDistance, 10)
     const nextCategories = DATE_CATEGORIES.filter(
       (_, index) => draftCategoriesChecked[index],
-    );
+    )
 
     if (!/^\d{4}-\d{2}-\d{2}$/.test(draftSelectedDate)) {
-      setEditError("Date must be in YYYY-MM-DD format.");
-      return;
+      setEditError("Date must be in YYYY-MM-DD format.")
+      return
     }
 
     if (Number.isNaN(nextStartHour12) || Number.isNaN(nextEndHour12)) {
-      setEditError("Start and end hours are required.");
-      return;
+      setEditError("Start and end hours are required.")
+      return
     }
 
     if (
       clampHour12(nextStartHour12) !== nextStartHour12 ||
       clampHour12(nextEndHour12) !== nextEndHour12
     ) {
-      setEditError("Start and end hours must be between 1 and 12.");
-      return;
+      setEditError("Start and end hours must be between 1 and 12.")
+      return
     }
 
     if (Number.isNaN(nextMaxPrice) || nextMaxPrice < 0) {
-      setEditError("Budget must be a non-negative number.");
-      return;
+      setEditError("Budget must be a non-negative number.")
+      return
     }
 
     if (Number.isNaN(nextMaxDistance) || nextMaxDistance < 0) {
-      setEditError("Distance must be a non-negative number.");
-      return;
+      setEditError("Distance must be a non-negative number.")
+      return
     }
 
     if (!nextCategories.length) {
-      setEditError("Add at least one category.");
-      return;
+      setEditError("Add at least one category.")
+      return
     }
 
     setPlannerParams({
@@ -213,28 +245,28 @@ export default function PlannedDateResults({
       hasStarvingStudentCard: draftHasStarvingStudentCard,
       categories: nextCategories,
       userLocation: plannerParams.userLocation ?? null,
-    });
-    setIsEditModalVisible(false);
-    setEditError(null);
-  };
+    })
+    setIsEditModalVisible(false)
+    setEditError(null)
+  }
 
   const draftDateValue = (() => {
-    const parsed = new Date(`${draftSelectedDate}T12:00:00`);
-    return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
-  })();
+    const parsed = new Date(`${draftSelectedDate}T12:00:00`)
+    return Number.isNaN(parsed.getTime()) ? new Date() : parsed
+  })()
 
   const handleEditInputFocus = (event: any) => {
-    const target = event?.target;
+    const target = event?.target
     if (!target) {
-      return;
+      return
     }
 
     setTimeout(() => {
-      (
+      ;(
         editModalScrollRef.current as any
-      )?.scrollResponderScrollNativeHandleToKeyboard?.(target, 120, true);
-    }, 120);
-  };
+      )?.scrollResponderScrollNativeHandleToKeyboard?.(target, 120, true)
+    }, 120)
+  }
 
   return (
     <ScrollView
@@ -266,6 +298,20 @@ export default function PlannedDateResults({
         Here are 10 generated date templates based on your categories, date, and
         time window.
       </Text>
+
+      {places.length === 0 && (
+        <Text
+          style={{
+            marginBottom: 16,
+            fontSize: 17,
+            lineHeight: 26,
+            color: "darkorange",
+          }}
+        >
+          You appear to be far from the Provo area. Your results won't include
+          any places nearby.
+        </Text>
+      )}
 
       <View
         style={{
@@ -327,7 +373,10 @@ export default function PlannedDateResults({
       </View>
 
       <TouchableOpacity
-        onPress={refetch}
+        onPress={() => {
+          setExpandedIdeas(new Set())
+          refetch()
+        }}
         disabled={isLoading}
         style={{
           backgroundColor: "#28a745",
@@ -348,8 +397,8 @@ export default function PlannedDateResults({
         transparent
         animationType="fade"
         onRequestClose={() => {
-          setShowEditDatePicker(false);
-          setIsEditModalVisible(false);
+          setShowEditDatePicker(false)
+          setIsEditModalVisible(false)
         }}
       >
         <KeyboardAvoidingView
@@ -444,17 +493,17 @@ export default function PlannedDateResults({
                       value={draftStartHour12}
                       onChangeText={(text) => {
                         if (text.trim() === "") {
-                          setDraftStartHour12("");
-                          return;
+                          setDraftStartHour12("")
+                          return
                         }
 
-                        const parsed = parseInt(text, 10);
+                        const parsed = parseInt(text, 10)
                         if (Number.isNaN(parsed)) {
-                          setDraftStartHour12("");
-                          return;
+                          setDraftStartHour12("")
+                          return
                         }
 
-                        setDraftStartHour12(String(clampHour12(parsed)));
+                        setDraftStartHour12(String(clampHour12(parsed)))
                       }}
                       placeholder="1-12"
                       onFocus={handleEditInputFocus}
@@ -516,17 +565,17 @@ export default function PlannedDateResults({
                       value={draftEndHour12}
                       onChangeText={(text) => {
                         if (text.trim() === "") {
-                          setDraftEndHour12("");
-                          return;
+                          setDraftEndHour12("")
+                          return
                         }
 
-                        const parsed = parseInt(text, 10);
+                        const parsed = parseInt(text, 10)
                         if (Number.isNaN(parsed)) {
-                          setDraftEndHour12("");
-                          return;
+                          setDraftEndHour12("")
+                          return
                         }
 
-                        setDraftEndHour12(String(clampHour12(parsed)));
+                        setDraftEndHour12(String(clampHour12(parsed)))
                       }}
                       placeholder="1-12"
                       onFocus={handleEditInputFocus}
@@ -613,7 +662,7 @@ export default function PlannedDateResults({
                 }}
               >
                 {DATE_CATEGORIES.map((category, index) => {
-                  const isSelected = draftCategoriesChecked[index];
+                  const isSelected = draftCategoriesChecked[index]
                   return (
                     <TouchableOpacity
                       key={category}
@@ -637,7 +686,7 @@ export default function PlannedDateResults({
                         {category}
                       </Text>
                     </TouchableOpacity>
-                  );
+                  )
                 })}
               </View>
 
@@ -703,9 +752,9 @@ export default function PlannedDateResults({
               >
                 <TouchableOpacity
                   onPress={() => {
-                    setShowEditDatePicker(false);
-                    setIsEditModalVisible(false);
-                    setEditError(null);
+                    setShowEditDatePicker(false)
+                    setIsEditModalVisible(false)
+                    setEditError(null)
                   }}
                   style={{
                     backgroundColor: "#6c757d",
@@ -763,15 +812,15 @@ export default function PlannedDateResults({
                   themeVariant={Platform.OS === "ios" ? "light" : undefined}
                   onChange={(event, date) => {
                     if (Platform.OS === "android") {
-                      setShowEditDatePicker(false);
+                      setShowEditDatePicker(false)
                       if (event.type === "set" && date) {
-                        setDraftSelectedDate(date.toISOString().slice(0, 10));
+                        setDraftSelectedDate(date.toISOString().slice(0, 10))
                       }
-                      return;
+                      return
                     }
 
                     if (date) {
-                      setDraftSelectedDate(date.toISOString().slice(0, 10));
+                      setDraftSelectedDate(date.toISOString().slice(0, 10))
                     }
                   }}
                 />
@@ -869,6 +918,40 @@ export default function PlannedDateResults({
                 <View
                   style={{ paddingHorizontal: 14, paddingBottom: 10, gap: 6 }}
                 >
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      fontWeight: "700",
+                      color: "#667788",
+                      marginBottom: 4,
+                    }}
+                  >
+                    Slot candidate counts
+                  </Text>
+                  {devPlaceSlotCounts.map(({ slot, count }) => (
+                    <Text
+                      key={slot}
+                      style={{
+                        fontSize: 13,
+                        color: "#556677",
+                        marginBottom: 2,
+                      }}
+                    >
+                      • {slot}: {count}
+                    </Text>
+                  ))}
+
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      fontWeight: "700",
+                      color: "#667788",
+                      marginTop: 6,
+                      marginBottom: 2,
+                    }}
+                  >
+                    Returned places
+                  </Text>
                   {places.length ? (
                     places.map((place) => (
                       <Text
@@ -971,15 +1054,75 @@ export default function PlannedDateResults({
                   )}
                 </View>
               ) : null}
+
+              <TouchableOpacity
+                onPress={() => setShowDevByuEvents((prev) => !prev)}
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  paddingHorizontal: 14,
+                  paddingVertical: 10,
+                  borderTopWidth: 1,
+                  borderTopColor: "#eef2f7",
+                }}
+              >
+                <Text
+                  style={{ fontSize: 14, fontWeight: "700", color: "#2c3e50" }}
+                >
+                  BYU Events ({byuEvents.length})
+                </Text>
+                <Text style={{ color: "#1e90ff", fontWeight: "700" }}>
+                  {showDevByuEvents ? "Hide" : "Show"}
+                </Text>
+              </TouchableOpacity>
+
+              {showDevByuEvents ? (
+                <View
+                  style={{ paddingHorizontal: 14, paddingBottom: 10, gap: 8 }}
+                >
+                  {byuEvents.length ? (
+                    byuEvents.map((event) => (
+                      <View key={event.id}>
+                        <Text
+                          style={{
+                            fontSize: 13,
+                            fontWeight: "700",
+                            color: "#334155",
+                          }}
+                        >
+                          • {event.title}
+                        </Text>
+                        {event.startDateTime ? (
+                          <Text style={{ fontSize: 13, color: "#2c3e50" }}>
+                            {event.startDateTime}
+                          </Text>
+                        ) : null}
+                      </View>
+                    ))
+                  ) : (
+                    <Text style={{ fontSize: 14, color: "#667788" }}>
+                      No BYU events.
+                    </Text>
+                  )}
+                </View>
+              ) : null}
             </View>
           ) : null}
-        </View>
-      ) : null}
 
-      {sourceFile ? (
-        <Text style={{ marginBottom: 16, fontSize: 13, color: "#7a8a99" }}>
-          Source: {sourceFile}
-        </Text>
+          {sourceFile ? (
+            <Text
+              style={{
+                marginBottom: 16,
+                paddingLeft: 16,
+                fontSize: 13,
+                color: "#7a8a99",
+              }}
+            >
+              Source: {sourceFile}
+            </Text>
+          ) : null}
+        </View>
       ) : null}
 
       {isLoading ? (
@@ -1026,9 +1169,9 @@ export default function PlannedDateResults({
 
       {!isLoading && !error
         ? filledIdeas.map((idea, index) => {
-            const places = Object.values(idea.places || {}).filter(Boolean);
-            const schedule = idea.schedule || [];
-            const isExpanded = expandedIdeas.has(index);
+            const places = Object.values(idea.places || {}).filter(Boolean)
+            const schedule = idea.schedule || []
+            const isExpanded = expandedIdeas.has(index)
 
             return (
               <View
@@ -1061,8 +1204,8 @@ export default function PlannedDateResults({
 
                   <TouchableOpacity
                     onPress={() => {
-                      saveDateIdea(idea);
-                      Alert.alert("Date Saved!");
+                      saveDateIdea(idea)
+                      Alert.alert("Date Idea Saved!")
                     }}
                     style={{
                       alignSelf: "flex-end",
@@ -1137,9 +1280,45 @@ export default function PlannedDateResults({
                           {step.startTime} - {step.endTime} (
                           {step.durationMinutes} min)
                         </Text>
+                        {stepIndex === 0 &&
+                        idea.commuteToFirstMinutes !== null &&
+                        idea.commuteToFirstMinutes !== 0 ? (
+                          <Text
+                            style={{
+                              marginBottom: 4,
+                              color: "#556677",
+                              fontSize: 13,
+                              fontWeight: "600",
+                            }}
+                          >
+                            Travel to first stop: ~{idea.commuteToFirstMinutes}{" "}
+                            min
+                          </Text>
+                        ) : null}
                         <Text style={{ fontSize: 14, color: "#2c3e50" }}>
                           {step.title}
                         </Text>
+                        {/* {step.place?.sourceKind === "activity" ? (
+                          <TouchableOpacity
+                            style={{ marginTop: 4 }}
+                            onPress={() =>
+                              navigation.navigate("ActivityDetail", {
+                                id: step.place.id,
+                              })
+                            }
+                          >
+                            <Text
+                              style={{
+                                color: "#1e90ff",
+                                fontWeight: "700",
+                                textDecorationLine: "underline",
+                              }}
+                            >
+                              View activity details
+                            </Text>
+                          </TouchableOpacity>
+                        ) : null} */}
+
                         {/* {step.place?.googleMapsUri ? (
                           <TouchableOpacity
                             style={{ marginTop: 4 }}
@@ -1159,7 +1338,8 @@ export default function PlannedDateResults({
                           </TouchableOpacity>
                         ) : null} */}
 
-                        {step.travelToNextMinutes !== null ? (
+                        {step.travelToNextMinutes !== null &&
+                        step.travelToNextMinutes !== 0 ? (
                           <Text
                             style={{
                               marginTop: 6,
@@ -1174,7 +1354,7 @@ export default function PlannedDateResults({
 
                         {stepIndex === schedule.length - 1 &&
                         idea.commuteFromLastMinutes !== null &&
-                        idea.commuteFromLastMinutes !== undefined ? (
+                        idea.commuteFromLastMinutes !== 0 ? (
                           <Text
                             style={{
                               marginTop: 6,
@@ -1215,49 +1395,12 @@ export default function PlannedDateResults({
                 ) : null}
 
                 {isExpanded && places.length ? (
-                  <View style={{ marginTop: 12 }}>
-                    {places.map((place, placeIndex) => {
-                      if (!place) {
-                        return null;
-                      }
-
-                      return (
-                        <TouchableOpacity
-                          key={`${place.id}-${placeIndex}`}
-                          style={{ marginBottom: 10 }}
-                          disabled={!place.googleMapsUri}
-                          onPress={() => {
-                            if (place.googleMapsUri) {
-                              Linking.openURL(place.googleMapsUri);
-                            }
-                          }}
-                        >
-                          <Text
-                            style={{
-                              fontSize: 15,
-                              color: "#1e90ff",
-                              textDecorationLine: place.googleMapsUri
-                                ? "underline"
-                                : "none",
-                              fontWeight: "700",
-                            }}
-                          >
-                            {place.name}
-                          </Text>
-                          {place.address ? (
-                            <Text style={{ color: "#667788", marginTop: 2 }}>
-                              {place.address}
-                            </Text>
-                          ) : null}
-                        </TouchableOpacity>
-                      );
-                    })}
-                  </View>
+                  <IdeaPlaceLinks places={places} navigation={navigation} />
                 ) : null}
               </View>
-            );
+            )
           })
         : null}
     </ScrollView>
-  );
+  )
 }

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react"
 import {
   View,
   Text,
@@ -10,9 +10,9 @@ import {
   Alert,
   Platform,
   KeyboardAvoidingView,
-} from "react-native";
-import DateTimePicker from "@react-native-community/datetimepicker";
-import { Ionicons } from "@expo/vector-icons";
+} from "react-native"
+import DateTimePicker from "@react-native-community/datetimepicker"
+import { Ionicons } from "@expo/vector-icons"
 import {
   addRecordedDate,
   getRecordedDates,
@@ -20,115 +20,118 @@ import {
   subscribeRecordedDates,
   updateRecordedDate,
   type RecordedDate,
-} from "../data/dateHistoryStore";
-import type { AppNavigation } from "../types/navigation";
+} from "../data/dateHistoryStore"
+import type { AppNavigation } from "../types/navigation"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 function getRatingColor(n: number): string {
   // hue 0 = red (1), hue 120 = green (10)
-  const hue = Math.round(((n - 1) / 9) * 120);
-  return `hsl(${hue}, 75%, 42%)`;
+  const hue = Math.round(((n - 1) / 9) * 120)
+  return `hsl(${hue}, 75%, 42%)`
 }
 
 export default function DateHistoryScreen({
   navigation,
 }: {
-  navigation: AppNavigation;
+  navigation: AppNavigation
 }) {
-  const [recordedDates, setRecordedDates] = useState<RecordedDate[]>([]);
-  const [modalVisible, setModalVisible] = useState(false);
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [editingDateId, setEditingDateId] = useState<string | null>(null);
+  const [recordedDates, setRecordedDates] = useState<RecordedDate[]>([])
+  const [modalVisible, setModalVisible] = useState(false)
+  const [showDatePicker, setShowDatePicker] = useState(false)
+  const [editingDateId, setEditingDateId] = useState<string | null>(null)
 
   // Form state
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  const [whoWentWith, setWhoWentWith] = useState("");
-  const [whatYouDid, setWhatYouDid] = useState("");
-  const [moneySpent, setMoneySpent] = useState("");
-  const [rating, setRating] = useState<number | null>(null);
-  const [whatYouLiked, setWhatYouLiked] = useState("");
-  const [whatYouLearned, setWhatYouLearned] = useState("");
-  const modalScrollRef = useRef<ScrollView>(null);
+  const [selectedDate, setSelectedDate] = useState(new Date())
+  const [whoWentWith, setWhoWentWith] = useState("")
+  const [whatYouDid, setWhatYouDid] = useState("")
+  const [moneySpent, setMoneySpent] = useState("")
+  const [rating, setRating] = useState<number | null>(null)
+  const [whatYouLiked, setWhatYouLiked] = useState("")
+  const [whatYouLearned, setWhatYouLearned] = useState("")
+  const modalScrollRef = useRef<ScrollView>(null)
+
+  const insets = useSafeAreaInsets()
 
   useEffect(() => {
     // Load initial data
-    setRecordedDates(getRecordedDates());
+    setRecordedDates(getRecordedDates())
 
     // Subscribe to changes
     const unsubscribe = subscribeRecordedDates(() => {
-      setRecordedDates(getRecordedDates());
-    });
+      setRecordedDates(getRecordedDates())
+    })
 
-    return unsubscribe;
-  }, []);
+    return unsubscribe
+  }, [])
 
   const handleDateChange = (event: any, date?: Date) => {
     if (date) {
-      setSelectedDate(date);
+      setSelectedDate(date)
     }
-    setShowDatePicker(false);
-  };
+    setShowDatePicker(false)
+  }
 
   const resetForm = () => {
-    setWhoWentWith("");
-    setWhatYouDid("");
-    setMoneySpent("");
-    setRating(null);
-    setWhatYouLiked("");
-    setWhatYouLearned("");
-    setSelectedDate(new Date());
-    setShowDatePicker(false);
-  };
+    setWhoWentWith("")
+    setWhatYouDid("")
+    setMoneySpent("")
+    setRating(null)
+    setWhatYouLiked("")
+    setWhatYouLearned("")
+    setSelectedDate(new Date())
+    setShowDatePicker(false)
+  }
 
   const closeModal = () => {
-    setModalVisible(false);
-    setEditingDateId(null);
-    resetForm();
-  };
+    setModalVisible(false)
+    setEditingDateId(null)
+    resetForm()
+  }
 
   const openCreateModal = () => {
-    setEditingDateId(null);
-    resetForm();
-    setModalVisible(true);
-  };
+    setEditingDateId(null)
+    resetForm()
+    setModalVisible(true)
+  }
 
   const openEditModal = (date: RecordedDate) => {
-    setEditingDateId(date.id);
-    setSelectedDate(new Date(date.dateOfDate));
-    setWhoWentWith(date.whoWentWith);
-    setWhatYouDid(date.whatYouDid);
-    setMoneySpent(String(date.moneySpent));
-    setRating(date.rating);
-    setWhatYouLiked(date.whatYouLiked);
-    setWhatYouLearned(date.whatYouLearned);
-    setShowDatePicker(false);
-    setModalVisible(true);
-  };
+    setEditingDateId(date.id)
+    setSelectedDate(new Date(date.dateOfDate))
+    setWhoWentWith(date.whoWentWith)
+    setWhatYouDid(date.whatYouDid)
+    setMoneySpent(String(date.moneySpent))
+    setRating(date.rating)
+    setWhatYouLiked(date.whatYouLiked)
+    setWhatYouLearned(date.whatYouLearned)
+    setShowDatePicker(false)
+    setModalVisible(true)
+  }
 
   const handleSaveDate = () => {
     if (!whoWentWith.trim()) {
-      Alert.alert("Error", "Please enter who you went out with");
-      return;
+      Alert.alert("Error", "Please enter who you went out with")
+      return
     }
 
     if (!whatYouDid.trim()) {
-      Alert.alert("Error", "Please describe what you did on the date");
-      return;
+      Alert.alert("Error", "Please describe what you did on the date")
+      return
     }
 
     if (!moneySpent.trim()) {
-      Alert.alert("Error", "Please enter the amount spent");
-      return;
+      Alert.alert("Error", "Please enter the amount spent")
+      return
     }
 
-    const moneyValue = parseFloat(moneySpent);
+    const moneyValue = parseFloat(moneySpent)
     if (isNaN(moneyValue)) {
-      Alert.alert("Error", "Please enter a valid number for money spent");
-      return;
+      Alert.alert("Error", "Please enter a valid number for money spent")
+      return
     }
 
     if (!whatYouDid.trim()) {
-      Alert.alert("Error", "Please enter what you did");
-      return;
+      Alert.alert("Error", "Please enter what you did")
+      return
     }
 
     const datePayload = {
@@ -139,16 +142,16 @@ export default function DateHistoryScreen({
       rating,
       whatYouLiked: whatYouLiked.trim(),
       whatYouLearned: whatYouLearned.trim(),
-    };
-
-    if (editingDateId) {
-      updateRecordedDate(editingDateId, datePayload);
-    } else {
-      addRecordedDate(datePayload);
     }
 
-    closeModal();
-  };
+    if (editingDateId) {
+      updateRecordedDate(editingDateId, datePayload)
+    } else {
+      addRecordedDate(datePayload)
+    }
+
+    closeModal()
+  }
 
   const handleDeleteDate = (id: string) => {
     Alert.alert(
@@ -162,25 +165,30 @@ export default function DateHistoryScreen({
           style: "destructive",
         },
       ],
-    );
-  };
+    )
+  }
 
   const handleFormInputFocus = (event: any) => {
-    const target = event?.target;
+    const target = event?.target
     if (!target) {
-      return;
+      return
     }
 
     setTimeout(() => {
-      (
+      ;(
         modalScrollRef.current as any
-      )?.scrollResponderScrollNativeHandleToKeyboard?.(target, 120, true);
-    }, 120);
-  };
+      )?.scrollResponderScrollNativeHandleToKeyboard?.(target, 120, true)
+    }, 120)
+  }
 
   return (
     <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingTop: insets.top },
+        ]}
+      >
         <View style={styles.header}>
           <Text style={styles.title}>Date History</Text>
           <Text style={styles.subtitle}>Record the dates you've been on</Text>
@@ -417,8 +425,8 @@ export default function DateHistoryScreen({
                 <Text style={styles.formLabel}>Rate the date (1–10)</Text>
                 <View style={styles.ratingRow}>
                   {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => {
-                    const color = getRatingColor(n);
-                    const selected = rating === n;
+                    const color = getRatingColor(n)
+                    const selected = rating === n
                     return (
                       <TouchableOpacity
                         key={n}
@@ -438,7 +446,7 @@ export default function DateHistoryScreen({
                           {n}
                         </Text>
                       </TouchableOpacity>
-                    );
+                    )
                   })}
                 </View>
               </View>
@@ -494,7 +502,7 @@ export default function DateHistoryScreen({
         </KeyboardAvoidingView>
       </Modal>
     </View>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -506,7 +514,6 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   header: {
-    paddingTop: 36,
     paddingHorizontal: 24,
     paddingBottom: 16,
   },
@@ -519,7 +526,7 @@ const styles = StyleSheet.create({
   title: {
     fontWeight: "900",
     fontSize: 36,
-    marginVertical: 24,
+    marginTop: 24,
     marginBottom: 12,
     color: "#1a1a1a",
   },
@@ -773,4 +780,4 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#1a1a1a",
   },
-});
+})

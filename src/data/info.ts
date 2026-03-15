@@ -1,3 +1,3 @@
-const appInfo = { appName: "Provo Dating Guide" }
+const appInfo = { appName: "Dating App" }
 
 export default appInfo

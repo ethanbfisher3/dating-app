@@ -1,24 +1,24 @@
-import { ALL } from "dns";
-import type { DateCategory } from "../utils/utils";
+import { ALL } from "dns"
+import type { DateCategory } from "../utils/utils"
 
 export interface Activity {
-  id: string;
-  name: string;
-  categories: DateCategory[];
-  description: string;
-  cost: number;
+  id: string
+  name: string
+  categories: DateCategory[]
+  description: string
+  cost: number
   durationMinutes: {
-    min: number;
-    max: number;
-  };
-  bestMonthsOfYear: string[];
-  bestDaysOfWeek: string[];
+    min: number
+    max: number
+  }
+  bestMonthsOfYear: string[]
+  bestDaysOfWeek: string[]
   bestTimesOfDay: {
-    startHour12: string;
-    endHour12: string;
-    startPeriod: string;
-    endPeriod: string;
-  }[];
+    startHour12: string
+    endHour12: string
+    startPeriod: string
+    endPeriod: string
+  }[]
 }
 
 const ALL_WEEKDAYS = [
@@ -29,7 +29,7 @@ const ALL_WEEKDAYS = [
   "Friday",
   "Saturday",
   "Sunday",
-];
+]
 
 const ALL_MONTHS = [
   "January",
@@ -44,7 +44,7 @@ const ALL_MONTHS = [
   "October",
   "November",
   "December",
-];
+]
 
 const ALL_TIMES_OF_DAY = [
   {
@@ -53,7 +53,7 @@ const ALL_TIMES_OF_DAY = [
     startPeriod: "AM",
     endPeriod: "PM",
   },
-];
+]
 
 export const activities: Activity[] = [
   {
@@ -64,7 +64,7 @@ export const activities: Activity[] = [
       "Dust off your favorite board games or try a new two-player game. A great way to spark some friendly competition and conversation from the comfort of your living room.",
     cost: 0,
     durationMinutes: {
-      min: 60,
+      min: 30,
       max: 180,
     },
     bestMonthsOfYear: ALL_MONTHS,
@@ -93,8 +93,8 @@ export const activities: Activity[] = [
       "Push the coffee table aside, lay out a blanket, and eat dinner on the floor. It completely changes the dynamic of a standard dinner at home.",
     cost: 0,
     durationMinutes: {
-      min: 60,
-      max: 120,
+      min: 30,
+      max: 60,
     },
     bestMonthsOfYear: ALL_MONTHS,
     bestDaysOfWeek: ALL_WEEKDAYS,
@@ -124,14 +124,14 @@ export const activities: Activity[] = [
   },
   {
     id: "act_004",
-    name: "Cook a complex recipe together",
+    name: "Cook something together with the ingredients you have on hand",
     categories: ["Food", "Learning", "Recreation"],
     description:
-      "Pick a recipe you've both always wanted to try but never had the time for—like handmade pasta or beef wellington. Split the prep work and enjoy the results.",
+      "Pick a recipe you've both always wanted to try. Try to make it using only food items that you already have in your kitchen.",
     cost: 0,
     durationMinutes: {
-      min: 90,
-      max: 180,
+      min: 30,
+      max: 60,
     },
     bestMonthsOfYear: ALL_MONTHS,
     bestDaysOfWeek: ALL_WEEKDAYS,
@@ -145,8 +145,8 @@ export const activities: Activity[] = [
       "Buy two cheap canvases and some paints. Follow along with a Bob Ross video or try to paint portraits of each other while enjoying your favorite beverage.",
     cost: 5,
     durationMinutes: {
-      min: 60,
-      max: 120,
+      min: 30,
+      max: 90,
     },
     bestMonthsOfYear: ALL_MONTHS,
     bestDaysOfWeek: ALL_WEEKDAYS,
@@ -160,8 +160,8 @@ export const activities: Activity[] = [
       "Download and print an at-home escape room kit. Work together to solve puzzles and crack codes at your kitchen table.",
     cost: 10,
     durationMinutes: {
-      min: 60,
-      max: 120,
+      min: 30,
+      max: 90,
     },
     bestMonthsOfYear: ALL_MONTHS,
     bestDaysOfWeek: ALL_WEEKDAYS,
@@ -175,8 +175,8 @@ export const activities: Activity[] = [
       "Channel your inner child by building a massive blanket fort in the living room, complete with pillows and string lights, then binge a movie series.",
     cost: 0,
     durationMinutes: {
-      min: 120,
-      max: 240,
+      min: 90,
+      max: 150,
     },
     bestMonthsOfYear: ALL_MONTHS,
     bestDaysOfWeek: ALL_WEEKDAYS,
@@ -198,7 +198,7 @@ export const activities: Activity[] = [
     cost: 0,
     durationMinutes: {
       min: 30,
-      max: 180,
+      max: 120,
     },
     bestMonthsOfYear: ALL_MONTHS,
     bestDaysOfWeek: ALL_WEEKDAYS,
@@ -213,7 +213,7 @@ export const activities: Activity[] = [
     cost: 0,
     durationMinutes: {
       min: 30,
-      max: 180,
+      max: 60,
     },
     bestMonthsOfYear: ALL_MONTHS,
     bestDaysOfWeek: ALL_WEEKDAYS,
@@ -228,7 +228,7 @@ export const activities: Activity[] = [
     cost: 0,
     durationMinutes: {
       min: 30,
-      max: 180,
+      max: 60,
     },
     bestMonthsOfYear: ALL_MONTHS,
     bestDaysOfWeek: ALL_WEEKDAYS,
@@ -243,7 +243,7 @@ export const activities: Activity[] = [
     cost: 0,
     durationMinutes: {
       min: 30,
-      max: 180,
+      max: 60,
     },
     bestMonthsOfYear: ALL_MONTHS,
     bestDaysOfWeek: ALL_WEEKDAYS,
@@ -258,7 +258,7 @@ export const activities: Activity[] = [
     cost: 0,
     durationMinutes: {
       min: 30,
-      max: 180,
+      max: 60,
     },
     bestMonthsOfYear: ALL_MONTHS,
     bestDaysOfWeek: ALL_WEEKDAYS,
@@ -281,7 +281,7 @@ export const activities: Activity[] = [
   },
   {
     id: "act_015",
-    name: "GeoGuessr competition",
+    name: "Have a GeoGuessr competition",
     categories: ["Recreation", "Learning"],
     description: "Face off in a game of GeoGuessr together",
     cost: 0,
@@ -295,14 +295,14 @@ export const activities: Activity[] = [
   },
   {
     id: "act_016",
-    name: "Wikipedia race",
+    name: "Place the Wikipedia race game",
     categories: ["Recreation", "Learning"],
     description:
       "Pick two completely random Wikipedia articles and race to get from one to the other by only clicking links within the articles.",
     cost: 0,
     durationMinutes: {
       min: 15,
-      max: 60,
+      max: 30,
     },
     bestMonthsOfYear: ALL_MONTHS,
     bestDaysOfWeek: ALL_WEEKDAYS,
@@ -332,7 +332,7 @@ export const activities: Activity[] = [
     cost: 0,
     durationMinutes: {
       min: 30,
-      max: 120,
+      max: 90,
     },
     bestMonthsOfYear: ALL_MONTHS,
     bestDaysOfWeek: ALL_WEEKDAYS,
@@ -340,7 +340,7 @@ export const activities: Activity[] = [
   },
   {
     id: "act_019",
-    name: "Non-dominant hand challenge",
+    name: "Try the Non-dominant hand challenge",
     categories: ["Recreation", "Learning"],
     description:
       "Try to do some task with your non-dominant hand and see who can do it better.",
@@ -362,12 +362,16 @@ export const activities: Activity[] = [
     cost: 0,
     durationMinutes: {
       min: 30,
-      max: 120,
+      max: 90,
     },
     bestMonthsOfYear: ALL_MONTHS,
     bestDaysOfWeek: ALL_WEEKDAYS,
     bestTimesOfDay: ALL_TIMES_OF_DAY,
   },
-];
+]
 
-export default activities;
+export function getActivityById(id: string) {
+  return activities.find((activity) => activity.id === id)
+}
+
+export default activities

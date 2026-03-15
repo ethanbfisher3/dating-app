@@ -1,22 +1,21 @@
 TODO:
-add activities for dates like the egg dropping thing
-Finish the date planner generator
-Full-on date editor after the 'plan a date' section. If the user already has date ideas, they can skip the questions section and go straight to the date editor
 New images
-the user currently can't delete the mile on the distance from you questions
-it should scroll down automatically on the date planner
-What to do if someone is not in utah planning a date?
-Check if BYU Events are included
 Come up with a better name for the app
-Fix the scrolling to an input in a modal when the user focuses on the input
+More date templates/Fix current date templates, add more activities
+Fix Google Places Querying
+Test the date planner generator
+On the date planner results page, the user can regenerate not just a date idea, but specific places listed on the date idea
+
+Name Ideas:
+Provo DateCreate
+Provo DateMate
 
 Maybe do:
-Date history/Journaling page?
-When filtering date ideas, only show one category at a time since at one point there might be a ton of ideas and loading will take a while
 add tutorial like the mood app
 Date preferences page? Instead of the date planner including ALL of the user's preferences, it will just ask when and what categories the user wants. A date preferences page will allow the user to specify their budget, if they have a SSC, if they like to cook, etc.
-On the date planner results page, the user can regenerate not just a date idea, but specific places listed on the date idea
+Add a button on the recipes for 'Start cooking' which will help the user with a checklist for the items they need to get out, which direction they're on, etc.
 
 Eventually:
 users can input their own date ideas
 users can upload pictures or reviews and there can be a 'recent dates in provo' section on the app to make it more like social media. Then, when a user is looking at date ideas or a place, it will show them dates that have taken place at that spot
+Ratings for recipes that you like (upvoting/downvoting)

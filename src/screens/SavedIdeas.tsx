@@ -1,39 +1,35 @@
-import React, { useEffect, useState } from "react";
-import {
-  Alert,
-  Linking,
-  ScrollView,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
-import type { AppNavigation } from "../types/navigation";
+import React, { useEffect, useState } from "react"
+import { Alert, ScrollView, Text, TouchableOpacity, View } from "react-native"
+import type { AppNavigation } from "../types/navigation"
+import IdeaPlaceLinks from "../Components/IdeaPlaceLinks"
 import {
   getSavedIdeas,
   removeSavedIdea,
   subscribeSavedIdeas,
   type SavedDateIdea,
-} from "../data/savedIdeasStore";
+} from "../data/savedIdeasStore"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 export default function SavedIdeas({
   navigation,
 }: {
-  navigation: AppNavigation;
+  navigation: AppNavigation
 }) {
-  const [savedIdeas, setSavedIdeas] =
-    useState<SavedDateIdea[]>(getSavedIdeas());
+  const [savedIdeas, setSavedIdeas] = useState<SavedDateIdea[]>(getSavedIdeas())
+
+  const insets = useSafeAreaInsets()
 
   useEffect(() => {
     return subscribeSavedIdeas(() => {
-      setSavedIdeas(getSavedIdeas());
-    });
-  }, []);
+      setSavedIdeas(getSavedIdeas())
+    })
+  }, [])
 
   return (
     <ScrollView
       contentContainerStyle={{
         padding: 24,
-        paddingTop: 36,
+        paddingTop: insets.top,
         backgroundColor: "#fafbfc",
       }}
     >
@@ -65,7 +61,7 @@ export default function SavedIdeas({
       ) : null}
 
       {savedIdeas.map((idea, index) => {
-        const places = Object.values(idea.places || {}).filter(Boolean);
+        const places = Object.values(idea.places || {}).filter(Boolean)
 
         return (
           <View
@@ -108,7 +104,7 @@ export default function SavedIdeas({
                         onPress: () => removeSavedIdea(idea.id),
                       },
                     ],
-                  );
+                  )
                 }}
                 style={{
                   alignSelf: "flex-end",
@@ -156,48 +152,11 @@ export default function SavedIdeas({
             ) : null}
 
             {places.length ? (
-              <View style={{ marginTop: 12 }}>
-                {places.map((place, placeIndex) => {
-                  if (!place) {
-                    return null;
-                  }
-
-                  return (
-                    <TouchableOpacity
-                      key={`${place.id}-${placeIndex}`}
-                      style={{ marginBottom: 10 }}
-                      disabled={!place.googleMapsUri}
-                      onPress={() => {
-                        if (place.googleMapsUri) {
-                          Linking.openURL(place.googleMapsUri);
-                        }
-                      }}
-                    >
-                      <Text
-                        style={{
-                          fontSize: 15,
-                          color: "#1e90ff",
-                          textDecorationLine: place.googleMapsUri
-                            ? "underline"
-                            : "none",
-                          fontWeight: "700",
-                        }}
-                      >
-                        {place.name}
-                      </Text>
-                      {place.address ? (
-                        <Text style={{ color: "#667788", marginTop: 2 }}>
-                          {place.address}
-                        </Text>
-                      ) : null}
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
+              <IdeaPlaceLinks places={places} navigation={navigation} />
             ) : null}
           </View>
-        );
+        )
       })}
     </ScrollView>
-  );
+  )
 }

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react"
 import {
   View,
   Text,
@@ -8,70 +8,77 @@ import {
   Animated,
   Platform,
   KeyboardAvoidingView,
-} from "react-native";
-import DateTimePicker from "@react-native-community/datetimepicker";
-import * as Location from "expo-location";
-import type { AppNavigation } from "../types/navigation";
-import { DATE_CATEGORIES, timesAreInvalid } from "src/utils/utils";
+} from "react-native"
+import DateTimePicker from "@react-native-community/datetimepicker"
+import * as Location from "expo-location"
+import type { AppNavigation } from "../types/navigation"
+import { DATE_CATEGORIES, timesAreInvalid } from "src/utils/utils"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
 
-const questionCount = 5;
+const questionCount = 5
+const SUPER_FAR_PACIFIC_LOCATION = {
+  latitude: 0,
+  longitude: -160,
+}
 
 export default function PlanADate({
   navigation,
 }: {
-  navigation: AppNavigation;
+  navigation: AppNavigation
 }) {
-  const [maxPrice, setMaxPrice] = useState<string>("20");
-  const [hasStarvingStudentCard, setHasStarvingStudentCard] = useState(false);
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [startHour12, setStartHour12] = useState<string>("12");
-  const [startPeriod, setStartPeriod] = useState<"AM" | "PM">("PM");
-  const [endHour12, setEndHour12] = useState<string>("6");
-  const [endPeriod, setEndPeriod] = useState<"AM" | "PM">("PM");
-  const [maxDistance, setMaxDistance] = useState<string>("10");
-  const [currentQuestion, setCurrentQuestion] = useState(1);
-  const [showDateError, setShowDateError] = useState(false);
-  const [showPriceError, setShowPriceError] = useState(false);
-  const [showTimeError, setShowTimeError] = useState(false);
-  const [showDistanceError, setShowDistanceError] = useState(false);
-  const [isAnimating, setIsAnimating] = useState(false);
+  const [maxPrice, setMaxPrice] = useState<string>("20")
+  const [hasStarvingStudentCard, setHasStarvingStudentCard] = useState(false)
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null)
+  const [showDatePicker, setShowDatePicker] = useState(false)
+  const [startHour12, setStartHour12] = useState<string>("12")
+  const [startPeriod, setStartPeriod] = useState<"AM" | "PM">("PM")
+  const [endHour12, setEndHour12] = useState<string>("6")
+  const [endPeriod, setEndPeriod] = useState<"AM" | "PM">("PM")
+  const [maxDistance, setMaxDistance] = useState<string>("10")
+  const [currentQuestion, setCurrentQuestion] = useState(1)
+  const [showDateError, setShowDateError] = useState(false)
+  const [showPriceError, setShowPriceError] = useState(false)
+  const [showTimeError, setShowTimeError] = useState(false)
+  const [showDistanceError, setShowDistanceError] = useState(false)
+  const [isAnimating, setIsAnimating] = useState(false)
   const [userLocation, setUserLocation] = useState<{
-    latitude: number;
-    longitude: number;
-  } | null>(null);
+    latitude: number
+    longitude: number
+  } | null>(null)
   const [categoriesChecked, setCategoriesChecked] = useState(
     Array(DATE_CATEGORIES.length).fill(true),
-  );
-  const scrollViewRef = useRef<ScrollView>(null);
-  const questionTranslateX = useRef(new Animated.Value(0)).current;
+  )
+  const scrollViewRef = useRef<ScrollView>(null)
+  const questionTranslateX = useRef(new Animated.Value(0)).current
   const questionOpacity = questionTranslateX.interpolate({
     inputRange: [-80, 0, 80],
     outputRange: [0.75, 1, 0.75],
     extrapolate: "clamp",
-  });
+  })
+
+  const insets = useSafeAreaInsets()
 
   useEffect(() => {
     const loadLocation = async () => {
       try {
-        const { status } = await Location.requestForegroundPermissionsAsync();
+        const { status } = await Location.requestForegroundPermissionsAsync()
         if (status !== "granted") {
-          return;
+          return
         }
 
         const position = await Location.getCurrentPositionAsync({
           accuracy: Location.Accuracy.Balanced,
-        });
+        })
 
         setUserLocation({
           latitude: position.coords.latitude,
           longitude: position.coords.longitude,
-        });
+        })
       } catch {}
-    };
+    }
 
-    loadLocation();
-  }, []);
+    loadLocation()
+  }, [])
 
   const transitionToQuestion = (nextQuestion: number, direction: number) => {
     if (
@@ -80,75 +87,75 @@ export default function PlanADate({
       nextQuestion > questionCount ||
       nextQuestion === currentQuestion
     ) {
-      return;
+      return
     }
 
-    setIsAnimating(true);
+    setIsAnimating(true)
     Animated.timing(questionTranslateX, {
       toValue: direction * -80,
       duration: 120,
       useNativeDriver: true,
     }).start(() => {
-      setCurrentQuestion(nextQuestion);
-      questionTranslateX.setValue(direction * 80);
+      setCurrentQuestion(nextQuestion)
+      questionTranslateX.setValue(direction * 80)
       Animated.timing(questionTranslateX, {
         toValue: 0,
         duration: 180,
         useNativeDriver: true,
       }).start(() => {
-        setIsAnimating(false);
-      });
-    });
-  };
+        setIsAnimating(false)
+      })
+    })
+  }
 
   const clampHour12 = (value: number) => {
-    if (Number.isNaN(value)) return 1;
-    if (value < 1) return 1;
-    if (value > 12) return 12;
-    return value;
-  };
+    if (Number.isNaN(value)) return 1
+    if (value < 1) return 1
+    if (value > 12) return 12
+    return value
+  }
 
   const convertTo24Hour = (hour12: number, period: "AM" | "PM") => {
-    let hour24 = hour12;
+    let hour24 = hour12
     if (period === "AM") {
-      hour24 = hour12 === 12 ? 0 : hour12;
+      hour24 = hour12 === 12 ? 0 : hour12
     } else {
-      hour24 = hour12 === 12 ? 12 : hour12 + 12;
+      hour24 = hour12 === 12 ? 12 : hour12 + 12
     }
-    return hour24;
-  };
+    return hour24
+  }
 
   const formatHour = (hour: number) => {
-    const normalized = ((hour % 24) + 24) % 24;
-    const period = normalized < 12 ? "AM" : "PM";
-    const display = normalized % 12 === 0 ? 12 : normalized % 12;
-    return `${display} ${period}`;
-  };
+    const normalized = ((hour % 24) + 24) % 24
+    const period = normalized < 12 ? "AM" : "PM"
+    const display = normalized % 12 === 0 ? 12 : normalized % 12
+    return `${display} ${period}`
+  }
 
   const toggleCategory = (index: number) => {
-    const newChecked = [...categoriesChecked];
-    newChecked[index] = !newChecked[index];
-    setCategoriesChecked(newChecked);
-  };
+    const newChecked = [...categoriesChecked]
+    newChecked[index] = !newChecked[index]
+    setCategoriesChecked(newChecked)
+  }
 
   const handleInputFocus = () => {
     setTimeout(() => {
-      scrollViewRef.current?.scrollToEnd({ animated: true });
-    }, 100);
-  };
+      scrollViewRef.current?.scrollToEnd({ animated: true })
+    }, 100)
+  }
 
   const handleNextQuestion = () => {
-    if (isAnimating) return;
+    if (isAnimating) return
     if (currentQuestion === 2 && !selectedDate) {
-      setShowDateError(true);
-      return;
+      setShowDateError(true)
+      return
     }
     if (
       currentQuestion === 1 &&
       (Number.isNaN(parseInt(maxPrice)) || parseInt(maxPrice) < 0)
     ) {
-      setShowPriceError(true);
-      return;
+      setShowPriceError(true)
+      return
     }
     if (
       currentQuestion === 3 &&
@@ -156,40 +163,40 @@ export default function PlanADate({
         Number.isNaN(parseInt(endHour12)) ||
         timesAreInvalid(startHour12, endHour12, startPeriod, endPeriod))
     ) {
-      setShowTimeError(true);
-      return;
+      setShowTimeError(true)
+      return
     }
     if (currentQuestion === 4 && Number.isNaN(parseInt(maxDistance))) {
-      setShowDistanceError(true);
-      return;
+      setShowDistanceError(true)
+      return
     }
-    setShowDateError(false);
-    setShowPriceError(false);
-    setShowTimeError(false);
-    setShowDistanceError(false);
+    setShowDateError(false)
+    setShowPriceError(false)
+    setShowTimeError(false)
+    setShowDistanceError(false)
     if (currentQuestion < questionCount) {
-      transitionToQuestion(currentQuestion + 1, 1);
+      transitionToQuestion(currentQuestion + 1, 1)
     } else {
-      handleGenerateIdeas();
+      handleGenerateIdeas()
     }
-  };
+  }
 
   const handlePreviousQuestion = () => {
-    if (isAnimating) return;
+    if (isAnimating) return
     if (currentQuestion > 1) {
-      transitionToQuestion(currentQuestion - 1, -1);
+      transitionToQuestion(currentQuestion - 1, -1)
     }
-  };
+  }
 
   const handleGenerateIdeas = () => {
     const selectedCategories = DATE_CATEGORIES.filter(
       (_, i) => categoriesChecked[i],
-    );
-    const start24 = convertTo24Hour(parseInt(startHour12), startPeriod);
-    const end24 = convertTo24Hour(parseInt(endHour12), endPeriod);
+    )
+    const start24 = convertTo24Hour(parseInt(startHour12), startPeriod)
+    const end24 = convertTo24Hour(parseInt(endHour12), endPeriod)
     const selectedDateIso = selectedDate
       ? selectedDate.toISOString().slice(0, 10)
-      : "";
+      : ""
     navigation.navigate("PlannedDateResults", {
       maxPrice: parseInt(maxPrice),
       hasStarvingStudentCard,
@@ -199,8 +206,8 @@ export default function PlanADate({
       maxDistance: parseInt(maxDistance),
       categories: selectedCategories,
       userLocation,
-    });
-  };
+    })
+  }
 
   const renderQuestion = () => {
     switch (currentQuestion) {
@@ -269,7 +276,7 @@ export default function PlanADate({
               </Text>
             </TouchableOpacity>
           </View>
-        );
+        )
       case 2:
         return (
           <View style={{ marginBottom: 30 }}>
@@ -320,10 +327,10 @@ export default function PlanADate({
                   themeVariant={Platform.OS === "ios" ? "light" : undefined}
                   onChange={(event, date) => {
                     const isConfirmed =
-                      Platform.OS === "ios" || event.type === "set";
-                    setShowDatePicker(false);
+                      Platform.OS === "ios" || event.type === "set"
+                    setShowDatePicker(false)
                     if (isConfirmed && date) {
-                      setSelectedDate(date);
+                      setSelectedDate(date)
                     }
                   }}
                 />
@@ -383,7 +390,7 @@ export default function PlanADate({
               </TouchableOpacity>
             </View>
           </View>
-        );
+        )
       case 3:
         return (
           <View style={{ marginBottom: 30 }}>
@@ -433,18 +440,18 @@ export default function PlanADate({
                     value={startHour12}
                     onChangeText={(text) => {
                       if (text.trim() === "") {
-                        setStartHour12("");
-                        return;
+                        setStartHour12("")
+                        return
                       }
 
-                      const parsed = parseInt(text, 10);
+                      const parsed = parseInt(text, 10)
                       if (Number.isNaN(parsed)) {
-                        setStartHour12("");
-                        return;
+                        setStartHour12("")
+                        return
                       }
 
-                      const num = clampHour12(parsed);
-                      setStartHour12(String(num));
+                      const num = clampHour12(parsed)
+                      setStartHour12(String(num))
                     }}
                     onFocus={handleInputFocus}
                     placeholder="1-12"
@@ -503,18 +510,18 @@ export default function PlanADate({
                     value={endHour12}
                     onChangeText={(text) => {
                       if (text.trim() === "") {
-                        setEndHour12("");
-                        return;
+                        setEndHour12("")
+                        return
                       }
 
-                      const parsed = parseInt(text, 10);
+                      const parsed = parseInt(text, 10)
                       if (Number.isNaN(parsed)) {
-                        setEndHour12("");
-                        return;
+                        setEndHour12("")
+                        return
                       }
 
-                      const num = clampHour12(parsed);
-                      setEndHour12(String(num));
+                      const num = clampHour12(parsed)
+                      setEndHour12(String(num))
                     }}
                     onFocus={handleInputFocus}
                     placeholder="1-12"
@@ -600,7 +607,7 @@ export default function PlanADate({
               </TouchableOpacity>
             </View>
           </View>
-        );
+        )
       case 4:
         return (
           <View style={{ marginBottom: 30 }}>
@@ -696,127 +703,8 @@ export default function PlanADate({
               </TouchableOpacity>
             </View>
           </View>
-        );
+        )
       case 5:
-        // return (
-        //   <View style={{ marginBottom: 30 }}>
-        //     <Text
-        //       style={{
-        //         fontWeight: "800",
-        //         fontSize: 26,
-        //         marginBottom: 12,
-        //         color: "#1a1a1a",
-        //       }}
-        //     >
-        //       Starving Student Card?
-        //     </Text>
-        //     <View
-        //       style={{
-        //         flexDirection: "row",
-        //         alignItems: "center",
-        //         marginVertical: 20,
-        //         backgroundColor: "#eaf4ff",
-        //         padding: 16,
-        //         borderRadius: 10,
-        //       }}
-        //     >
-        //       <TouchableOpacity
-        //         onPress={() => setHasStarvingStudentCard((prev) => !prev)}
-        //         style={{
-        //           width: 28,
-        //           height: 28,
-        //           borderRadius: 6,
-        //           borderWidth: 2,
-        //           borderColor: hasStarvingStudentCard ? "#1e90ff" : "#7a8a99",
-        //           backgroundColor: hasStarvingStudentCard
-        //             ? "#1e90ff"
-        //             : "#ffffff",
-        //           alignItems: "center",
-        //           justifyContent: "center",
-        //         }}
-        //       >
-        //         {hasStarvingStudentCard ? (
-        //           <Text
-        //             style={{ color: "#fff", fontSize: 18, fontWeight: "900" }}
-        //           >
-        //             ✓
-        //           </Text>
-        //         ) : null}
-        //       </TouchableOpacity>
-        //       <Text
-        //         style={{
-        //           marginLeft: 14,
-        //           fontSize: 17,
-        //           fontWeight: "600",
-        //           color: "#1f2d3d",
-        //         }}
-        //       >
-        //         I have a Starving Student Card
-        //       </Text>
-        //     </View>
-        //     <Text
-        //       style={{
-        //         fontSize: 16,
-        //         color: "#666",
-        //         marginTop: 10,
-        //         lineHeight: 24,
-        //       }}
-        //     >
-        //       {hasStarvingStudentCard
-        //         ? "Great! We'll include date ideas that offer discounts to give you more value for your money."
-        //         : "If you have a Starving Student Card, check this box to see more discounted options!"}
-        //     </Text>
-        //     <View
-        //       style={{
-        //         flexDirection: "row",
-        //         justifyContent: "space-between",
-        //         marginTop: 20,
-        //         gap: 12,
-        //       }}
-        //     >
-        //       <TouchableOpacity
-        //         style={{
-        //           flex: 1,
-        //           backgroundColor: "#6c757d",
-        //           paddingVertical: 16,
-        //           paddingHorizontal: 20,
-        //           borderRadius: 10,
-        //           alignItems: "center",
-        //         }}
-        //         onPress={handlePreviousQuestion}
-        //       >
-        //         <Text
-        //           style={{ color: "#fff", fontSize: 18, fontWeight: "700" }}
-        //         >
-        //           Back
-        //         </Text>
-        //       </TouchableOpacity>
-        //       <TouchableOpacity
-        //         style={{
-        //           flex: 1,
-        //           backgroundColor: "#1e90ff",
-        //           paddingVertical: 16,
-        //           paddingHorizontal: 20,
-        //           borderRadius: 10,
-        //           alignItems: "center",
-        //           shadowColor: "#000",
-        //           shadowOffset: { width: 0, height: 2 },
-        //           shadowOpacity: 0.2,
-        //           shadowRadius: 4,
-        //           elevation: 3,
-        //         }}
-        //         onPress={handleNextQuestion}
-        //       >
-        //         <Text
-        //           style={{ color: "#fff", fontSize: 18, fontWeight: "700" }}
-        //         >
-        //           Next
-        //         </Text>
-        //       </TouchableOpacity>
-        //     </View>
-        //   </View>
-        // );
-        // case 6:
         return (
           <View style={{ marginBottom: 30 }}>
             <Text
@@ -838,7 +726,7 @@ export default function PlanADate({
               }}
             >
               {DATE_CATEGORIES.map((category, index) => {
-                const isSelected = categoriesChecked[index];
+                const isSelected = categoriesChecked[index]
                 return (
                   <TouchableOpacity
                     key={index}
@@ -862,7 +750,7 @@ export default function PlanADate({
                       {category}
                     </Text>
                   </TouchableOpacity>
-                );
+                )
               })}
             </View>
             {categoriesChecked.every((checked) => !checked) && (
@@ -923,11 +811,11 @@ export default function PlanADate({
               </TouchableOpacity>
             </View>
           </View>
-        );
+        )
       default:
-        return null;
+        return null
     }
-  };
+  }
 
   return (
     <KeyboardAvoidingView
@@ -940,7 +828,7 @@ export default function PlanADate({
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={{
           padding: 24,
-          paddingTop: 36,
+          paddingTop: insets.top,
           paddingBottom: 48,
           backgroundColor: "#fafbfc",
           flexGrow: 1,
@@ -967,6 +855,38 @@ export default function PlanADate({
           Let's find the perfect date idea for you! We'll ask a few questions to
           personalize your experience.
         </Text>
+        {__DEV__ && (
+          <TouchableOpacity
+            style={{
+              alignSelf: "flex-start",
+              backgroundColor: "#ffe8a3",
+              borderWidth: 1,
+              borderColor: "#d6b656",
+              paddingVertical: 10,
+              paddingHorizontal: 14,
+              borderRadius: 10,
+              marginBottom: 16,
+            }}
+            onPress={() => {
+              setUserLocation(
+                userLocation === SUPER_FAR_PACIFIC_LOCATION
+                  ? null
+                  : SUPER_FAR_PACIFIC_LOCATION,
+              )
+            }}
+          >
+            <Text
+              style={{
+                color: "#4a3b00",
+                fontSize: 15,
+                fontWeight: "700",
+              }}
+            >
+              Use super far address:{" "}
+              {userLocation === SUPER_FAR_PACIFIC_LOCATION ? "ON" : "OFF"}
+            </Text>
+          </TouchableOpacity>
+        )}
         <View style={{ marginBottom: 24, alignItems: "center" }}>
           <View
             style={{
@@ -1011,5 +931,5 @@ export default function PlanADate({
         </Animated.View>
       </ScrollView>
     </KeyboardAvoidingView>
-  );
+  )
 }

@@ -19,6 +19,7 @@ import Info from "./src/screens/Info"
 import DateIdeas from "./src/screens/DateIdeas"
 import RecipesPage from "./src/screens/RecipesPage"
 import RecipeDetail from "./src/screens/RecipeDetail"
+import ActivityDetail from "./src/screens/ActivityDetail"
 import InspectDateIdea from "./src/screens/InspectDateIdea"
 import PlannedDateResults from "./src/screens/PlannedDateResults"
 import SavedIdeas from "./src/screens/SavedIdeas"
@@ -97,6 +98,7 @@ export default function App() {
           <Stack.Screen name="RecipesPage" component={RecipesPage} />
           <Stack.Screen name="SavedIdeas" component={SavedIdeas} />
           <Stack.Screen name="RecipeDetail" component={RecipeDetail} />
+          <Stack.Screen name="ActivityDetail" component={ActivityDetail} />
           <Stack.Screen name="InspectDateIdea" component={InspectDateIdea} />
           <Stack.Screen
             name="PlannedDateResults"

@@ -1,38 +1,49 @@
-import { useMemo } from "react";
-import type { PlannedDateResultsParams } from "../types/navigation";
-import allRecipes, { Recipe } from "../data/Recipes";
-import type { Activity } from "../data/activities";
-import type { PlaceSummary } from "./usePlacesActivitiesRecipes";
+import { useMemo } from "react"
+import type { PlannedDateResultsParams } from "../types/navigation"
+import allRecipes, { Recipe } from "../data/Recipes"
+import type { Activity } from "../data/activities"
+import {
+  getFreeStayInTemplates,
+  IdeaTemplate,
+  LONG_TEMPLATES,
+  SHORT_TEMPLATES,
+  STANDARD_TEMPLATES,
+} from "../data/datePlannerTemplates"
+import type { PlaceSummary } from "./usePlacesActivitiesRecipes"
 
 export type FilledIdea = {
-  template: string;
-  filledTemplate: string;
-  recipeIndex?: number;
-  commuteToFirstMinutes?: number | null;
-  commuteFromLastMinutes?: number | null;
-  places: Record<string, PlaceSummary | null>;
+  template: string
+  filledTemplate: string
+  recipeIndex?: number
+  commuteToFirstMinutes?: number | null
+  commuteFromLastMinutes?: number | null
+  places: Record<string, PlaceSummary | null>
   schedule?: Array<{
-    title: string;
-    slot: string;
-    startTime: string;
-    endTime: string;
-    durationMinutes: number;
-    place: PlaceSummary | null;
-    travelToNextMinutes: number | null;
-  }>;
-};
+    title: string
+    slot: string
+    startTime: string
+    endTime: string
+    durationMinutes: number
+    place: PlaceSummary | null
+    travelToNextMinutes: number | null
+  }>
+}
 
-type IdeaTemplate = {
-  template: string;
-  slots: string[];
-};
+type SlotCandidate = {
+  id?: string
+  value: string
+  place: PlaceSummary | null
+  recipeIndex?: number
+  minDurationMinutes?: number
+  maxDurationMinutes?: number
+}
 
 type UseFilledIdeasArgs = {
-  params: PlannedDateResultsParams;
-  places: PlaceSummary[];
-  recipes: Recipe[];
-  activities: Activity[];
-};
+  params: PlannedDateResultsParams
+  places: PlaceSummary[]
+  recipes: Recipe[]
+  activities: Activity[]
+}
 
 const PLACE_SLOT_TYPES: Record<string, string[]> = {
   meal: ["restaurant", "meal_takeaway", "cafe", "pizza_restaurant"],
@@ -46,255 +57,549 @@ const PLACE_SLOT_TYPES: Record<string, string[]> = {
   ],
   learningSpot: ["museum", "library", "book_store", "art_gallery"],
   shop: ["shopping_mall", "department_store", "clothing_store", "store"],
-};
-
-const SHORT_TEMPLATES: IdeaTemplate[] = [
-  { template: "Grab a bite at {meal}", slots: ["meal"] },
-  { template: "Take a walk at {park}", slots: ["park"] },
-  { template: "Do {activity} together", slots: ["activity"] },
-  { template: "Make {recipe} together", slots: ["recipe"] },
-  {
-    template: "Do {activity} together, then cook {recipe}",
-    slots: ["activity", "recipe"],
-  },
-];
-
-const STANDARD_TEMPLATES: IdeaTemplate[] = [
-  { template: "Start at {meal}, then walk at {park}", slots: ["meal", "park"] },
-  {
-    template: "Do {activity}, then grab dessert at {dessert}",
-    slots: ["activity", "dessert"],
-  },
-  {
-    template: "Cook {recipe} together, then go to {dessert}",
-    slots: ["recipe", "dessert"],
-  },
-  {
-    template: "Visit {learningSpot}, then stop at {meal}",
-    slots: ["learningSpot", "meal"],
-  },
-  {
-    template: "Browse {shop}, then end with {activity}",
-    slots: ["shop", "activity"],
-  },
-];
-
-const LONG_TEMPLATES: IdeaTemplate[] = [
-  {
-    template:
-      "Start at {park}, eat at {meal}, do {activity}, and finish with dessert at {dessert}",
-    slots: ["park", "meal", "activity", "dessert"],
-  },
-  {
-    template:
-      "Visit {learningSpot}, explore {shop}, then have dinner at {meal}",
-    slots: ["learningSpot", "shop", "meal"],
-  },
-  {
-    template: "Cook {recipe}, then go to {park}, and finish at {dessert}",
-    slots: ["recipe", "park", "dessert"],
-  },
-];
+}
 
 function computeWindowDurationMinutes(startHour: number, endHour: number) {
-  const start = startHour * 60;
-  let end = endHour * 60;
-  if (end <= start) end += 24 * 60;
-  return end - start;
+  const start = startHour * 60
+  let end = endHour * 60
+  if (end <= start) end += 24 * 60
+  return end - start
 }
 
-function formatHourLabel(hour24: number): string {
-  const normalized = ((hour24 % 24) + 24) % 24;
-  const suffix = normalized < 12 ? "AM" : "PM";
-  const hour12 = normalized % 12 === 0 ? 12 : normalized % 12;
-  return `${hour12}:00 ${suffix}`;
+function formatTimeLabel(totalMinutes: number): string {
+  const minutesInDay = 24 * 60
+  const normalizedMinutes =
+    ((totalMinutes % minutesInDay) + minutesInDay) % minutesInDay
+  const hour24 = Math.floor(normalizedMinutes / 60)
+  const minute = normalizedMinutes % 60
+  const suffix = hour24 < 12 ? "AM" : "PM"
+  const hour12 = hour24 % 12 === 0 ? 12 : hour24 % 12
+  const minuteText = String(minute).padStart(2, "0")
+  return `${hour12}:${minuteText} ${suffix}`
 }
 
-const PLACE_SLOTS = new Set(Object.keys(PLACE_SLOT_TYPES));
+const PLACE_SLOTS = new Set(Object.keys(PLACE_SLOT_TYPES))
 
 function requiresPlaces(template: IdeaTemplate): boolean {
-  return template.slots.some((slot) => PLACE_SLOTS.has(slot));
+  return template.slots.some((slot) => PLACE_SLOTS.has(slot))
 }
 
 function chooseTemplates(
   params: PlannedDateResultsParams,
   places: PlaceSummary[],
+  activities: Activity[],
 ): IdeaTemplate[] {
   const duration = computeWindowDurationMinutes(
     params.startHour,
     params.endHour,
-  );
+  )
 
-  let base: IdeaTemplate[];
-  if (duration <= 120) {
-    base = SHORT_TEMPLATES;
-  } else if (duration <= 240) {
-    base = STANDARD_TEMPLATES;
+  let base: IdeaTemplate[]
+  if (duration <= 90) {
+    base = SHORT_TEMPLATES
+  } else if (duration <= 180) {
+    base = STANDARD_TEMPLATES
   } else {
-    base = LONG_TEMPLATES;
+    base = LONG_TEMPLATES
   }
 
   if (!places.length) {
-    // Only keep templates that don't need any place slots
-    const noPlaceTemplates = base.filter((t) => !requiresPlaces(t));
-    if (noPlaceTemplates.length) {
-      return noPlaceTemplates;
+    const stayInTemplates = getFreeStayInTemplates(
+      duration,
+      activities,
+      params.maxPrice,
+      params.maxDistance,
+    )
+
+    const noPlaceTemplates = [
+      ...base,
+      ...SHORT_TEMPLATES,
+      ...STANDARD_TEMPLATES,
+      ...LONG_TEMPLATES,
+    ].filter((template, index, templates) => {
+      if (requiresPlaces(template)) {
+        return false
+      }
+
+      return (
+        templates.findIndex(
+          (candidate) =>
+            candidate.template === template.template &&
+            candidate.slots.join(",") === template.slots.join(","),
+        ) === index
+      )
+    })
+
+    if (stayInTemplates.length || noPlaceTemplates.length) {
+      return [...stayInTemplates, ...noPlaceTemplates]
     }
+
     // Fall back to the activity/recipe-only templates from SHORT_TEMPLATES
-    return SHORT_TEMPLATES.filter((t) => !requiresPlaces(t));
+    return SHORT_TEMPLATES.filter((t) => !requiresPlaces(t))
   }
 
-  return base;
+  return base
 }
 
-function matchPlaceBySlot(
+function getPlaceCandidatesBySlot(
   slot: string,
   places: PlaceSummary[],
-  offset: number,
-): PlaceSummary | null {
+): PlaceSummary[] {
   if (!places.length) {
-    return null;
+    return []
   }
 
-  const allowedTypes = PLACE_SLOT_TYPES[slot];
+  const allowedTypes = PLACE_SLOT_TYPES[slot]
   if (!allowedTypes) {
-    return places[offset % places.length] || null;
+    return places
   }
 
-  const candidates = places.filter((place) =>
+  return places.filter((place) =>
     place.types.some((type) => allowedTypes.includes(type)),
-  );
+  )
+}
 
-  if (!candidates.length) {
-    return null;
+function toActivityPlaceSummary(activity: Activity): PlaceSummary {
+  return {
+    id: activity.id,
+    name: activity.name,
+    address: "",
+    types: ["activity"],
+    googleMapsUri: "",
+    rating: null,
+    sourceKind: "activity",
+    location: {
+      latitude: null,
+      longitude: null,
+    },
+  }
+}
+
+function getCandidatesForSlot(
+  slot: string,
+  places: PlaceSummary[],
+  recipes: Recipe[],
+  activities: Activity[],
+  options?: {
+    avoidFoodActivities?: boolean
+  },
+): SlotCandidate[] {
+  if (slot === "recipe") {
+    return recipes
+      .map((recipe) => {
+        const recipeIndex = allRecipes.findIndex(
+          (candidate) => candidate.name === recipe.name,
+        )
+
+        return {
+          id: recipe.name,
+          value: recipe.name,
+          place: null,
+          recipeIndex: recipeIndex >= 0 ? recipeIndex : undefined,
+          minDurationMinutes:
+            typeof recipe.estimatedTime === "number" && recipe.estimatedTime > 0
+              ? recipe.estimatedTime
+              : undefined,
+          maxDurationMinutes:
+            typeof recipe.estimatedTime === "number" && recipe.estimatedTime > 0
+              ? recipe.estimatedTime
+              : undefined,
+        }
+      })
+      .filter((candidate) => Boolean(candidate.value))
   }
 
-  return candidates[offset % candidates.length] || null;
+  if (slot === "activity") {
+    const filteredActivities = options?.avoidFoodActivities
+      ? activities.filter((activity) => !activity.categories.includes("Food"))
+      : activities
+
+    return filteredActivities.map((activity) => ({
+      id: activity.id,
+      value: activity.name,
+      place: toActivityPlaceSummary(activity),
+      minDurationMinutes: activity.durationMinutes?.min,
+      maxDurationMinutes: activity.durationMinutes?.max,
+    }))
+  }
+
+  return getPlaceCandidatesBySlot(slot, places).map((place) => ({
+    id: place.id,
+    value: place.name,
+    place,
+  }))
 }
 
 function chunkMinutesEvenly(totalMinutes: number, parts: number): number[] {
   if (parts <= 0) {
-    return [];
+    return []
   }
 
-  const base = Math.floor(totalMinutes / parts);
-  const remainder = totalMinutes % parts;
+  const base = Math.floor(totalMinutes / parts)
+  const remainder = totalMinutes % parts
   return Array.from({ length: parts }, (_, index) =>
     index < remainder ? base + 1 : base,
-  );
+  )
+}
+
+function dedupeByKey<T>(items: T[], getKey: (item: T) => string): T[] {
+  const seen = new Set<string>()
+
+  return items.filter((item) => {
+    const key = getKey(item)
+    if (seen.has(key)) {
+      return false
+    }
+
+    seen.add(key)
+    return true
+  })
+}
+
+function getIdeaSignature(idea: FilledIdea): string {
+  return `${idea.filledTemplate}__${idea.template}`
+}
+
+function shuffleIdeas<T>(items: T[]): T[] {
+  const shuffled = [...items]
+
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1))
+    ;[shuffled[index], shuffled[swapIndex]] = [
+      shuffled[swapIndex],
+      shuffled[index],
+    ]
+  }
+
+  return shuffled
+}
+
+function allocateSlotDurations(
+  totalMinutes: number,
+  entries: Array<{
+    minDurationMinutes?: number
+    maxDurationMinutes?: number
+  }>,
+): number[] | null {
+  if (!entries.length) {
+    return []
+  }
+
+  const minimums = entries.map((entry) =>
+    Math.max(0, entry.minDurationMinutes ?? 0),
+  )
+  const caps = entries.map(
+    (entry) => entry.maxDurationMinutes ?? Number.POSITIVE_INFINITY,
+  )
+  const minimumTotal = minimums.reduce((sum, value) => sum + value, 0)
+
+  if (minimumTotal > totalMinutes) {
+    return null
+  }
+
+  if (minimums.some((minimum, index) => minimum > caps[index])) {
+    return null
+  }
+
+  const durations = [...minimums]
+  let remainingMinutes = totalMinutes - minimumTotal
+
+  while (remainingMinutes > 0) {
+    let assignedInPass = false
+
+    for (
+      let index = 0;
+      index < entries.length && remainingMinutes > 0;
+      index += 1
+    ) {
+      if (durations[index] >= caps[index]) {
+        continue
+      }
+
+      durations[index] += 1
+      remainingMinutes -= 1
+      assignedInPass = true
+    }
+
+    if (!assignedInPass) {
+      return null
+    }
+  }
+
+  return durations
+}
+
+function toRadians(value: number): number {
+  return (value * Math.PI) / 180
+}
+
+function estimateTravelMinutesBetween(
+  from: PlaceSummary | null,
+  to: PlaceSummary | null,
+): number | null {
+  const fromLat = from?.location?.latitude
+  const fromLon = from?.location?.longitude
+  const toLat = to?.location?.latitude
+  const toLon = to?.location?.longitude
+
+  if (
+    typeof fromLat !== "number" ||
+    typeof fromLon !== "number" ||
+    typeof toLat !== "number" ||
+    typeof toLon !== "number"
+  ) {
+    return null
+  }
+
+  const earthRadiusMiles = 3958.8
+  const dLat = toRadians(toLat - fromLat)
+  const dLon = toRadians(toLon - fromLon)
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRadians(fromLat)) *
+      Math.cos(toRadians(toLat)) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2)
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+  const straightLineMiles = earthRadiusMiles * c
+
+  const estimatedRoadMiles = straightLineMiles * 1.25
+  const averageCityMph = 25
+  const minutes = (estimatedRoadMiles / averageCityMph) * 60 + 5
+
+  return Math.max(5, Math.min(90, Math.round(minutes)))
+}
+
+function estimateTravelMinutesFromUserLocation(
+  userLocation: PlannedDateResultsParams["userLocation"],
+  place: PlaceSummary | null,
+): number | null {
+  if (
+    !userLocation ||
+    typeof userLocation.latitude !== "number" ||
+    typeof userLocation.longitude !== "number"
+  ) {
+    return null
+  }
+
+  const pseudoUserPlace: PlaceSummary = {
+    id: "user_location",
+    name: "User Location",
+    address: "",
+    types: [],
+    googleMapsUri: "",
+    rating: null,
+    sourceKind: "place",
+    location: {
+      latitude: userLocation.latitude,
+      longitude: userLocation.longitude,
+    },
+  }
+
+  return estimateTravelMinutesBetween(pseudoUserPlace, place)
+}
+
+function pickLeastUsedPlaceCandidate(
+  candidates: SlotCandidate[],
+  placeUsageById: Map<string, number>,
+): SlotCandidate {
+  const usageFor = (candidate: SlotCandidate) => {
+    const placeId = candidate.place?.id
+    if (!placeId) {
+      return Number.POSITIVE_INFINITY
+    }
+
+    return placeUsageById.get(placeId) || 0
+  }
+
+  const minimumUsage = candidates.reduce(
+    (min, candidate) => Math.min(min, usageFor(candidate)),
+    Number.POSITIVE_INFINITY,
+  )
+  const leastUsed = candidates.filter(
+    (candidate) => usageFor(candidate) === minimumUsage,
+  )
+
+  return (
+    leastUsed[Math.floor(Math.random() * leastUsed.length)] || candidates[0]
+  )
 }
 
 function buildFilledIdea(
   template: IdeaTemplate,
-  ideaIndex: number,
+  _combinationIndex: number,
   params: PlannedDateResultsParams,
   places: PlaceSummary[],
   recipes: Recipe[],
   activities: Activity[],
+  placeUsageById: Map<string, number>,
 ): FilledIdea | null {
-  const selectedEntries: Array<{
-    slot: string;
-    value: string;
-    place: PlaceSummary | null;
-  }> = [];
-  let selectedRecipeIndex: number | undefined;
+  const avoidFoodActivities = template.slots.includes("recipe")
+  const slotCandidates = template.slots.map((slot) =>
+    getCandidatesForSlot(slot, places, recipes, activities, {
+      avoidFoodActivities,
+    }),
+  )
 
-  for (let slotIndex = 0; slotIndex < template.slots.length; slotIndex += 1) {
-    const slot = template.slots[slotIndex];
-
-    if (slot === "recipe") {
-      if (!recipes.length) {
-        return null;
-      }
-
-      const recipe = recipes[(ideaIndex + slotIndex) % recipes.length];
-      selectedRecipeIndex = allRecipes.findIndex(
-        (candidate) => candidate.name === recipe.name,
-      );
-      selectedEntries.push({
-        slot,
-        value: recipe.name,
-        place: null,
-      });
-      continue;
-    }
-
-    if (slot === "activity") {
-      if (!activities.length) {
-        return null;
-      }
-
-      const activity = activities[(ideaIndex + slotIndex) % activities.length];
-      selectedEntries.push({
-        slot,
-        value: activity.name,
-        place: {
-          id: activity.id,
-          name: activity.name,
-          address: "",
-          types: ["activity"],
-          googleMapsUri: "",
-          rating: null,
-          sourceKind: "activity",
-          location: {
-            latitude: null,
-            longitude: null,
-          },
-        },
-      });
-      continue;
-    }
-
-    const place = matchPlaceBySlot(slot, places, ideaIndex + slotIndex);
-    if (!place) {
-      return null;
-    }
-
-    selectedEntries.push({
-      slot,
-      value: place.name,
-      place,
-    });
+  if (slotCandidates.some((candidates) => !candidates.length)) {
+    return null
   }
 
-  let filledTemplate = template.template;
-  const placeRecord: Record<string, PlaceSummary | null> = {};
+  const selectedEntries: Array<{
+    id?: string
+    slot: string
+    value: string
+    place: PlaceSummary | null
+    minDurationMinutes?: number
+    maxDurationMinutes?: number
+  }> = []
+  let selectedRecipeIndex: number | undefined
+  const usedActivityIds = new Set<string>()
+  const usedPlaceIds = new Set<string>()
+
+  for (let slotIndex = 0; slotIndex < template.slots.length; slotIndex += 1) {
+    const slot = template.slots[slotIndex]
+    const candidates = slotCandidates[slotIndex]
+    const availableCandidates =
+      slot === "activity"
+        ? candidates.filter(
+            (candidate) => !candidate.id || !usedActivityIds.has(candidate.id),
+          )
+        : slot !== "recipe"
+          ? candidates.filter(
+              (candidate) =>
+                !candidate.place?.id || !usedPlaceIds.has(candidate.place.id),
+            )
+          : candidates
+    const candidatePool = availableCandidates.length
+      ? availableCandidates
+      : candidates
+
+    const candidate =
+      slot !== "activity" && slot !== "recipe"
+        ? pickLeastUsedPlaceCandidate(candidatePool, placeUsageById)
+        : candidatePool[Math.floor(Math.random() * candidatePool.length)]
+
+    selectedEntries.push({
+      id: candidate.id,
+      slot,
+      value: candidate.value,
+      place: candidate.place,
+      minDurationMinutes: candidate.minDurationMinutes,
+      maxDurationMinutes: candidate.maxDurationMinutes,
+    })
+
+    if (slot === "activity" && candidate.id) {
+      usedActivityIds.add(candidate.id)
+    }
+
+    if (slot !== "activity" && slot !== "recipe" && candidate.place?.id) {
+      usedPlaceIds.add(candidate.place.id)
+    }
+
+    if (candidate.recipeIndex !== undefined) {
+      selectedRecipeIndex = candidate.recipeIndex
+    }
+  }
+
+  let filledTemplate = template.template
+  const placeRecord: Record<string, PlaceSummary | null> = {}
 
   selectedEntries.forEach((entry, index) => {
-    filledTemplate = filledTemplate.replace(`{${entry.slot}}`, entry.value);
-    const key = `${entry.slot}_${index + 1}`;
-    placeRecord[key] = entry.place;
-  });
+    filledTemplate = filledTemplate.replace(`{${entry.slot}}`, entry.value)
+    const key = `${entry.slot}_${index + 1}`
+    placeRecord[key] = entry.place
+  })
 
   const totalMinutes = computeWindowDurationMinutes(
     params.startHour,
     params.endHour,
-  );
-  const slotDurations = chunkMinutesEvenly(
-    totalMinutes,
-    Math.max(1, selectedEntries.length),
-  );
+  )
 
-  let currentMinute = params.startHour * 60;
+  const firstEntry = selectedEntries[0]
+  const lastEntry = selectedEntries[selectedEntries.length - 1]
+
+  const commuteToFirstMinutes =
+    estimateTravelMinutesFromUserLocation(
+      params.userLocation,
+      firstEntry?.place || null,
+    ) ?? (firstEntry?.place?.sourceKind === "place" ? 10 : 0)
+
+  const commuteFromLastMinutes =
+    estimateTravelMinutesFromUserLocation(
+      params.userLocation,
+      lastEntry?.place || null,
+    ) ?? (lastEntry?.place?.sourceKind === "place" ? 10 : 0)
+
+  const travelDurations = selectedEntries.map((entry, index) => {
+    const nextEntry = selectedEntries[index + 1]
+    if (!nextEntry) {
+      return null
+    }
+
+    const estimatedTravel = estimateTravelMinutesBetween(
+      entry.place || null,
+      nextEntry.place || null,
+    )
+
+    if (estimatedTravel !== null) {
+      return estimatedTravel
+    }
+
+    return entry.place?.sourceKind === "place" ||
+      nextEntry.place?.sourceKind === "place"
+      ? 10
+      : 0
+  })
+  const totalTravelMinutes = travelDurations.reduce(
+    (sum, value) => sum + (value || 0),
+    0,
+  )
+  const totalReservedTravelMinutes =
+    totalTravelMinutes + commuteToFirstMinutes + commuteFromLastMinutes
+  if (totalReservedTravelMinutes > totalMinutes) {
+    return null
+  }
+
+  const availableActivityMinutes = totalMinutes - totalReservedTravelMinutes
+  const constrainedDurations = allocateSlotDurations(
+    availableActivityMinutes,
+    selectedEntries,
+  )
+  const hasDurationConstraints = selectedEntries.some(
+    (entry) =>
+      entry.minDurationMinutes !== undefined ||
+      entry.maxDurationMinutes !== undefined,
+  )
+  if (hasDurationConstraints && !constrainedDurations) {
+    return null
+  }
+
+  const slotDurations =
+    constrainedDurations ||
+    chunkMinutesEvenly(
+      availableActivityMinutes,
+      Math.max(1, selectedEntries.length),
+    )
+
+  let currentMinute = params.startHour * 60 + commuteToFirstMinutes
   const schedule = selectedEntries.map((entry, index) => {
-    const durationMinutes = slotDurations[index] || 0;
-    const startMinute = currentMinute;
-    const endMinute = currentMinute + durationMinutes;
-    currentMinute = endMinute;
-
-    const startHour24 = Math.floor((startMinute / 60) % 24);
-    const endHour24 = Math.floor((endMinute / 60) % 24);
+    const durationMinutes = slotDurations[index] || 0
+    const startMinute = currentMinute
+    const endMinute = currentMinute + durationMinutes
+    const travelToNextMinutes = travelDurations[index] ?? null
+    currentMinute = endMinute + (travelToNextMinutes || 0)
 
     return {
       title: entry.value,
       slot: entry.slot,
-      startTime: formatHourLabel(startHour24),
-      endTime: formatHourLabel(endHour24),
+      startTime: formatTimeLabel(startMinute),
+      endTime: formatTimeLabel(endMinute),
       durationMinutes,
       place: entry.place,
-      travelToNextMinutes: index === selectedEntries.length - 1 ? null : 10,
-    };
-  });
+      travelToNextMinutes,
+    }
+  })
 
   return {
     template: template.template,
@@ -303,11 +608,11 @@ function buildFilledIdea(
       selectedRecipeIndex !== undefined && selectedRecipeIndex >= 0
         ? selectedRecipeIndex
         : undefined,
-    commuteToFirstMinutes: null,
-    commuteFromLastMinutes: null,
+    commuteToFirstMinutes: commuteToFirstMinutes || null,
+    commuteFromLastMinutes: commuteFromLastMinutes || null,
     places: placeRecord,
     schedule,
-  };
+  }
 }
 
 export default function useFilledIdeas({
@@ -317,27 +622,62 @@ export default function useFilledIdeas({
   activities,
 }: UseFilledIdeasArgs): FilledIdea[] {
   return useMemo(() => {
-    const templates = chooseTemplates(params, places);
-    const targetCount = 10;
-    const ideas: FilledIdea[] = [];
+    const uniquePlaces = dedupeByKey(
+      places,
+      (place) => `${place.id}__${place.name}__${place.address}`,
+    )
+    const uniqueRecipes = dedupeByKey(recipes, (recipe) => recipe.name)
+    const uniqueActivities = dedupeByKey(
+      activities,
+      (activity) => `${activity.id}__${activity.name}`,
+    )
 
-    let cursor = 0;
-    while (ideas.length < targetCount && cursor < targetCount * 4) {
-      const template = templates[cursor % templates.length];
+    const randomizedPlaces = shuffleIdeas(uniquePlaces)
+    const randomizedRecipes = shuffleIdeas(uniqueRecipes)
+    const randomizedActivities = shuffleIdeas(uniqueActivities)
+
+    const templates = shuffleIdeas(
+      chooseTemplates(params, randomizedPlaces, randomizedActivities),
+    )
+    const targetCount = 10
+    const poolTargetCount = Math.max(targetCount * 4, 30)
+    const ideas: FilledIdea[] = []
+    const seenIdeas = new Set<string>()
+    const placeUsageById = new Map<string, number>()
+    const maxAttempts = Math.max(poolTargetCount * templates.length * 25, 300)
+
+    let cursor = 0
+    while (ideas.length < poolTargetCount && cursor < maxAttempts) {
+      const template = templates[cursor % templates.length]
+      const combinationIndex = Math.floor(cursor / templates.length)
       const idea = buildFilledIdea(
         template,
-        cursor,
+        combinationIndex,
         params,
-        places,
-        recipes,
-        activities,
-      );
+        randomizedPlaces,
+        randomizedRecipes,
+        randomizedActivities,
+        placeUsageById,
+      )
       if (idea) {
-        ideas.push(idea);
+        const signature = getIdeaSignature(idea)
+        if (!seenIdeas.has(signature)) {
+          seenIdeas.add(signature)
+          ideas.push(idea)
+
+          Object.values(idea.places)
+            .filter((place): place is PlaceSummary => Boolean(place?.id))
+            .forEach((place) => {
+              placeUsageById.set(
+                place.id,
+                (placeUsageById.get(place.id) || 0) + 1,
+              )
+            })
+        }
       }
-      cursor += 1;
+      cursor += 1
     }
 
-    return ideas;
-  }, [activities, params, places, recipes]);
+    return shuffleIdeas(ideas).slice(0, targetCount)
+  }, [activities, params, places, recipes])
 }

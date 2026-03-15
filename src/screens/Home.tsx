@@ -4,6 +4,7 @@ import { ScrollView, Text, View, TouchableOpacity } from "react-native"
 import appInfo from "src/data/info"
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6"
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 export default function Info({ goToTab }) {
   const [expandedOffers, setExpandedOffers] = useState({
@@ -12,6 +13,8 @@ export default function Info({ goToTab }) {
     recipeIdeas: false,
     savedIdeas: false,
   })
+
+  const insets = useSafeAreaInsets()
 
   const toggleOffer = (offerKey: keyof typeof expandedOffers) => {
     setExpandedOffers((previous) => ({
@@ -24,7 +27,7 @@ export default function Info({ goToTab }) {
     <ScrollView
       contentContainerStyle={{
         padding: 24,
-        paddingTop: 36,
+        paddingTop: insets.top,
         backgroundColor: "#fafbfc",
       }}
     >
@@ -449,7 +452,7 @@ export default function Info({ goToTab }) {
         </Text>
       </View>
 
-      <View
+      {/* <View
         style={{
           backgroundColor: "#fff",
           padding: 20,
@@ -487,7 +490,7 @@ export default function Info({ goToTab }) {
         >
           byudating@outlook.com
         </Text>
-      </View>
+      </View> */}
     </ScrollView>
   )
 }
