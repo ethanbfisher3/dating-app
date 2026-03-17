@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Dating App",
-    "slug": "dating-app",
+    "slug": "byu-dating-native",
     "platforms": ["ios", "android", "web"],
     "version": "1.0.0",
     "icon": "./src/assets/images/date_planner_icon.png",

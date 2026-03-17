@@ -8,6 +8,12 @@ import useBYUAPI, {
 } from "./useBYUAPI"
 import type { DateCategory } from "src/utils/utils"
 
+// Default location: BYU campus area (Provo, Utah)
+const DEFAULT_USER_LOCATION = {
+  latitude: 40.2444,
+  longitude: -111.6435,
+}
+
 export type PlaceSummary = {
   id: string
   name: string
@@ -500,22 +506,25 @@ export default function useDatePlannerIdeas(params: PlannedDateResultsParams): {
         setSourceFile(byuEventPlaces.length ? "BYU Calendar API" : "")
       } else {
         const localPlaces = loadLocalPlacesData()
+
+        // Use user's location or default to BYU/Provo area
+        const userLocationForFiltering =
+          params.userLocation || DEFAULT_USER_LOCATION
+
         const filteredLocalPlaces = localPlaces
           .filter((place) => placeMatchesCategories(place, params.categories))
           .filter((place) => {
-            if (!params.userLocation) {
-              return true
-            }
-
             const latitude = place.location?.latitude
             const longitude = place.location?.longitude
+
+            // Only include places that have valid coordinates
             if (typeof latitude !== "number" || typeof longitude !== "number") {
-              return true
+              return false
             }
 
             const milesAway = haversineMiles(
-              params.userLocation.latitude,
-              params.userLocation.longitude,
+              userLocationForFiltering.latitude,
+              userLocationForFiltering.longitude,
               latitude,
               longitude,
             )

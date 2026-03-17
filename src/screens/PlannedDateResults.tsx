@@ -16,8 +16,14 @@ import type {
   AppScreenProps,
   PlannedDateResultsParams,
 } from "../types/navigation"
-import useDatePlannerIdeas from "../hooks/useDatePlannerIdeas"
-import useFilledIdeas from "../hooks/useFilledIdeas"
+import useDatePlannerIdeas, { PlaceSummary } from "../hooks/useDatePlannerIdeas"
+import useFilledIdeas, {
+  estimateTravelMinutesBetween,
+  estimateTravelMinutesFromUserLocation,
+  formatTimeLabel,
+  getPlaceCandidatesBySlot,
+  getCandidatesForSlot,
+} from "../hooks/useFilledIdeas"
 import { saveDateIdea } from "../data/savedIdeasStore"
 import IdeaPlaceLinks from "../Components/IdeaPlaceLinks"
 
@@ -92,6 +98,12 @@ export default function PlannedDateResults({
   const [showDevActivities, setShowDevActivities] = useState(false)
   const [showDevRecipes, setShowDevRecipes] = useState(false)
   const [showDevByuEvents, setShowDevByuEvents] = useState(false)
+  const [regeneratingSteps, setRegeneratingSteps] = useState<Set<string>>(
+    new Set(),
+  )
+  const [modifiedIdeas, setModifiedIdeas] = useState<Map<number, any>>(
+    new Map(),
+  )
   const editModalScrollRef = useRef<ScrollView>(null)
 
   const toggleIdeaExpanded = (index: number) => {
@@ -104,6 +116,127 @@ export default function PlannedDateResults({
       }
       return next
     })
+  }
+
+  const regenerateStep = async (
+    ideaIndex: number,
+    stepIndex: number,
+    idea: any,
+  ) => {
+    const stepKey = `${ideaIndex}-${stepIndex}`
+    const schedule = idea.schedule || []
+    const step = schedule[stepIndex]
+    if (!step) return
+
+    setRegeneratingSteps((prev) => new Set(prev).add(stepKey))
+
+    try {
+      // Get candidates for the slot type
+      const candidates = getCandidatesForSlot(
+        step.slot,
+        places,
+        recipes,
+        activities,
+      )
+
+      if (!candidates.length) {
+        Alert.alert("No alternatives available for this item.")
+        setRegeneratingSteps((prev) => {
+          const next = new Set(prev)
+          next.delete(stepKey)
+          return next
+        })
+        return
+      }
+
+      // Pick a random candidate
+      const newCandidate =
+        candidates[Math.floor(Math.random() * candidates.length)]
+
+      // Calculate new travel times
+      const prevStep = stepIndex > 0 ? schedule[stepIndex - 1] : null
+      const nextStep =
+        stepIndex < schedule.length - 1 ? schedule[stepIndex + 1] : null
+
+      let newTravelToNextMinutes: number | null = null
+      let newTravelFromPrevMinutes: number | null = null
+
+      if (nextStep) {
+        newTravelToNextMinutes = estimateTravelMinutesBetween(
+          newCandidate.place || null,
+          nextStep.place || null,
+        )
+        if (newTravelToNextMinutes === null) {
+          newTravelToNextMinutes =
+            newCandidate.place?.sourceKind === "place" ||
+            nextStep.place?.sourceKind === "place"
+              ? 10
+              : 0
+        }
+      }
+
+      // Create the new step with updated values
+      const updatedStep = {
+        ...step,
+        title: newCandidate.value,
+        place: newCandidate.place,
+        travelToNextMinutes: newTravelToNextMinutes,
+      }
+
+      // If there's a previous step, update its travelToNextMinutes
+      const updatedSchedule = [...schedule]
+      updatedSchedule[stepIndex] = updatedStep
+
+      if (prevStep && stepIndex > 0) {
+        const prevTravelMinutes = estimateTravelMinutesBetween(
+          prevStep.place || null,
+          newCandidate.place || null,
+        )
+        updatedSchedule[stepIndex - 1] = {
+          ...prevStep,
+          travelToNextMinutes:
+            prevTravelMinutes !== null
+              ? prevTravelMinutes
+              : prevStep.place?.sourceKind === "place" ||
+                  newCandidate.place?.sourceKind === "place"
+                ? 10
+                : 0,
+        }
+      }
+
+      // Rebuild the filledTemplate with the new step title
+      let updatedFilledTemplate = idea.filledTemplate || idea.template
+      updatedFilledTemplate = updatedFilledTemplate.replace(
+        step.title,
+        newCandidate.value,
+      )
+
+      // Update places record with the new place
+      const updatedPlaces = { ...idea.places }
+      const placeKey = `${step.slot}_${stepIndex + 1}`
+      updatedPlaces[placeKey] = newCandidate.place || null
+
+      // Update modified ideas state with schedule, template, and places
+      setModifiedIdeas((prev) => {
+        const newMap = new Map(prev)
+        const ideaMods = newMap.get(ideaIndex) || {}
+        newMap.set(ideaIndex, {
+          ...ideaMods,
+          schedule: updatedSchedule,
+          filledTemplate: updatedFilledTemplate,
+          places: updatedPlaces,
+        })
+        return newMap
+      })
+
+      Alert.alert(`Updated with ${newCandidate.value}!`)
+    } finally {
+      setRegeneratingSteps((prev) => {
+        const next = new Set(prev)
+        next.delete(stepKey)
+        return next
+      })
+    }
   }
 
   const {
@@ -1169,8 +1302,16 @@ export default function PlannedDateResults({
 
       {!isLoading && !error
         ? filledIdeas.map((idea, index) => {
-            const places = Object.values(idea.places || {}).filter(Boolean)
-            const schedule = idea.schedule || []
+            const modifiedPlaces = modifiedIdeas.get(index)?.places
+            const ideaPlacesRecord = modifiedPlaces || idea.places || {}
+            const places: PlaceSummary[] = Object.values(
+              ideaPlacesRecord,
+            ).filter(Boolean) as PlaceSummary[]
+            const modifiedSchedule = modifiedIdeas.get(index)?.schedule
+            const schedule = modifiedSchedule || idea.schedule || []
+            const modifiedFilledTemplate =
+              modifiedIdeas.get(index)?.filledTemplate
+            const filledTemplate = modifiedFilledTemplate || idea.filledTemplate
             const isExpanded = expandedIdeas.has(index)
 
             return (
@@ -1229,7 +1370,7 @@ export default function PlannedDateResults({
                     fontWeight: "600",
                   }}
                 >
-                  {idea.filledTemplate}
+                  {filledTemplate}
                 </Text>
 
                 <TouchableOpacity
@@ -1269,88 +1410,92 @@ export default function PlannedDateResults({
                           backgroundColor: "#f5f8fb",
                         }}
                       >
-                        <Text
+                        <View
                           style={{
-                            fontSize: 14,
-                            fontWeight: "700",
-                            color: "#2c3e50",
-                            marginBottom: 4,
+                            display: "flex",
+                            flexDirection: "row",
+                            justifyContent: "space-between",
                           }}
                         >
-                          {step.startTime} - {step.endTime} (
-                          {step.durationMinutes} min)
-                        </Text>
-                        {stepIndex === 0 &&
-                        idea.commuteToFirstMinutes !== null &&
-                        idea.commuteToFirstMinutes !== 0 ? (
-                          <Text
-                            style={{
-                              marginBottom: 4,
-                              color: "#556677",
-                              fontSize: 13,
-                              fontWeight: "600",
-                            }}
-                          >
-                            Travel to first stop: ~{idea.commuteToFirstMinutes}{" "}
-                            min
-                          </Text>
-                        ) : null}
-                        <Text style={{ fontSize: 14, color: "#2c3e50" }}>
-                          {step.title}
-                        </Text>
-                        {/* {step.place?.sourceKind === "activity" ? (
+                          <View style={{ maxWidth: "70%" }}>
+                            <Text
+                              style={{
+                                fontSize: 14,
+                                fontWeight: "700",
+                                color: "#2c3e50",
+                                marginBottom: 4,
+                              }}
+                            >
+                              {step.startTime} - {step.endTime} (
+                              {step.durationMinutes} min)
+                            </Text>
+                            {stepIndex === 0 &&
+                            idea.commuteToFirstMinutes !== null &&
+                            idea.commuteToFirstMinutes !== 0 ? (
+                              <Text
+                                style={{
+                                  marginBottom: 4,
+                                  color: "#556677",
+                                  fontSize: 13,
+                                  fontWeight: "600",
+                                }}
+                              >
+                                Travel to first stop: ~
+                                {idea.commuteToFirstMinutes} min
+                              </Text>
+                            ) : null}
+                            <Text style={{ fontSize: 14, color: "#2c3e50" }}>
+                              {step.title}
+                            </Text>
+
+                            {step.travelToNextMinutes !== null &&
+                            step.travelToNextMinutes !== 0 ? (
+                              <Text
+                                style={{
+                                  marginTop: 6,
+                                  color: "#556677",
+                                  fontSize: 13,
+                                  fontWeight: "600",
+                                }}
+                              >
+                                Travel to next stop: ~{step.travelToNextMinutes}{" "}
+                                min
+                              </Text>
+                            ) : null}
+                          </View>
+
                           <TouchableOpacity
-                            style={{ marginTop: 4 }}
                             onPress={() =>
-                              navigation.navigate("ActivityDetail", {
-                                id: step.place.id,
-                              })
+                              regenerateStep(index, stepIndex, idea)
                             }
+                            disabled={regeneratingSteps.has(
+                              `${index}-${stepIndex}`,
+                            )}
+                            style={{
+                              backgroundColor: regeneratingSteps.has(
+                                `${index}-${stepIndex}`,
+                              )
+                                ? "#ccc"
+                                : "#e63f67",
+                              borderRadius: 6,
+                              paddingVertical: 6,
+                              paddingHorizontal: 10,
+                              alignSelf: "flex-start",
+                            }}
                           >
                             <Text
                               style={{
-                                color: "#1e90ff",
+                                color: "#fff",
                                 fontWeight: "700",
-                                textDecorationLine: "underline",
+                                fontSize: 12,
                               }}
                             >
-                              View activity details
+                              {regeneratingSteps.has(`${index}-${stepIndex}`)
+                                ? "Loading..."
+                                : "Regenerate"}
                             </Text>
                           </TouchableOpacity>
-                        ) : null} */}
-
-                        {/* {step.place?.googleMapsUri ? (
-                          <TouchableOpacity
-                            style={{ marginTop: 4 }}
-                            onPress={() =>
-                              Linking.openURL(step.place!.googleMapsUri)
-                            }
-                          >
-                            <Text
-                              style={{
-                                color: "#1e90ff",
-                                fontWeight: "700",
-                                textDecorationLine: "underline",
-                              }}
-                            >
-                              {step.place.name}
-                            </Text>
-                          </TouchableOpacity>
-                        ) : null} */}
-
-                        {step.travelToNextMinutes !== null &&
-                        step.travelToNextMinutes !== 0 ? (
-                          <Text
-                            style={{
-                              marginTop: 6,
-                              color: "#556677",
-                              fontSize: 13,
-                              fontWeight: "600",
-                            }}
-                          >
-                            Travel to next stop: ~{step.travelToNextMinutes} min
-                          </Text>
-                        ) : null}
+                        </View>
 
                         {stepIndex === schedule.length - 1 &&
                         idea.commuteFromLastMinutes !== null &&

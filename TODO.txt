@@ -4,7 +4,6 @@ Come up with a better name for the app
 More date templates/Fix current date templates, add more activities
 Fix Google Places Querying
 Test the date planner generator
-On the date planner results page, the user can regenerate not just a date idea, but specific places listed on the date idea
 
 Name Ideas:
 Provo DateCreate

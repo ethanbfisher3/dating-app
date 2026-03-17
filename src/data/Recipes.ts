@@ -1,12 +1,12 @@
 export interface Recipe {
-  name: string;
-  description: string;
-  ingredients: { [key: string]: string };
-  steps: string[];
-  estimatedPrice: number;
-  estimatedTime: number;
-  categories: string[];
-  image: any;
+  name: string
+  description: string
+  ingredients: { [key: string]: string }
+  steps: string[]
+  estimatedPrice: number
+  estimatedTime: number
+  categories: string[]
+  image: any
 }
 
 const recipes: Recipe[] = [
@@ -875,10 +875,10 @@ const recipes: Recipe[] = [
       "Crispy zucchini fritters make a tasty side or vegetarian main dish.",
     image: require("../../assets/images/recipes/zucchini_fritters.png"),
   },
-];
+].sort((a, b) => a.name.localeCompare(b.name))
 
 export function getRecipeByIndex(index: number) {
-  return recipes[index];
+  return recipes[index]
 }
 
-export default recipes;
+export default recipes

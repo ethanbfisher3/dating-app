@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import "react-native-gesture-handler"
 import { NavigationContainer } from "@react-navigation/native"
 import { createNativeStackNavigator } from "@react-navigation/native-stack"
@@ -10,6 +10,8 @@ import {
   Text,
   StyleSheet,
 } from "react-native"
+import * as NavigationBar from "expo-navigation-bar"
+import { Asset } from "expo-asset"
 import { GestureHandlerRootView } from "react-native-gesture-handler"
 import Ionicons from "@expo/vector-icons/Ionicons"
 import PagerView from "react-native-pager-view"
@@ -24,6 +26,7 @@ import InspectDateIdea from "./src/screens/InspectDateIdea"
 import PlannedDateResults from "./src/screens/PlannedDateResults"
 import SavedIdeas from "./src/screens/SavedIdeas"
 import DateHistory from "src/screens/DateHistory"
+import recipes from "./src/data/Recipes"
 
 const Stack = createNativeStackNavigator<RootStackParamList>()
 
@@ -81,6 +84,21 @@ const TABS = [
 ]
 
 export default function App() {
+  useEffect(() => {
+    NavigationBar.setVisibilityAsync("hidden")
+    NavigationBar.setBehaviorAsync("overlay-swipe")
+  }, [])
+
+  useEffect(() => {
+    const recipeImages = recipes
+      .map((recipe) => recipe.image)
+      .filter((image): image is number => typeof image === "number")
+    const uniqueRecipeImages = [...new Set(recipeImages)]
+
+    // Warm the image cache so recipe thumbnails render quickly on first open.
+    void Asset.loadAsync(uniqueRecipeImages)
+  }, [])
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <NavigationContainer>

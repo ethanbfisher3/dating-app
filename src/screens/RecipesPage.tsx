@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import {
   KeyboardAvoidingView,
   Platform,
@@ -15,6 +15,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context"
 import recipes from "../data/Recipes"
 import type { AppNavigation } from "../types/navigation"
 
+const RECIPES_PER_PAGE = 10
+
 export default function RecipesPage({
   navigation,
 }: {
@@ -24,6 +26,7 @@ export default function RecipesPage({
   const [budget, setBudget] = useState("")
   const [mealType, setMealType] = useState("")
   const [time, setTime] = useState("")
+  const [currentPage, setCurrentPage] = useState(1)
   const [filtersExpanded, setFiltersExpanded] = useState(false)
   const scrollRef = useRef<ScrollView>(null)
 
@@ -62,6 +65,27 @@ export default function RecipesPage({
       return true
     })
   }, [budget, mealType, time])
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredRecipes.length / RECIPES_PER_PAGE),
+  )
+  const pageStartIndex = (currentPage - 1) * RECIPES_PER_PAGE
+  const pagedRecipes = filteredRecipes.slice(
+    pageStartIndex,
+    pageStartIndex + RECIPES_PER_PAGE,
+  )
+  const pageEndIndex = pageStartIndex + pagedRecipes.length
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [budget, mealType, time])
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages)
+    }
+  }, [currentPage, totalPages])
 
   return (
     <KeyboardAvoidingView
@@ -171,11 +195,61 @@ export default function RecipesPage({
           )}
         </View>
 
+        {filteredRecipes.length > RECIPES_PER_PAGE && (
+          <View style={styles.paginationContainer}>
+            <TouchableOpacity
+              style={[
+                styles.paginationButton,
+                currentPage === 1 && styles.paginationButtonDisabled,
+              ]}
+              onPress={() => setCurrentPage((page) => Math.max(1, page - 1))}
+              disabled={currentPage === 1}
+            >
+              <Text
+                style={[
+                  styles.paginationButtonText,
+                  currentPage === 1 && styles.paginationButtonTextDisabled,
+                ]}
+              >
+                Previous
+              </Text>
+            </TouchableOpacity>
+
+            <Text style={styles.pageIndicator}>
+              Page {currentPage} of {totalPages}
+            </Text>
+
+            <TouchableOpacity
+              style={[
+                styles.paginationButton,
+                currentPage === totalPages && styles.paginationButtonDisabled,
+              ]}
+              onPress={() =>
+                setCurrentPage((page) => Math.min(totalPages, page + 1))
+              }
+              disabled={currentPage === totalPages}
+            >
+              <Text
+                style={[
+                  styles.paginationButtonText,
+                  currentPage === totalPages &&
+                    styles.paginationButtonTextDisabled,
+                ]}
+              >
+                Next
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
         {/* Recipe List */}
         <View style={styles.recipeListContainer}>
           <Text style={styles.resultCount}>
             {filteredRecipes.length} recipe
             {filteredRecipes.length !== 1 ? "s" : ""} found
+            {filteredRecipes.length > 0
+              ? ` • Showing ${pageStartIndex + 1}-${pageEndIndex}`
+              : ""}
           </Text>
           {filteredRecipes.length === 0 ? (
             <View style={styles.noResults}>
@@ -184,9 +258,9 @@ export default function RecipesPage({
               </Text>
             </View>
           ) : (
-            filteredRecipes.map((recipe, index) => (
+            pagedRecipes.map((recipe, index) => (
               <TouchableOpacity
-                key={index}
+                key={`${recipe.name}-${pageStartIndex + index}`}
                 style={styles.recipeCard}
                 onPress={() =>
                   navigation.navigate("RecipeDetail", {
@@ -267,7 +341,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 12,
   },
   filterTitle: {
     fontWeight: "800",
@@ -412,6 +485,40 @@ const styles = StyleSheet.create({
   categoryText: {
     fontSize: 11,
     color: "#007AFF",
+    fontWeight: "600",
+  },
+  paginationContainer: {
+    marginBottom: 12,
+    paddingHorizontal: 24,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  paginationButton: {
+    backgroundColor: "#007AFF",
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    minWidth: 86,
+    alignItems: "center",
+  },
+  paginationButtonDisabled: {
+    backgroundColor: "#e5e5ea",
+  },
+  paginationButtonText: {
+    color: "#fff",
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  paginationButtonTextDisabled: {
+    color: "#9a9aa1",
+  },
+  pageIndicator: {
+    flex: 1,
+    textAlign: "center",
+    color: "#666",
+    fontSize: 13,
     fontWeight: "600",
   },
 })
