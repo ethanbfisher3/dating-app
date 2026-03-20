@@ -501,15 +501,14 @@ export default function useDatePlannerIdeas(params: PlannedDateResultsParams): {
     setError(null)
 
     try {
-      if (params.maxDistance <= 0) {
+      if (params.maxDistance <= 0 || !params.userLocation) {
         setMatchedPlaces([])
         setSourceFile(byuEventPlaces.length ? "BYU Calendar API" : "")
       } else {
         const localPlaces = loadLocalPlacesData()
 
-        // Use user's location or default to BYU/Provo area
-        const userLocationForFiltering =
-          params.userLocation || DEFAULT_USER_LOCATION
+        // Use user's location for filtering
+        const userLocationForFiltering = params.userLocation
 
         const filteredLocalPlaces = localPlaces
           .filter((place) => placeMatchesCategories(place, params.categories))
