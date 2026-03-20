@@ -1,13 +1,11 @@
-TODO:
+Devlog 2 TODOs:
 New images
 Come up with a better name for the app
 More date templates/Fix current date templates, add more activities
 Fix Google Places Querying
-Test the date planner generator
 
-Name Ideas:
-Provo DateCreate
-Provo DateMate
+Devlog 3 TODOs:
+Test the date planner generator
 
 Maybe do:
 add tutorial like the mood app
