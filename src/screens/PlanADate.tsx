@@ -16,10 +16,6 @@ import { DATE_CATEGORIES, timesAreInvalid } from "src/utils/utils"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 const questionCount = 5
-const SUPER_FAR_PACIFIC_LOCATION = {
-  latitude: 0,
-  longitude: -160,
-}
 
 export default function PlanADate({
   navigation,
@@ -41,10 +37,11 @@ export default function PlanADate({
   const [showTimeError, setShowTimeError] = useState(false)
   const [showDistanceError, setShowDistanceError] = useState(false)
   const [isAnimating, setIsAnimating] = useState(false)
-  const [userLocation, setUserLocation] = useState<{
+  const [actualUserLocation, setActualUserLocation] = useState<{
     latitude: number
     longitude: number
   } | null>(null)
+  const [useMyAddressEnabled, setUseMyAddressEnabled] = useState(false)
   const [categoriesChecked, setCategoriesChecked] = useState(
     Array(DATE_CATEGORIES.length).fill(true),
   )
@@ -70,7 +67,7 @@ export default function PlanADate({
           accuracy: Location.Accuracy.Balanced,
         })
 
-        setUserLocation({
+        setActualUserLocation({
           latitude: position.coords.latitude,
           longitude: position.coords.longitude,
         })
@@ -205,7 +202,7 @@ export default function PlanADate({
       endHour: end24,
       maxDistance: parseInt(maxDistance),
       categories: selectedCategories,
-      userLocation,
+      userLocation: useMyAddressEnabled ? actualUserLocation : null,
     })
   }
 
@@ -868,11 +865,7 @@ export default function PlanADate({
               marginBottom: 16,
             }}
             onPress={() => {
-              setUserLocation(
-                userLocation === SUPER_FAR_PACIFIC_LOCATION
-                  ? null
-                  : SUPER_FAR_PACIFIC_LOCATION,
-              )
+              setUseMyAddressEnabled((prev) => !prev)
             }}
           >
             <Text
@@ -882,8 +875,8 @@ export default function PlanADate({
                 fontWeight: "700",
               }}
             >
-              Use super far address:{" "}
-              {userLocation === SUPER_FAR_PACIFIC_LOCATION ? "ON" : "OFF"}
+              Use my address:{" "}
+              {useMyAddressEnabled ? "ON" : "OFF"}
             </Text>
           </TouchableOpacity>
         )}

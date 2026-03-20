@@ -1,10 +1,8 @@
-import { Ionicons } from "@expo/vector-icons"
-import React, { useState } from "react"
-import { ScrollView, Text, View, TouchableOpacity } from "react-native"
-import appInfo from "src/data/info"
-import FontAwesome6 from "@expo/vector-icons/FontAwesome6"
-import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons"
-import { useSafeAreaInsets } from "react-native-safe-area-context"
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { useState } from "react";
+import { ScrollView, Text, View, TouchableOpacity } from "react-native";
+import appInfo from "src/data/info";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function Info({ goToTab }) {
   const [expandedOffers, setExpandedOffers] = useState({
@@ -12,16 +10,16 @@ export default function Info({ goToTab }) {
     datePlanner: false,
     recipeIdeas: false,
     savedIdeas: false,
-  })
+  });
 
-  const insets = useSafeAreaInsets()
+  const insets = useSafeAreaInsets();
 
   const toggleOffer = (offerKey: keyof typeof expandedOffers) => {
     setExpandedOffers((previous) => ({
       ...previous,
       [offerKey]: !previous[offerKey],
-    }))
-  }
+    }));
+  };
 
   return (
     <ScrollView
@@ -74,14 +72,8 @@ export default function Info({ goToTab }) {
           }}
         >
           {appInfo.appName} is your ultimate companion for planning
-          unforgettable dates in the Provo, Utah area.
+          unforgettable dates that you'll never forget!
         </Text>
-        {/* <Text style={{ fontSize: 17, lineHeight: 26, color: "#555" }}>
-          Whether you're a BYU student looking for creative date ideas, trying
-          to plan the perfect evening, or just exploring what Provo has to
-          offer, we're here to help you create meaningful connections and
-          memorable experiences.
-        </Text> */}
       </View>
 
       <View
@@ -122,9 +114,6 @@ export default function Info({ goToTab }) {
             >
               <Text
                 style={{
-                  fontSize: 18,
-                  fontWeight: "700",
-                  color: "#1a1a1a",
                   marginBottom: 6,
                 }}
               >
@@ -170,8 +159,7 @@ export default function Info({ goToTab }) {
                 marginLeft: 12,
               }}
             >
-              Curated list of date spots in and around Provo, from outdoor
-              adventures to cozy cafes.
+              Curated list of date spots, from outdoor adventures to cozy cafes.
             </Text>
           )}
         </View>
@@ -492,5 +480,5 @@ export default function Info({ goToTab }) {
         </Text>
       </View> */}
     </ScrollView>
-  )
+  );
 }

@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from "react"
+import { useLayoutEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -10,22 +10,24 @@ import {
   TextInput,
   TouchableOpacity,
   View,
-} from "react-native"
-import DateTimePicker from "@react-native-community/datetimepicker"
+} from "react-native";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import type {
   AppScreenProps,
   PlannedDateResultsParams,
-} from "../types/navigation"
-import useDatePlannerIdeas, { PlaceSummary } from "../hooks/useDatePlannerIdeas"
+} from "../types/navigation";
+import useDatePlannerIdeas, {
+  PlaceSummary,
+} from "../hooks/useDatePlannerIdeas";
 import useFilledIdeas, {
   estimateTravelMinutesBetween,
   estimateTravelMinutesFromUserLocation,
   formatTimeLabel,
   getPlaceCandidatesBySlot,
   getCandidatesForSlot,
-} from "../hooks/useFilledIdeas"
-import { saveDateIdea } from "../data/savedIdeasStore"
-import IdeaPlaceLinks from "../Components/IdeaPlaceLinks"
+} from "../hooks/useFilledIdeas";
+import { saveDateIdea } from "../data/savedIdeasStore";
+import IdeaPlaceLinks from "../Components/IdeaPlaceLinks";
 
 const DATE_CATEGORIES = [
   "Food",
@@ -35,7 +37,7 @@ const DATE_CATEGORIES = [
   "Learning",
   "Shopping",
   "Recreation",
-]
+];
 
 const DEV_PLACE_SLOT_TYPES: Record<string, string[]> = {
   meal: ["restaurant", "meal_takeaway", "cafe", "pizza_restaurant"],
@@ -43,7 +45,7 @@ const DEV_PLACE_SLOT_TYPES: Record<string, string[]> = {
   park: ["park", "hiking_area", "nature_preserve", "lake", "river"],
   learningSpot: ["museum", "library", "book_store", "art_gallery"],
   shop: ["shopping_mall", "department_store", "clothing_store", "store"],
-}
+};
 
 export default function PlannedDateResults({
   route,
@@ -53,82 +55,82 @@ export default function PlannedDateResults({
     navigation.setOptions({
       headerBackTitle: "Back",
       title: "Date Ideas",
-    })
-  }, [navigation])
+    });
+  }, [navigation]);
 
   const [plannerParams, setPlannerParams] = useState<PlannedDateResultsParams>(
     route.params,
-  )
-  const [isEditModalVisible, setIsEditModalVisible] = useState(false)
-  const [showEditDatePicker, setShowEditDatePicker] = useState(false)
-  const [editError, setEditError] = useState<string | null>(null)
+  );
+  const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+  const [showEditDatePicker, setShowEditDatePicker] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
   const [draftSelectedDate, setDraftSelectedDate] = useState(
     route.params.selectedDate,
-  )
-  const initialStartHour24 = ((route.params.startHour % 24) + 24) % 24
-  const initialEndHour24 = ((route.params.endHour % 24) + 24) % 24
+  );
+  const initialStartHour24 = ((route.params.startHour % 24) + 24) % 24;
+  const initialEndHour24 = ((route.params.endHour % 24) + 24) % 24;
   const [draftStartHour12, setDraftStartHour12] = useState(
     String(initialStartHour24 % 12 === 0 ? 12 : initialStartHour24 % 12),
-  )
+  );
   const [draftStartPeriod, setDraftStartPeriod] = useState<"AM" | "PM">(
     initialStartHour24 < 12 ? "AM" : "PM",
-  )
+  );
   const [draftEndHour12, setDraftEndHour12] = useState(
     String(initialEndHour24 % 12 === 0 ? 12 : initialEndHour24 % 12),
-  )
+  );
   const [draftEndPeriod, setDraftEndPeriod] = useState<"AM" | "PM">(
     initialEndHour24 < 12 ? "AM" : "PM",
-  )
+  );
   const [draftMaxPrice, setDraftMaxPrice] = useState(
     String(route.params.maxPrice),
-  )
+  );
   const [draftMaxDistance, setDraftMaxDistance] = useState(
     String(route.params.maxDistance),
-  )
+  );
   const [draftHasStarvingStudentCard, setDraftHasStarvingStudentCard] =
-    useState(route.params.hasStarvingStudentCard)
+    useState(route.params.hasStarvingStudentCard);
   const [draftCategoriesChecked, setDraftCategoriesChecked] = useState(
     DATE_CATEGORIES.map((category) =>
       route.params.categories.includes(category),
     ),
-  )
-  const [expandedIdeas, setExpandedIdeas] = useState<Set<number>>(new Set())
-  const [showDevMatches, setShowDevMatches] = useState(false)
-  const [showDevPlaces, setShowDevPlaces] = useState(false)
-  const [showDevActivities, setShowDevActivities] = useState(false)
-  const [showDevRecipes, setShowDevRecipes] = useState(false)
-  const [showDevByuEvents, setShowDevByuEvents] = useState(false)
+  );
+  const [expandedIdeas, setExpandedIdeas] = useState<Set<number>>(new Set());
+  const [showDevMatches, setShowDevMatches] = useState(false);
+  const [showDevPlaces, setShowDevPlaces] = useState(false);
+  const [showDevActivities, setShowDevActivities] = useState(false);
+  const [showDevRecipes, setShowDevRecipes] = useState(false);
+  const [showDevByuEvents, setShowDevByuEvents] = useState(false);
   const [regeneratingSteps, setRegeneratingSteps] = useState<Set<string>>(
     new Set(),
-  )
+  );
   const [modifiedIdeas, setModifiedIdeas] = useState<Map<number, any>>(
     new Map(),
-  )
-  const editModalScrollRef = useRef<ScrollView>(null)
+  );
+  const editModalScrollRef = useRef<ScrollView>(null);
 
   const toggleIdeaExpanded = (index: number) => {
     setExpandedIdeas((prev) => {
-      const next = new Set(prev)
+      const next = new Set(prev);
       if (next.has(index)) {
-        next.delete(index)
+        next.delete(index);
       } else {
-        next.add(index)
+        next.add(index);
       }
-      return next
-    })
-  }
+      return next;
+    });
+  };
 
   const regenerateStep = async (
     ideaIndex: number,
     stepIndex: number,
     idea: any,
   ) => {
-    const stepKey = `${ideaIndex}-${stepIndex}`
-    const schedule = idea.schedule || []
-    const step = schedule[stepIndex]
-    if (!step) return
+    const stepKey = `${ideaIndex}-${stepIndex}`;
+    const schedule = idea.schedule || [];
+    const step = schedule[stepIndex];
+    if (!step) return;
 
-    setRegeneratingSteps((prev) => new Set(prev).add(stepKey))
+    setRegeneratingSteps((prev) => new Set(prev).add(stepKey));
 
     try {
       // Get candidates for the slot type
@@ -137,41 +139,41 @@ export default function PlannedDateResults({
         places,
         recipes,
         activities,
-      )
+      );
 
       if (!candidates.length) {
-        Alert.alert("No alternatives available for this item.")
+        Alert.alert("No alternatives available for this item.");
         setRegeneratingSteps((prev) => {
-          const next = new Set(prev)
-          next.delete(stepKey)
-          return next
-        })
-        return
+          const next = new Set(prev);
+          next.delete(stepKey);
+          return next;
+        });
+        return;
       }
 
       // Pick a random candidate
       const newCandidate =
-        candidates[Math.floor(Math.random() * candidates.length)]
+        candidates[Math.floor(Math.random() * candidates.length)];
 
       // Calculate new travel times
-      const prevStep = stepIndex > 0 ? schedule[stepIndex - 1] : null
+      const prevStep = stepIndex > 0 ? schedule[stepIndex - 1] : null;
       const nextStep =
-        stepIndex < schedule.length - 1 ? schedule[stepIndex + 1] : null
+        stepIndex < schedule.length - 1 ? schedule[stepIndex + 1] : null;
 
-      let newTravelToNextMinutes: number | null = null
-      let newTravelFromPrevMinutes: number | null = null
+      let newTravelToNextMinutes: number | null = null;
+      let newTravelFromPrevMinutes: number | null = null;
 
       if (nextStep) {
         newTravelToNextMinutes = estimateTravelMinutesBetween(
           newCandidate.place || null,
           nextStep.place || null,
-        )
+        );
         if (newTravelToNextMinutes === null) {
           newTravelToNextMinutes =
             newCandidate.place?.sourceKind === "place" ||
             nextStep.place?.sourceKind === "place"
               ? 10
-              : 0
+              : 0;
         }
       }
 
@@ -181,17 +183,17 @@ export default function PlannedDateResults({
         title: newCandidate.value,
         place: newCandidate.place,
         travelToNextMinutes: newTravelToNextMinutes,
-      }
+      };
 
       // If there's a previous step, update its travelToNextMinutes
-      const updatedSchedule = [...schedule]
-      updatedSchedule[stepIndex] = updatedStep
+      const updatedSchedule = [...schedule];
+      updatedSchedule[stepIndex] = updatedStep;
 
       if (prevStep && stepIndex > 0) {
         const prevTravelMinutes = estimateTravelMinutesBetween(
           prevStep.place || null,
           newCandidate.place || null,
-        )
+        );
         updatedSchedule[stepIndex - 1] = {
           ...prevStep,
           travelToNextMinutes:
@@ -201,43 +203,43 @@ export default function PlannedDateResults({
                   newCandidate.place?.sourceKind === "place"
                 ? 10
                 : 0,
-        }
+        };
       }
 
       // Rebuild the filledTemplate with the new step title
-      let updatedFilledTemplate = idea.filledTemplate || idea.template
+      let updatedFilledTemplate = idea.filledTemplate || idea.template;
       updatedFilledTemplate = updatedFilledTemplate.replace(
         step.title,
         newCandidate.value,
-      )
+      );
 
       // Update places record with the new place
-      const updatedPlaces = { ...idea.places }
-      const placeKey = `${step.slot}_${stepIndex + 1}`
-      updatedPlaces[placeKey] = newCandidate.place || null
+      const updatedPlaces = { ...idea.places };
+      const placeKey = `${step.slot}_${stepIndex + 1}`;
+      updatedPlaces[placeKey] = newCandidate.place || null;
 
       // Update modified ideas state with schedule, template, and places
       setModifiedIdeas((prev) => {
-        const newMap = new Map(prev)
-        const ideaMods = newMap.get(ideaIndex) || {}
+        const newMap = new Map(prev);
+        const ideaMods = newMap.get(ideaIndex) || {};
         newMap.set(ideaIndex, {
           ...ideaMods,
           schedule: updatedSchedule,
           filledTemplate: updatedFilledTemplate,
           places: updatedPlaces,
-        })
-        return newMap
-      })
+        });
+        return newMap;
+      });
 
-      Alert.alert(`Updated with ${newCandidate.value}!`)
+      Alert.alert(`Updated with ${newCandidate.value}!`);
     } finally {
       setRegeneratingSteps((prev) => {
-        const next = new Set(prev)
-        next.delete(stepKey)
-        return next
-      })
+        const next = new Set(prev);
+        next.delete(stepKey);
+        return next;
+      });
     }
-  }
+  };
 
   const {
     places,
@@ -248,14 +250,14 @@ export default function PlannedDateResults({
     isLoading,
     error,
     refetch,
-  } = useDatePlannerIdeas(plannerParams)
+  } = useDatePlannerIdeas(plannerParams);
 
   const filledIdeas = useFilledIdeas({
     params: plannerParams,
     places,
     recipes,
     activities,
-  })
+  });
 
   const {
     selectedDate,
@@ -265,7 +267,7 @@ export default function PlannedDateResults({
     maxDistance,
     hasStarvingStudentCard,
     categories,
-  } = plannerParams
+  } = plannerParams;
 
   const devPlaceSlotCounts = Object.entries(DEV_PLACE_SLOT_TYPES).map(
     ([slot, allowedTypes]) => ({
@@ -274,99 +276,99 @@ export default function PlannedDateResults({
         place.types.some((type) => allowedTypes.includes(type)),
       ).length,
     }),
-  )
+  );
 
   const formatHour = (hour24: number) => {
-    const normalized = ((hour24 % 24) + 24) % 24
-    const period = normalized < 12 ? "AM" : "PM"
-    const hour12 = normalized % 12 === 0 ? 12 : normalized % 12
-    return `${hour12}:00 ${period}`
-  }
+    const normalized = ((hour24 % 24) + 24) % 24;
+    const period = normalized < 12 ? "AM" : "PM";
+    const hour12 = normalized % 12 === 0 ? 12 : normalized % 12;
+    return `${hour12}:00 ${period}`;
+  };
 
   const clampHour12 = (value: number) => {
-    if (Number.isNaN(value)) return 1
-    if (value < 1) return 1
-    if (value > 12) return 12
-    return value
-  }
+    if (Number.isNaN(value)) return 1;
+    if (value < 1) return 1;
+    if (value > 12) return 12;
+    return value;
+  };
 
   const convertTo24Hour = (hour12: number, period: "AM" | "PM") => {
     if (period === "AM") {
-      return hour12 === 12 ? 0 : hour12
+      return hour12 === 12 ? 0 : hour12;
     }
-    return hour12 === 12 ? 12 : hour12 + 12
-  }
+    return hour12 === 12 ? 12 : hour12 + 12;
+  };
 
   const toggleDraftCategory = (index: number) => {
     setDraftCategoriesChecked((current) => {
-      const updated = [...current]
-      updated[index] = !updated[index]
-      return updated
-    })
-  }
+      const updated = [...current];
+      updated[index] = !updated[index];
+      return updated;
+    });
+  };
 
   const openEditModal = () => {
-    const startHour24 = ((plannerParams.startHour % 24) + 24) % 24
-    const endHour24 = ((plannerParams.endHour % 24) + 24) % 24
+    const startHour24 = ((plannerParams.startHour % 24) + 24) % 24;
+    const endHour24 = ((plannerParams.endHour % 24) + 24) % 24;
 
-    setDraftSelectedDate(plannerParams.selectedDate)
-    setDraftStartHour12(String(startHour24 % 12 === 0 ? 12 : startHour24 % 12))
-    setDraftStartPeriod(startHour24 < 12 ? "AM" : "PM")
-    setDraftEndHour12(String(endHour24 % 12 === 0 ? 12 : endHour24 % 12))
-    setDraftEndPeriod(endHour24 < 12 ? "AM" : "PM")
-    setDraftMaxPrice(String(plannerParams.maxPrice))
-    setDraftMaxDistance(String(plannerParams.maxDistance))
-    setDraftHasStarvingStudentCard(plannerParams.hasStarvingStudentCard)
+    setDraftSelectedDate(plannerParams.selectedDate);
+    setDraftStartHour12(String(startHour24 % 12 === 0 ? 12 : startHour24 % 12));
+    setDraftStartPeriod(startHour24 < 12 ? "AM" : "PM");
+    setDraftEndHour12(String(endHour24 % 12 === 0 ? 12 : endHour24 % 12));
+    setDraftEndPeriod(endHour24 < 12 ? "AM" : "PM");
+    setDraftMaxPrice(String(plannerParams.maxPrice));
+    setDraftMaxDistance(String(plannerParams.maxDistance));
+    setDraftHasStarvingStudentCard(plannerParams.hasStarvingStudentCard);
     setDraftCategoriesChecked(
       DATE_CATEGORIES.map((category) =>
         plannerParams.categories.includes(category),
       ),
-    )
-    setShowEditDatePicker(false)
-    setEditError(null)
-    setIsEditModalVisible(true)
-  }
+    );
+    setShowEditDatePicker(false);
+    setEditError(null);
+    setIsEditModalVisible(true);
+  };
 
   const applyEditsAndRegenerate = () => {
-    const nextStartHour12 = Number.parseInt(draftStartHour12, 10)
-    const nextEndHour12 = Number.parseInt(draftEndHour12, 10)
-    const nextMaxPrice = Number.parseInt(draftMaxPrice, 10)
-    const nextMaxDistance = Number.parseInt(draftMaxDistance, 10)
+    const nextStartHour12 = Number.parseInt(draftStartHour12, 10);
+    const nextEndHour12 = Number.parseInt(draftEndHour12, 10);
+    const nextMaxPrice = Number.parseInt(draftMaxPrice, 10);
+    const nextMaxDistance = Number.parseInt(draftMaxDistance, 10);
     const nextCategories = DATE_CATEGORIES.filter(
       (_, index) => draftCategoriesChecked[index],
-    )
+    );
 
     if (!/^\d{4}-\d{2}-\d{2}$/.test(draftSelectedDate)) {
-      setEditError("Date must be in YYYY-MM-DD format.")
-      return
+      setEditError("Date must be in YYYY-MM-DD format.");
+      return;
     }
 
     if (Number.isNaN(nextStartHour12) || Number.isNaN(nextEndHour12)) {
-      setEditError("Start and end hours are required.")
-      return
+      setEditError("Start and end hours are required.");
+      return;
     }
 
     if (
       clampHour12(nextStartHour12) !== nextStartHour12 ||
       clampHour12(nextEndHour12) !== nextEndHour12
     ) {
-      setEditError("Start and end hours must be between 1 and 12.")
-      return
+      setEditError("Start and end hours must be between 1 and 12.");
+      return;
     }
 
     if (Number.isNaN(nextMaxPrice) || nextMaxPrice < 0) {
-      setEditError("Budget must be a non-negative number.")
-      return
+      setEditError("Budget must be a non-negative number.");
+      return;
     }
 
     if (Number.isNaN(nextMaxDistance) || nextMaxDistance < 0) {
-      setEditError("Distance must be a non-negative number.")
-      return
+      setEditError("Distance must be a non-negative number.");
+      return;
     }
 
     if (!nextCategories.length) {
-      setEditError("Add at least one category.")
-      return
+      setEditError("Add at least one category.");
+      return;
     }
 
     setPlannerParams({
@@ -378,28 +380,28 @@ export default function PlannedDateResults({
       hasStarvingStudentCard: draftHasStarvingStudentCard,
       categories: nextCategories,
       userLocation: plannerParams.userLocation ?? null,
-    })
-    setIsEditModalVisible(false)
-    setEditError(null)
-  }
+    });
+    setIsEditModalVisible(false);
+    setEditError(null);
+  };
 
   const draftDateValue = (() => {
-    const parsed = new Date(`${draftSelectedDate}T12:00:00`)
-    return Number.isNaN(parsed.getTime()) ? new Date() : parsed
-  })()
+    const parsed = new Date(`${draftSelectedDate}T12:00:00`);
+    return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
+  })();
 
   const handleEditInputFocus = (event: any) => {
-    const target = event?.target
+    const target = event?.target;
     if (!target) {
-      return
+      return;
     }
 
     setTimeout(() => {
-      ;(
+      (
         editModalScrollRef.current as any
-      )?.scrollResponderScrollNativeHandleToKeyboard?.(target, 120, true)
-    }, 120)
-  }
+      )?.scrollResponderScrollNativeHandleToKeyboard?.(target, 120, true);
+    }, 120);
+  };
 
   return (
     <ScrollView
@@ -441,8 +443,7 @@ export default function PlannedDateResults({
             color: "darkorange",
           }}
         >
-          You appear to be far from the Provo area. Your results won't include
-          any places nearby.
+          No places found nearby. Date ideas won't include any travel
         </Text>
       )}
 
@@ -507,8 +508,8 @@ export default function PlannedDateResults({
 
       <TouchableOpacity
         onPress={() => {
-          setExpandedIdeas(new Set())
-          refetch()
+          setExpandedIdeas(new Set());
+          refetch();
         }}
         disabled={isLoading}
         style={{
@@ -530,8 +531,8 @@ export default function PlannedDateResults({
         transparent
         animationType="fade"
         onRequestClose={() => {
-          setShowEditDatePicker(false)
-          setIsEditModalVisible(false)
+          setShowEditDatePicker(false);
+          setIsEditModalVisible(false);
         }}
       >
         <KeyboardAvoidingView
@@ -626,17 +627,17 @@ export default function PlannedDateResults({
                       value={draftStartHour12}
                       onChangeText={(text) => {
                         if (text.trim() === "") {
-                          setDraftStartHour12("")
-                          return
+                          setDraftStartHour12("");
+                          return;
                         }
 
-                        const parsed = parseInt(text, 10)
+                        const parsed = parseInt(text, 10);
                         if (Number.isNaN(parsed)) {
-                          setDraftStartHour12("")
-                          return
+                          setDraftStartHour12("");
+                          return;
                         }
 
-                        setDraftStartHour12(String(clampHour12(parsed)))
+                        setDraftStartHour12(String(clampHour12(parsed)));
                       }}
                       placeholder="1-12"
                       onFocus={handleEditInputFocus}
@@ -698,17 +699,17 @@ export default function PlannedDateResults({
                       value={draftEndHour12}
                       onChangeText={(text) => {
                         if (text.trim() === "") {
-                          setDraftEndHour12("")
-                          return
+                          setDraftEndHour12("");
+                          return;
                         }
 
-                        const parsed = parseInt(text, 10)
+                        const parsed = parseInt(text, 10);
                         if (Number.isNaN(parsed)) {
-                          setDraftEndHour12("")
-                          return
+                          setDraftEndHour12("");
+                          return;
                         }
 
-                        setDraftEndHour12(String(clampHour12(parsed)))
+                        setDraftEndHour12(String(clampHour12(parsed)));
                       }}
                       placeholder="1-12"
                       onFocus={handleEditInputFocus}
@@ -795,7 +796,7 @@ export default function PlannedDateResults({
                 }}
               >
                 {DATE_CATEGORIES.map((category, index) => {
-                  const isSelected = draftCategoriesChecked[index]
+                  const isSelected = draftCategoriesChecked[index];
                   return (
                     <TouchableOpacity
                       key={category}
@@ -819,7 +820,7 @@ export default function PlannedDateResults({
                         {category}
                       </Text>
                     </TouchableOpacity>
-                  )
+                  );
                 })}
               </View>
 
@@ -885,9 +886,9 @@ export default function PlannedDateResults({
               >
                 <TouchableOpacity
                   onPress={() => {
-                    setShowEditDatePicker(false)
-                    setIsEditModalVisible(false)
-                    setEditError(null)
+                    setShowEditDatePicker(false);
+                    setIsEditModalVisible(false);
+                    setEditError(null);
                   }}
                   style={{
                     backgroundColor: "#6c757d",
@@ -945,15 +946,15 @@ export default function PlannedDateResults({
                   themeVariant={Platform.OS === "ios" ? "light" : undefined}
                   onChange={(event, date) => {
                     if (Platform.OS === "android") {
-                      setShowEditDatePicker(false)
+                      setShowEditDatePicker(false);
                       if (event.type === "set" && date) {
-                        setDraftSelectedDate(date.toISOString().slice(0, 10))
+                        setDraftSelectedDate(date.toISOString().slice(0, 10));
                       }
-                      return
+                      return;
                     }
 
                     if (date) {
-                      setDraftSelectedDate(date.toISOString().slice(0, 10))
+                      setDraftSelectedDate(date.toISOString().slice(0, 10));
                     }
                   }}
                 />
@@ -1302,17 +1303,18 @@ export default function PlannedDateResults({
 
       {!isLoading && !error
         ? filledIdeas.map((idea, index) => {
-            const modifiedPlaces = modifiedIdeas.get(index)?.places
-            const ideaPlacesRecord = modifiedPlaces || idea.places || {}
+            const modifiedPlaces = modifiedIdeas.get(index)?.places;
+            const ideaPlacesRecord = modifiedPlaces || idea.places || {};
             const places: PlaceSummary[] = Object.values(
               ideaPlacesRecord,
-            ).filter(Boolean) as PlaceSummary[]
-            const modifiedSchedule = modifiedIdeas.get(index)?.schedule
-            const schedule = modifiedSchedule || idea.schedule || []
+            ).filter(Boolean) as PlaceSummary[];
+            const modifiedSchedule = modifiedIdeas.get(index)?.schedule;
+            const schedule = modifiedSchedule || idea.schedule || [];
             const modifiedFilledTemplate =
-              modifiedIdeas.get(index)?.filledTemplate
-            const filledTemplate = modifiedFilledTemplate || idea.filledTemplate
-            const isExpanded = expandedIdeas.has(index)
+              modifiedIdeas.get(index)?.filledTemplate;
+            const filledTemplate =
+              modifiedFilledTemplate || idea.filledTemplate;
+            const isExpanded = expandedIdeas.has(index);
 
             return (
               <View
@@ -1345,8 +1347,8 @@ export default function PlannedDateResults({
 
                   <TouchableOpacity
                     onPress={() => {
-                      saveDateIdea(idea)
-                      Alert.alert("Date Idea Saved!")
+                      saveDateIdea(idea);
+                      Alert.alert("Date Idea Saved!");
                     }}
                     style={{
                       alignSelf: "flex-end",
@@ -1543,9 +1545,9 @@ export default function PlannedDateResults({
                   <IdeaPlaceLinks places={places} navigation={navigation} />
                 ) : null}
               </View>
-            )
+            );
           })
         : null}
     </ScrollView>
-  )
+  );
 }

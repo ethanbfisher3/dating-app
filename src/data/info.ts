@@ -1,3 +1,3 @@
-const appInfo = { appName: "Dating App" }
+const appInfo = { appName: "Date Planner" };
 
-export default appInfo
+export default appInfo;
