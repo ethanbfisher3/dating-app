@@ -1,38 +1,37 @@
-import config from "../config";
-import burgers_and_sandwiches from "./ssc_deals/burgers_and_sandwiches";
-import entertainment from "./ssc_deals/entertainment";
-import free_deals from "./ssc_deals/free_deals";
-import pizza from "./ssc_deals/pizza";
-import restaurants from "./ssc_deals/restaurants";
-import treats_and_drinks from "./ssc_deals/treats_and_drinks";
-import { sanitizeUri } from "../utils/utils";
-import { findAssetForPath } from "../assets/imageMap";
+import burgers_and_sandwiches from "./ssc_deals/burgers_and_sandwiches"
+import entertainment from "./ssc_deals/entertainment"
+import free_deals from "./ssc_deals/free_deals"
+import pizza from "./ssc_deals/pizza"
+import restaurants from "./ssc_deals/restaurants"
+import treats_and_drinks from "./ssc_deals/treats_and_drinks"
+import { sanitizeUri } from "../utils/utils"
+import { findAssetForPath } from "../assets/imageMap"
 
 export function toRadians(value: number) {
-  return (value * Math.PI) / 180;
+  return (value * Math.PI) / 180
 }
 
 export function milesBetween(a: GeoLocation, b: GeoLocation) {
-  const earthRadiusMiles = 3958.8;
-  const dLat = toRadians(b.latitude - a.latitude);
-  const dLon = toRadians(b.longitude - a.longitude);
+  const earthRadiusMiles = 3958.8
+  const dLat = toRadians(b.latitude - a.latitude)
+  const dLon = toRadians(b.longitude - a.longitude)
 
-  const lat1 = toRadians(a.latitude);
-  const lat2 = toRadians(b.latitude);
+  const lat1 = toRadians(a.latitude)
+  const lat2 = toRadians(b.latitude)
 
   const haversine =
     Math.sin(dLat / 2) ** 2 +
-    Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) ** 2;
+    Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) ** 2
 
-  const arc = 2 * Math.atan2(Math.sqrt(haversine), Math.sqrt(1 - haversine));
-  return earthRadiusMiles * arc;
+  const arc = 2 * Math.atan2(Math.sqrt(haversine), Math.sqrt(1 - haversine))
+  return earthRadiusMiles * arc
 }
 
 export function getDistanceText(
   idea: DateIdea,
   userLocation?: GeoLocation | null,
 ) {
-  if (!userLocation) return null;
+  if (!userLocation) return null
 
   const validIdeaLocations = (idea.locations || [])
     .map((l) => l.location)
@@ -42,63 +41,63 @@ export function getDistanceText(
         Number.isFinite(location.latitude) &&
         Number.isFinite(location.longitude) &&
         !(location.latitude === 0 && location.longitude === 0),
-    );
+    )
 
-  if (!validIdeaLocations.length) return null;
+  if (!validIdeaLocations.length) return null
 
   const closestDistance = Math.min(
     ...validIdeaLocations.map((location) =>
       milesBetween(userLocation, location),
     ),
-  );
+  )
 
-  return `${closestDistance.toFixed(1)} mi`;
+  return `${closestDistance.toFixed(1)} mi`
 }
 
 export function getSeasonText(idea: DateIdea) {
   const months =
-    idea.seasonalTimeframe?.months || idea.seasonalTimeframe?.months;
-  if (!months || !months.length) return null;
-  if (months.length >= 11) return "All year";
-  const first = months[0];
-  const last = months[months.length - 1];
-  return first === last ? first : `${first}–${last}`;
+    idea.seasonalTimeframe?.months || idea.seasonalTimeframe?.months
+  if (!months || !months.length) return null
+  if (months.length >= 11) return "All year"
+  const first = months[0]
+  const last = months[months.length - 1]
+  return first === last ? first : `${first}–${last}`
 }
 
 export interface GeoLocation {
-  latitude: number;
-  longitude: number;
+  latitude: number
+  longitude: number
 }
 
 export interface DateIdea {
-  id?: number;
-  name: string;
-  mapSrc?: string;
-  description: string;
-  image?: any;
-  website?: string;
-  rating?: string;
-  pricing?: string;
-  free?: boolean;
-  hours?: string;
-  categories: string[];
-  minDateNumber: number;
-  timeOfDay: string[];
+  id?: number
+  name: string
+  mapSrc?: string
+  description: string
+  image?: any
+  website?: string
+  rating?: string
+  pricing?: string
+  free?: boolean
+  hours?: string
+  categories: string[]
+  minDateNumber: number
+  timeOfDay: string[]
   seasonalTimeframe: {
-    months: string[];
-  };
-  CanUseSSC: boolean;
+    months: string[]
+  }
+  CanUseSSC: boolean
   locations: {
-    name: string;
-    src: string;
-    address: string;
-    location: GeoLocation;
-  }[];
+    name: string
+    src: string
+    address: string
+    location: GeoLocation
+  }[]
   link?: {
-    text: string;
-    url: string;
-  };
-  majorRizz?: boolean;
+    text: string
+    url: string
+  }
+  majorRizz?: boolean
 }
 
 const dateideas: DateIdea[] = [
@@ -929,33 +928,33 @@ const dateideas: DateIdea[] = [
     },
     CanUseSSC: true,
   },
-];
+]
 
-export type DateIdeaWithId = DateIdea & { id: number };
+export type DateIdeaWithId = DateIdea & { id: number }
 
 const dateideasWithIds: DateIdeaWithId[] = dateideas.map((idea, index) => ({
   ...idea,
   id: index + 1,
-}));
+}))
 
 export function getDateIdeaById(id: number | string) {
-  return dateideasWithIds.find((idea) => String(idea.id) === String(id));
+  return dateideasWithIds.find((idea) => String(idea.id) === String(id))
 }
 
 // Helper: parse SSC distance strings (e.g., "0.31Mi", "<1 mile") into numeric miles
 const parseSSCDistance = (d) => {
-  if (d === undefined || d === null) return undefined;
-  if (typeof d === "number") return d;
-  const s = String(d).trim();
-  if (!s) return undefined;
+  if (d === undefined || d === null) return undefined
+  if (typeof d === "number") return d
+  const s = String(d).trim()
+  if (!s) return undefined
   if (s.includes("Mi") || s.toLowerCase().includes("mi")) {
-    const num = parseFloat(s.replace(/[^0-9.]/g, ""));
-    return isNaN(num) ? undefined : num;
+    const num = parseFloat(s.replace(/[^0-9.]/g, ""))
+    return isNaN(num) ? undefined : num
   }
-  if (s.includes("<1") || s.toLowerCase().includes("<1 mile")) return 0.5;
-  const num = parseFloat(s.replace(/[^0-9.]/g, ""));
-  return isNaN(num) ? undefined : num;
-};
+  if (s.includes("<1") || s.toLowerCase().includes("<1 mile")) return 0.5
+  const num = parseFloat(s.replace(/[^0-9.]/g, ""))
+  return isNaN(num) ? undefined : num
+}
 
 // Build a combined list of SSC items with source category tags
 const sscSources = [
@@ -965,48 +964,48 @@ const sscSources = [
   { list: pizza, category: "Food" },
   { list: restaurants, category: "Food" },
   { list: treats_and_drinks, category: "Food" },
-];
+]
 
 const allSSC = sscSources.flatMap((s) =>
   s.list.map((it) => ({ ...it, _category: s.category })),
-);
+)
 
 // Group by normalized lower-case name
 const grouped = allSSC.reduce((acc, item) => {
-  const key = (item.name || "").trim().toLowerCase();
-  if (!acc[key]) acc[key] = [];
-  acc[key].push(item);
-  return acc;
-}, {});
+  const key = (item.name || "").trim().toLowerCase()
+  if (!acc[key]) acc[key] = []
+  acc[key].push(item)
+  return acc
+}, {})
 
 const normalizedFromGroups = Object.keys(grouped).map((key) => {
-  const group = grouped[key];
+  const group = grouped[key]
   // choose the first non-empty image, else fallback
   const img =
     group.find((g) => g.image && g.image !== "data:,")?.image ||
-    require("../../assets/images/ssc.png");
+    require("../../assets/images/ssc.png")
   // parse distances and pick the minimum (closest)
   const distances = group
     .map((g) => parseSSCDistance(g.distance))
-    .filter((d) => d !== undefined);
-  const minDistance = distances.length ? Math.min(...distances) : undefined;
+    .filter((d) => d !== undefined)
+  const minDistance = distances.length ? Math.min(...distances) : undefined
   // count number of deals (each item has a 'deal' attribute)
-  const dealsCount = group.length;
+  const dealsCount = group.length
   // pick pricing/free heuristics
   const anyFree = group.some(
     (g) => g.free === true || (g.pricing && /free/i.test(g.pricing)),
-  );
+  )
   const pricing =
     group.find((g) => g.pricing && !/free/i.test(g.pricing))?.pricing ||
-    (anyFree ? "Free" : undefined);
+    (anyFree ? "Free" : undefined)
   // collect categories (dedupe)
   const categories = Array.from(
     new Set(group.map((g) => g._category).filter(Boolean)),
-  );
+  )
 
   const uniqueDeals = Array.from(
     new Set(group.map((g) => g.deal).filter(Boolean)),
-  );
+  )
   return {
     name: group[0].name,
     imgSrc: img,
@@ -1022,7 +1021,7 @@ const normalizedFromGroups = Object.keys(grouped).map((key) => {
     categories: categories.length ? categories : ["Food"],
     dealsCount: uniqueDeals.length,
     deals: uniqueDeals,
-  };
-});
+  }
+})
 
-export default dateideasWithIds;
+export default dateideasWithIds

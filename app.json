@@ -1,8 +1,22 @@
 {
   "expo": {
-    "name": "BYU Dating",
+    "name": "Dating App",
     "slug": "byu-dating-native",
     "platforms": ["ios", "android", "web"],
-    "version": "1.0.0"
+    "version": "1.0.0",
+    "icon": "./src/assets/images/date_planner_icon.png",
+    "backgroundColor": "#FFFFFF",
+    "splash": {
+      "backgroundColor": "#FFFFFF",
+      "image": "./src/assets/images/date_planner_icon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "acb92048-fe7c-4b07-a0ed-d40443ef8df0"
+      }
+    },
+    "android": {
+      "package": "com.ethanbfisher3.dateplanner"
+    }
   }
 }

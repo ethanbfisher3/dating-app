@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import "react-native-gesture-handler";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
@@ -10,18 +10,23 @@ import {
   Text,
   StyleSheet,
 } from "react-native";
+import * as NavigationBar from "expo-navigation-bar";
+import { Asset } from "expo-asset";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import PagerView from "react-native-pager-view";
 import Home from "./src/screens/Home";
 import PlanADate from "./src/screens/PlanADate";
-import Tips from "./src/screens/Tips";
 import Info from "./src/screens/Info";
 import DateIdeas from "./src/screens/DateIdeas";
 import RecipesPage from "./src/screens/RecipesPage";
 import RecipeDetail from "./src/screens/RecipeDetail";
+import ActivityDetail from "./src/screens/ActivityDetail";
 import InspectDateIdea from "./src/screens/InspectDateIdea";
 import PlannedDateResults from "./src/screens/PlannedDateResults";
+import SavedIdeas from "./src/screens/SavedIdeas";
+import DateHistory from "src/screens/DateHistory";
+import recipes from "./src/data/Recipes";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -34,12 +39,19 @@ const TABS = [
     iconOutline: "home-outline",
     component: Home,
   },
+  // {
+  //   key: "Date Ideas",
+  //   title: "Date Ideas",
+  //   icon: "compass",
+  //   iconOutline: "compass-outline",
+  //   component: DateIdeas,
+  // },
   {
-    key: "Date Ideas",
-    title: "Date Ideas",
-    icon: "compass",
-    iconOutline: "compass-outline",
-    component: DateIdeas,
+    key: "Date History",
+    title: "Date History",
+    icon: "time",
+    iconOutline: "time-outline",
+    component: DateHistory,
   },
   {
     key: "Date Planner",
@@ -56,11 +68,11 @@ const TABS = [
     component: RecipesPage,
   },
   {
-    key: "Tips",
-    title: "Tips",
-    icon: "bulb",
-    iconOutline: "bulb-outline",
-    component: Tips,
+    key: "Saved Ideas",
+    title: "Saved Ideas",
+    icon: "bookmark",
+    iconOutline: "bookmark-outline",
+    component: SavedIdeas,
   },
   // {
   //   key: "Info",
@@ -72,6 +84,20 @@ const TABS = [
 ];
 
 export default function App() {
+  useEffect(() => {
+    NavigationBar.setVisibilityAsync("hidden");
+  }, []);
+
+  useEffect(() => {
+    const recipeImages = recipes
+      .map((recipe) => recipe.image)
+      .filter((image): image is number => typeof image === "number");
+    const uniqueRecipeImages = [...new Set(recipeImages)];
+
+    // Warm the image cache so recipe thumbnails render quickly on first open.
+    void Asset.loadAsync(uniqueRecipeImages);
+  }, []);
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <NavigationContainer>
@@ -87,7 +113,9 @@ export default function App() {
           <Stack.Screen name="DateIdeas" component={DateIdeas} />
           <Stack.Screen name="PlanADate" component={PlanADate} />
           <Stack.Screen name="RecipesPage" component={RecipesPage} />
+          <Stack.Screen name="SavedIdeas" component={SavedIdeas} />
           <Stack.Screen name="RecipeDetail" component={RecipeDetail} />
+          <Stack.Screen name="ActivityDetail" component={ActivityDetail} />
           <Stack.Screen name="InspectDateIdea" component={InspectDateIdea} />
           <Stack.Screen
             name="PlannedDateResults"
@@ -108,6 +136,7 @@ function MainTabs({ navigation }: { navigation: AppNavigation }) {
   }, []);
 
   const handleTabPress = useCallback((index: number) => {
+    setCurrentPage(index);
     pagerRef.current?.setPage(index);
   }, []);
 
@@ -176,7 +205,7 @@ function MainTabs({ navigation }: { navigation: AppNavigation }) {
                     size={isCenterTab ? 30 : 28}
                     color={isCenterTab ? "#ffffff" : color}
                   />
-                  <Text
+                  {/* <Text
                     style={
                       isCenterTab
                         ? styles.centerTabLabel
@@ -184,7 +213,7 @@ function MainTabs({ navigation }: { navigation: AppNavigation }) {
                     }
                   >
                     {tab.title}
-                  </Text>
+                  </Text> */}
                 </View>
               </TouchableOpacity>
             );
@@ -209,7 +238,7 @@ const styles = StyleSheet.create({
     borderTopColor: "#e0e0e0",
     paddingBottom: 12,
     paddingTop: 8,
-    height: 86,
+    height: 72,
   },
   tabButton: {
     flex: 1,
@@ -223,10 +252,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   centerTabCircle: {
-    width: 88,
-    height: 88,
+    width: 72,
+    height: 72,
     borderRadius: 44,
-    marginTop: -28,
+    marginTop: -16,
     alignItems: "center",
     justifyContent: "center",
     shadowColor: "#000",

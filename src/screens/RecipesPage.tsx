@@ -1,5 +1,7 @@
-import React, { useState, useMemo } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import {
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   Text,
   StyleSheet,
@@ -9,14 +11,37 @@ import {
   TextInput,
 } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
-import recipes, { Recipe } from "../data/Recipes"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
+import recipes from "../data/Recipes"
 import type { AppNavigation } from "../types/navigation"
 
-export default function RecipesPage({ navigation }: { navigation: AppNavigation }) {
+const RECIPES_PER_PAGE = 10
+
+export default function RecipesPage({
+  navigation,
+}: {
+  navigation: AppNavigation
+}) {
+  const insets = useSafeAreaInsets()
   const [budget, setBudget] = useState("")
   const [mealType, setMealType] = useState("")
   const [time, setTime] = useState("")
+  const [currentPage, setCurrentPage] = useState(1)
   const [filtersExpanded, setFiltersExpanded] = useState(false)
+  const scrollRef = useRef<ScrollView>(null)
+
+  const handleFilterInputFocus = (event: any) => {
+    const target = event?.target
+    if (!target) {
+      return
+    }
+
+    setTimeout(() => {
+      ;(
+        scrollRef.current as any
+      )?.scrollResponderScrollNativeHandleToKeyboard?.(target, 120, true)
+    }, 120)
+  }
 
   const mealTypes = ["Breakfast", "Lunch", "Dinner", "Dessert", "Snack"]
 
@@ -41,154 +66,240 @@ export default function RecipesPage({ navigation }: { navigation: AppNavigation 
     })
   }, [budget, mealType, time])
 
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredRecipes.length / RECIPES_PER_PAGE),
+  )
+  const pageStartIndex = (currentPage - 1) * RECIPES_PER_PAGE
+  const pagedRecipes = filteredRecipes.slice(
+    pageStartIndex,
+    pageStartIndex + RECIPES_PER_PAGE,
+  )
+  const pageEndIndex = pageStartIndex + pagedRecipes.length
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [budget, mealType, time])
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages)
+    }
+  }, [currentPage, totalPages])
+
   return (
-    <ScrollView
+    <KeyboardAvoidingView
       style={styles.container}
-      contentContainerStyle={{ paddingTop: 36, paddingBottom: 24 }}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 24 : 0}
     >
-      <View style={styles.header}>
-        <Text style={styles.title}>Recipe Ideas</Text>
-        <Text style={styles.subtitle}>
-          Fast, simple, and affordable recipes to impress your date.
-        </Text>
-      </View>
+      <ScrollView
+        ref={scrollRef}
+        style={styles.container}
+        contentContainerStyle={{
+          paddingTop: insets.top,
+          paddingBottom: 24,
+        }}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+      >
+        <View style={styles.header}>
+          <Text style={styles.title}>Recipe Ideas</Text>
+          <Text style={styles.subtitle}>
+            Fast, simple, and affordable recipes to impress your date.
+          </Text>
+        </View>
 
-      {/* Filter Section */}
-      <View style={styles.filterSection}>
-        <TouchableOpacity
-          style={styles.filterHeader}
-          onPress={() => setFiltersExpanded(!filtersExpanded)}
-        >
-          <Text style={styles.filterTitle}>Filter Recipes</Text>
-          <Ionicons
-            name={filtersExpanded ? "chevron-up" : "chevron-down"}
-            size={24}
-            color="#1a1a1a"
-          />
-        </TouchableOpacity>
+        {/* Filter Section */}
+        <View style={styles.filterSection}>
+          <TouchableOpacity
+            style={styles.filterHeader}
+            onPress={() => setFiltersExpanded(!filtersExpanded)}
+          >
+            <Text style={styles.filterTitle}>Filter Recipes</Text>
+            <Ionicons
+              name={filtersExpanded ? "chevron-up" : "chevron-down"}
+              size={24}
+              color="#1a1a1a"
+            />
+          </TouchableOpacity>
 
-        {filtersExpanded && (
-          <>
-            {/* Budget Input */}
-            <View style={styles.filterGroup}>
-              <Text style={styles.filterLabel}>Max Budget ($)</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="e.g., 10"
-                placeholderTextColor="#999"
-                keyboardType="decimal-pad"
-                value={budget}
-                onChangeText={setBudget}
-              />
-            </View>
-
-            {/* Time Input */}
-            <View style={styles.filterGroup}>
-              <Text style={styles.filterLabel}>Max Time (minutes)</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="e.g., 30"
-                placeholderTextColor="#999"
-                keyboardType="number-pad"
-                value={time}
-                onChangeText={setTime}
-              />
-            </View>
-
-            {/* Meal Type Selection */}
-            <View style={styles.filterGroup}>
-              <Text style={styles.filterLabel}>Meal Type</Text>
-              <View style={styles.mealTypeContainer}>
-                {mealTypes.map((type) => (
-                  <TouchableOpacity
-                    key={type}
-                    style={[
-                      styles.mealTypeButton,
-                      mealType === type && styles.mealTypeButtonActive,
-                    ]}
-                    onPress={() => setMealType(mealType === type ? "" : type)}
-                  >
-                    <Text
-                      style={[
-                        styles.mealTypeText,
-                        mealType === type && styles.mealTypeTextActive,
-                      ]}
-                    >
-                      {type}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-
-            {/* Clear Filters Button */}
-            <TouchableOpacity
-              style={styles.clearButton}
-              onPress={() => {
-                setBudget("")
-                setMealType("")
-                setTime("")
-              }}
-            >
-              <Text style={styles.clearButtonText}>Clear Filters</Text>
-            </TouchableOpacity>
-          </>
-        )}
-      </View>
-
-      {/* Recipe List */}
-      <View style={styles.recipeListContainer}>
-        <Text style={styles.resultCount}>
-          {filteredRecipes.length} recipe
-          {filteredRecipes.length !== 1 ? "s" : ""} found
-        </Text>
-        {filteredRecipes.length === 0 ? (
-          <View style={styles.noResults}>
-            <Text style={styles.noResultsText}>
-              No recipes match your filters. Try adjusting your preferences!
-            </Text>
-          </View>
-        ) : (
-          filteredRecipes.map((recipe, index) => (
-            <TouchableOpacity
-              key={index}
-              style={styles.recipeCard}
-              onPress={() =>
-                navigation.navigate("RecipeDetail", {
-                  index: recipes.indexOf(recipe),
-                })
-              }
-            >
-              {recipe.image ? (
-                <Image source={recipe.image} style={styles.recipeImage} />
-              ) : (
-                <View
-                  style={[styles.recipeImage, { backgroundColor: "#e0e0e0" }]}
+          {filtersExpanded && (
+            <>
+              {/* Budget Input */}
+              <View style={styles.filterGroup}>
+                <Text style={styles.filterLabel}>Max Budget ($)</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="e.g., 10"
+                  placeholderTextColor="#999"
+                  keyboardType="decimal-pad"
+                  value={budget}
+                  onChangeText={setBudget}
+                  onFocus={handleFilterInputFocus}
                 />
-              )}
-              <View style={styles.recipeInfo}>
-                <Text style={styles.recipeName}>{recipe.name}</Text>
-                <Text style={styles.recipeDescription} numberOfLines={2}>
-                  {recipe.description}
-                </Text>
-                <View style={styles.metaContainer}>
-                  <Text style={styles.meta}>⏱ {recipe.estimatedTime} min</Text>
-                  <Text style={styles.meta}>💰 ${recipe.estimatedPrice}</Text>
+              </View>
+
+              {/* Time Input */}
+              <View style={styles.filterGroup}>
+                <Text style={styles.filterLabel}>Max Time (minutes)</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="e.g., 30"
+                  placeholderTextColor="#999"
+                  keyboardType="number-pad"
+                  value={time}
+                  onChangeText={setTime}
+                  onFocus={handleFilterInputFocus}
+                />
+              </View>
+
+              {/* Meal Type Selection */}
+              <View style={styles.filterGroup}>
+                <Text style={styles.filterLabel}>Meal Type</Text>
+                <View style={styles.mealTypeContainer}>
+                  {mealTypes.map((type) => (
+                    <TouchableOpacity
+                      key={type}
+                      style={[
+                        styles.mealTypeButton,
+                        mealType === type && styles.mealTypeButtonActive,
+                      ]}
+                      onPress={() => setMealType(mealType === type ? "" : type)}
+                    >
+                      <Text
+                        style={[
+                          styles.mealTypeText,
+                          mealType === type && styles.mealTypeTextActive,
+                        ]}
+                      >
+                        {type}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
                 </View>
-                <View style={styles.categoriesContainer}>
-                  {recipe.categories &&
-                    recipe.categories.slice(0, 2).map((cat, i) => (
+              </View>
+
+              {/* Clear Filters Button */}
+              <TouchableOpacity
+                style={styles.clearButton}
+                onPress={() => {
+                  setBudget("")
+                  setMealType("")
+                  setTime("")
+                }}
+              >
+                <Text style={styles.clearButtonText}>Clear Filters</Text>
+              </TouchableOpacity>
+            </>
+          )}
+        </View>
+
+        {filteredRecipes.length > RECIPES_PER_PAGE && (
+          <View style={styles.paginationContainer}>
+            <TouchableOpacity
+              style={[
+                styles.paginationButton,
+                currentPage === 1 && styles.paginationButtonDisabled,
+              ]}
+              onPress={() => setCurrentPage((page) => Math.max(1, page - 1))}
+              disabled={currentPage === 1}
+            >
+              <Text
+                style={[
+                  styles.paginationButtonText,
+                  currentPage === 1 && styles.paginationButtonTextDisabled,
+                ]}
+              >
+                Previous
+              </Text>
+            </TouchableOpacity>
+
+            <Text style={styles.pageIndicator}>
+              Page {currentPage} of {totalPages}
+            </Text>
+
+            <TouchableOpacity
+              style={[
+                styles.paginationButton,
+                currentPage === totalPages && styles.paginationButtonDisabled,
+              ]}
+              onPress={() =>
+                setCurrentPage((page) => Math.min(totalPages, page + 1))
+              }
+              disabled={currentPage === totalPages}
+            >
+              <Text
+                style={[
+                  styles.paginationButtonText,
+                  currentPage === totalPages &&
+                    styles.paginationButtonTextDisabled,
+                ]}
+              >
+                Next
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Recipe List */}
+        <View style={styles.recipeListContainer}>
+          <Text style={styles.resultCount}>
+            {filteredRecipes.length} recipe
+            {filteredRecipes.length !== 1 ? "s" : ""} found
+            {filteredRecipes.length > 0
+              ? ` • Showing ${pageStartIndex + 1}-${pageEndIndex}`
+              : ""}
+          </Text>
+          {filteredRecipes.length === 0 ? (
+            <View style={styles.noResults}>
+              <Text style={styles.noResultsText}>
+                No recipes match your filters. Try adjusting your preferences!
+              </Text>
+            </View>
+          ) : (
+            pagedRecipes.map((recipe, index) => (
+              <TouchableOpacity
+                key={`${recipe.name}-${pageStartIndex + index}`}
+                style={styles.recipeCard}
+                onPress={() =>
+                  navigation.navigate("RecipeDetail", {
+                    index: recipes.indexOf(recipe),
+                  })
+                }
+              >
+                {recipe.image ? (
+                  <Image source={recipe.image} style={styles.recipeImage} />
+                ) : (
+                  <View
+                    style={[styles.recipeImage, { backgroundColor: "#e0e0e0" }]}
+                  />
+                )}
+                <View style={styles.recipeInfo}>
+                  <Text style={styles.recipeName}>{recipe.name}</Text>
+                  {/* <Text style={styles.recipeDescription} numberOfLines={2}>
+                    {recipe.description}
+                  </Text> */}
+                  <View style={styles.metaContainer}>
+                    <Text style={styles.meta}>
+                      ⏱ {recipe.estimatedTime} min
+                    </Text>
+                    <Text style={styles.meta}>💰 ${recipe.estimatedPrice}</Text>
+                  </View>
+                  <View style={styles.categoriesContainer}>
+                    {recipe.categories.map((cat, i) => (
                       <View key={i} style={styles.categoryTag}>
                         <Text style={styles.categoryText}>{cat}</Text>
                       </View>
                     ))}
+                  </View>
                 </View>
-              </View>
-            </TouchableOpacity>
-          ))
-        )}
-      </View>
-    </ScrollView>
+              </TouchableOpacity>
+            ))
+          )}
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   )
 }
 
@@ -198,13 +309,14 @@ const styles = StyleSheet.create({
     backgroundColor: "#fafbfc",
   },
   header: {
-    padding: 24,
+    paddingHorizontal: 24,
     paddingBottom: 16,
   },
   title: {
     fontWeight: "900",
     fontSize: 36,
-    marginVertical: 0,
+    marginTop: 24,
+    marginBottom: 12,
     color: "#1a1a1a",
   },
   subtitle: {
@@ -229,7 +341,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 12,
   },
   filterTitle: {
     fontWeight: "800",
@@ -329,8 +440,8 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   recipeImage: {
-    width: 120,
-    height: 120,
+    width: "30%",
+    height: "100%",
     backgroundColor: "#f0f0f0",
   },
   recipeInfo: {
@@ -374,6 +485,40 @@ const styles = StyleSheet.create({
   categoryText: {
     fontSize: 11,
     color: "#007AFF",
+    fontWeight: "600",
+  },
+  paginationContainer: {
+    marginBottom: 12,
+    paddingHorizontal: 24,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  paginationButton: {
+    backgroundColor: "#007AFF",
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    minWidth: 86,
+    alignItems: "center",
+  },
+  paginationButtonDisabled: {
+    backgroundColor: "#e5e5ea",
+  },
+  paginationButtonText: {
+    color: "#fff",
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  paginationButtonTextDisabled: {
+    color: "#9a9aa1",
+  },
+  pageIndicator: {
+    flex: 1,
+    textAlign: "center",
+    color: "#666",
+    fontSize: 13,
     fontWeight: "600",
   },
 })

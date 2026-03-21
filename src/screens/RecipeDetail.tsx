@@ -15,13 +15,15 @@ export default function RecipeDetail({
   route,
   navigation,
 }: AppScreenProps<"RecipeDetail">) {
+  const { index } = route.params || {}
+  const recipe = getRecipeByIndex(index)
+
   useLayoutEffect(() => {
     navigation.setOptions({
       headerBackTitle: "Back",
+      title: recipe.name + " Recipe",
     })
   }, [navigation])
-  const { index } = route.params || {}
-  const recipe = getRecipeByIndex(index)
 
   if (!recipe) {
     return (
@@ -33,23 +35,6 @@ export default function RecipeDetail({
 
   const imageUri = sanitizeUri(recipe.image)
 
-  const sections = [
-    {
-      title: "Ingredients",
-      data: Object.entries(recipe.ingredients || {}).map(([name, amount]) => ({
-        name,
-        amount,
-      })),
-    },
-    {
-      title: "Steps",
-      data: (recipe.steps || []).map((step, index) => ({
-        step,
-        index: index + 1,
-      })),
-    },
-  ]
-
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       {imageUri && (
@@ -58,7 +43,7 @@ export default function RecipeDetail({
         </View>
       )}
       <Text style={styles.title}>{recipe.name}</Text>
-      <Text style={styles.description}>{recipe.description}</Text>
+      {/* <Text style={styles.description}>{recipe.description}</Text> */}
 
       <View style={styles.statsContainer}>
         <View style={styles.statBox}>
@@ -71,7 +56,7 @@ export default function RecipeDetail({
         </View>
       </View>
 
-      {recipe.categories && recipe.categories.length > 0 && (
+      {/* {recipe.categories && recipe.categories.length > 0 && (
         <View style={styles.categoriesSection}>
           <Text style={styles.sectionTitle}>Categories</Text>
           <View style={styles.categoriesContainer}>
@@ -82,11 +67,11 @@ export default function RecipeDetail({
             ))}
           </View>
         </View>
-      )}
+      )} */}
 
       <View style={styles.sectionContainer}>
         <Text style={styles.sectionTitle}>Ingredients</Text>
-        {Object.entries(recipe.ingredients || {}).map(([name, amount], i) => (
+        {Object.entries(recipe.ingredients).map(([name, amount], i) => (
           <View key={i} style={styles.ingredientRow}>
             <Text style={styles.ingredientName}>• {name}</Text>
             <Text style={styles.ingredientAmount}>{amount}</Text>
@@ -116,8 +101,8 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   image: {
-    width: 256,
-    height: 256,
+    width: "100%",
+    height: "100%",
     backgroundColor: "#e0e0e0",
   },
   title: {
@@ -129,6 +114,7 @@ const styles = StyleSheet.create({
   },
   imageParent: {
     width: "100%",
+    maxHeight: 240,
     display: "flex",
     alignItems: "center",
   },

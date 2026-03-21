@@ -1,5 +1,6 @@
 import React from "react"
 import { ScrollView, Text } from "react-native"
+import appInfo from "src/data/info"
 
 export default function Contact() {
   return (
@@ -14,7 +15,7 @@ export default function Contact() {
           color: "#1a1a1a",
         }}
       >
-        Thank you for visiting BYUSINGLES!
+        Thank you for visiting {appInfo.appName}!
       </Text>
       <Text
         style={{
