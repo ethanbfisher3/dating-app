@@ -269,6 +269,12 @@ export default function PlannedDateResults({
     categories,
   } = plannerParams;
 
+  const canQueryPlacesByLocation =
+    maxDistance > 0 && plannerParams.userLocation != null;
+  const devPlacesQueryLocationLabel = canQueryPlacesByLocation
+    ? `${plannerParams.userLocation?.latitude.toFixed(6)}, ${plannerParams.userLocation?.longitude.toFixed(6)}`
+    : "Not used (missing location or distance <= 0)";
+
   const devPlaceSlotCounts = Object.entries(DEV_PLACE_SLOT_TYPES).map(
     ([slot, allowedTypes]) => ({
       slot,
@@ -498,6 +504,11 @@ export default function PlannedDateResults({
         <Text style={{ color: "#4b5b6b", marginBottom: 4 }}>
           Distance: {maxDistance} mile{maxDistance !== 1 ? "s" : ""}
         </Text>
+        {__DEV__ ? (
+          <Text style={{ color: "#4b5b6b", marginBottom: 4 }}>
+            Places query location: {devPlacesQueryLocationLabel}
+          </Text>
+        ) : null}
         {/* <Text style={{ color: "#4b5b6b", marginBottom: 4 }}>
           Starving Student Card: {hasStarvingStudentCard ? "Yes" : "No"}
         </Text> */}

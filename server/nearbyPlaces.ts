@@ -112,9 +112,7 @@ async function runMassiveSearch() {
               point.longitude +
               " for place type: " +
               placeType +
-              reset +
-              "data: " +
-              JSON.stringify(data),
+              reset,
           );
 
         // TODO add information about the type that was searched for to the place object so we can filter by it later if we want to
