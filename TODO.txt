@@ -1,5 +1,5 @@
 Devlog 2 TODOs:
-New images
+MORE PICTURES
 Come up with a better name for the app
 More date templates/Fix current date templates, add more activities
 Fix Google Places Querying
@@ -7,12 +7,9 @@ Fix Google Places Querying
 Devlog 3 TODOs:
 Test the date planner generator
 
-Maybe do:
-add tutorial like the mood app
-Date preferences page? Instead of the date planner including ALL of the user's preferences, it will just ask when and what categories the user wants. A date preferences page will allow the user to specify their budget, if they have a SSC, if they like to cook, etc.
-Add a button on the recipes for 'Start cooking' which will help the user with a checklist for the items they need to get out, which direction they're on, etc.
-
 Eventually:
 users can input their own date ideas
 users can upload pictures or reviews and there can be a 'recent dates in provo' section on the app to make it more like social media. Then, when a user is looking at date ideas or a place, it will show them dates that have taken place at that spot
 Ratings for recipes that you like (upvoting/downvoting)
+
+To make the app useable for anyone regardless of location, first check if the places contains places nearby the user, otherwise query the server to generate new places. Places should regenerate once every couple weeks just to keep everything updated

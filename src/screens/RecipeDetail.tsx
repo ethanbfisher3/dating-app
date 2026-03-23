@@ -37,11 +37,11 @@ export default function RecipeDetail({
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {imageUri && (
+      {/* {imageUri && (
         <View style={styles.imageParent}>
           <Image source={recipe.image} style={styles.image} />
         </View>
-      )}
+      )} */}
       <Text style={styles.title}>{recipe.name}</Text>
       {/* <Text style={styles.description}>{recipe.description}</Text> */}
 
@@ -109,7 +109,7 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     fontSize: 32,
     color: "#1a1a1a",
-    marginTop: 24,
+    marginVertical: 12,
     marginHorizontal: 24,
   },
   imageParent: {
