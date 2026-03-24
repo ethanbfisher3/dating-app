@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react"
+import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -10,9 +10,9 @@ import {
   Alert,
   Platform,
   KeyboardAvoidingView,
-} from "react-native"
-import DateTimePicker from "@react-native-community/datetimepicker"
-import { Ionicons } from "@expo/vector-icons"
+} from "react-native";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import { Ionicons } from "@expo/vector-icons";
 import {
   addRecordedDate,
   getRecordedDates,
@@ -20,118 +20,130 @@ import {
   subscribeRecordedDates,
   updateRecordedDate,
   type RecordedDate,
-} from "../data/dateHistoryStore"
-import type { AppNavigation } from "../types/navigation"
-import { useSafeAreaInsets } from "react-native-safe-area-context"
+} from "../data/dateHistoryStore";
+import type { AppNavigation } from "../types/navigation";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { usePremium } from "../hooks/usePremium";
+import PaywallModal from "../Components/PaywallModal";
 
 function getRatingColor(n: number): string {
   // hue 0 = red (1), hue 120 = green (10)
-  const hue = Math.round(((n - 1) / 9) * 120)
-  return `hsl(${hue}, 75%, 42%)`
+  const hue = Math.round(((n - 1) / 9) * 120);
+  return `hsl(${hue}, 75%, 42%)`;
 }
 
 export default function DateHistoryScreen({
   navigation,
 }: {
-  navigation: AppNavigation
+  navigation: AppNavigation;
 }) {
-  const [recordedDates, setRecordedDates] = useState<RecordedDate[]>([])
-  const [modalVisible, setModalVisible] = useState(false)
-  const [showDatePicker, setShowDatePicker] = useState(false)
-  const [editingDateId, setEditingDateId] = useState<string | null>(null)
+  const [recordedDates, setRecordedDates] = useState<RecordedDate[]>([]);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [editingDateId, setEditingDateId] = useState<string | null>(null);
+  const [paywallVisible, setPaywallVisible] = useState(false);
+
+  const { isUnlocked } = usePremium();
+  const FREE_TIER_LIMIT = 5;
 
   // Form state
-  const [selectedDate, setSelectedDate] = useState(new Date())
-  const [whoWentWith, setWhoWentWith] = useState("")
-  const [whatYouDid, setWhatYouDid] = useState("")
-  const [moneySpent, setMoneySpent] = useState("")
-  const [rating, setRating] = useState<number | null>(null)
-  const [whatYouLiked, setWhatYouLiked] = useState("")
-  const [whatYouLearned, setWhatYouLearned] = useState("")
-  const modalScrollRef = useRef<ScrollView>(null)
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [whoWentWith, setWhoWentWith] = useState("");
+  const [whatYouDid, setWhatYouDid] = useState("");
+  const [moneySpent, setMoneySpent] = useState("");
+  const [rating, setRating] = useState<number | null>(null);
+  const [whatYouLiked, setWhatYouLiked] = useState("");
+  const [whatYouLearned, setWhatYouLearned] = useState("");
+  const modalScrollRef = useRef<ScrollView>(null);
 
-  const insets = useSafeAreaInsets()
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     // Load initial data
-    setRecordedDates(getRecordedDates())
+    setRecordedDates(getRecordedDates());
 
     // Subscribe to changes
     const unsubscribe = subscribeRecordedDates(() => {
-      setRecordedDates(getRecordedDates())
-    })
+      setRecordedDates(getRecordedDates());
+    });
 
-    return unsubscribe
-  }, [])
+    return unsubscribe;
+  }, []);
 
   const handleDateChange = (event: any, date?: Date) => {
     if (date) {
-      setSelectedDate(date)
+      setSelectedDate(date);
     }
-    setShowDatePicker(false)
-  }
+    setShowDatePicker(false);
+  };
 
   const resetForm = () => {
-    setWhoWentWith("")
-    setWhatYouDid("")
-    setMoneySpent("")
-    setRating(null)
-    setWhatYouLiked("")
-    setWhatYouLearned("")
-    setSelectedDate(new Date())
-    setShowDatePicker(false)
-  }
+    setWhoWentWith("");
+    setWhatYouDid("");
+    setMoneySpent("");
+    setRating(null);
+    setWhatYouLiked("");
+    setWhatYouLearned("");
+    setSelectedDate(new Date());
+    setShowDatePicker(false);
+  };
 
   const closeModal = () => {
-    setModalVisible(false)
-    setEditingDateId(null)
-    resetForm()
-  }
+    setModalVisible(false);
+    setEditingDateId(null);
+    resetForm();
+  };
 
   const openCreateModal = () => {
-    setEditingDateId(null)
-    resetForm()
-    setModalVisible(true)
-  }
+    setEditingDateId(null);
+    resetForm();
+    setModalVisible(true);
+  };
 
   const openEditModal = (date: RecordedDate) => {
-    setEditingDateId(date.id)
-    setSelectedDate(new Date(date.dateOfDate))
-    setWhoWentWith(date.whoWentWith)
-    setWhatYouDid(date.whatYouDid)
-    setMoneySpent(String(date.moneySpent))
-    setRating(date.rating)
-    setWhatYouLiked(date.whatYouLiked)
-    setWhatYouLearned(date.whatYouLearned)
-    setShowDatePicker(false)
-    setModalVisible(true)
-  }
+    setEditingDateId(date.id);
+    setSelectedDate(new Date(date.dateOfDate));
+    setWhoWentWith(date.whoWentWith);
+    setWhatYouDid(date.whatYouDid);
+    setMoneySpent(String(date.moneySpent));
+    setRating(date.rating);
+    setWhatYouLiked(date.whatYouLiked);
+    setWhatYouLearned(date.whatYouLearned);
+    setShowDatePicker(false);
+    setModalVisible(true);
+  };
 
   const handleSaveDate = () => {
     if (!whoWentWith.trim()) {
-      Alert.alert("Error", "Please enter who you went out with")
-      return
+      Alert.alert("Error", "Please enter who you went out with");
+      return;
     }
 
     if (!whatYouDid.trim()) {
-      Alert.alert("Error", "Please describe what you did on the date")
-      return
+      Alert.alert("Error", "Please describe what you did on the date");
+      return;
     }
 
     if (!moneySpent.trim()) {
-      Alert.alert("Error", "Please enter the amount spent")
-      return
+      Alert.alert("Error", "Please enter the amount spent");
+      return;
     }
 
-    const moneyValue = parseFloat(moneySpent)
+    const moneyValue = parseFloat(moneySpent);
     if (isNaN(moneyValue)) {
-      Alert.alert("Error", "Please enter a valid number for money spent")
-      return
+      Alert.alert("Error", "Please enter a valid number for money spent");
+      return;
     }
 
     if (!whatYouDid.trim()) {
-      Alert.alert("Error", "Please enter what you did")
-      return
+      Alert.alert("Error", "Please enter what you did");
+      return;
+    }
+
+    // Check if free user is at limit (editing doesn't count toward limit)
+    if (!editingDateId && !isUnlocked && recordedDates.length >= FREE_TIER_LIMIT) {
+      setPaywallVisible(true);
+      return;
     }
 
     const datePayload = {
@@ -142,16 +154,16 @@ export default function DateHistoryScreen({
       rating,
       whatYouLiked: whatYouLiked.trim(),
       whatYouLearned: whatYouLearned.trim(),
-    }
+    };
 
     if (editingDateId) {
-      updateRecordedDate(editingDateId, datePayload)
+      updateRecordedDate(editingDateId, datePayload);
     } else {
-      addRecordedDate(datePayload)
+      addRecordedDate(datePayload);
     }
 
-    closeModal()
-  }
+    closeModal();
+  };
 
   const handleDeleteDate = (id: string) => {
     Alert.alert(
@@ -165,21 +177,21 @@ export default function DateHistoryScreen({
           style: "destructive",
         },
       ],
-    )
-  }
+    );
+  };
 
   const handleFormInputFocus = (event: any) => {
-    const target = event?.target
+    const target = event?.target;
     if (!target) {
-      return
+      return;
     }
 
     setTimeout(() => {
-      ;(
+      (
         modalScrollRef.current as any
-      )?.scrollResponderScrollNativeHandleToKeyboard?.(target, 120, true)
-    }, 120)
-  }
+      )?.scrollResponderScrollNativeHandleToKeyboard?.(target, 120, true);
+    }, 120);
+  };
 
   return (
     <View style={styles.container}>
@@ -267,11 +279,6 @@ export default function DateHistoryScreen({
                     ) : null}
 
                     <View style={styles.section}>
-                      <Text style={styles.sectionLabel}>What You Did</Text>
-                      <Text style={styles.sectionText}>{date.whatYouDid}</Text>
-                    </View>
-
-                    <View style={styles.section}>
                       <Text style={styles.sectionLabel}>Money Spent</Text>
                       <Text style={styles.sectionText}>
                         ${date.moneySpent.toFixed(2)}
@@ -286,6 +293,11 @@ export default function DateHistoryScreen({
                         </Text>
                       </View>
                     )}
+
+                    <View style={styles.section}>
+                      <Text style={styles.sectionLabel}>What You Did</Text>
+                      <Text style={styles.sectionText}>{date.whatYouDid}</Text>
+                    </View>
 
                     {date.whatYouLiked ? (
                       <View style={styles.section}>
@@ -425,8 +437,8 @@ export default function DateHistoryScreen({
                 <Text style={styles.formLabel}>Rate the date (1–10)</Text>
                 <View style={styles.ratingRow}>
                   {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => {
-                    const color = getRatingColor(n)
-                    const selected = rating === n
+                    const color = getRatingColor(n);
+                    const selected = rating === n;
                     return (
                       <TouchableOpacity
                         key={n}
@@ -446,7 +458,7 @@ export default function DateHistoryScreen({
                           {n}
                         </Text>
                       </TouchableOpacity>
-                    )
+                    );
                   })}
                 </View>
               </View>
@@ -501,8 +513,14 @@ export default function DateHistoryScreen({
           </View>
         </KeyboardAvoidingView>
       </Modal>
+
+      <PaywallModal
+        visible={paywallVisible}
+        onClose={() => setPaywallVisible(false)}
+        reason="date_history_limit"
+      />
     </View>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
@@ -605,9 +623,12 @@ const styles = StyleSheet.create({
   },
   dateCardContent: {
     gap: 12,
+    flexDirection: "row",
+    flexWrap: "wrap",
   },
   section: {
     gap: 4,
+    minWidth: "47%",
   },
   sectionLabel: {
     fontSize: 12,
@@ -780,4 +801,4 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#1a1a1a",
   },
-})
+});

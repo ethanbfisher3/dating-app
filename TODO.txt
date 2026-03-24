@@ -4,6 +4,8 @@ Come up with a better name for the app
 More date templates/Fix current date templates, add more activities
 Fix Google Places Querying
 
+Add Revenuecat api keys for apple and google play
+
 Devlog 3 TODOs:
 Test the date planner generator
 

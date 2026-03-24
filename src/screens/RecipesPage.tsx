@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -9,83 +9,85 @@ import {
   TouchableOpacity,
   Image,
   TextInput,
-} from "react-native"
-import { Ionicons } from "@expo/vector-icons"
-import { useSafeAreaInsets } from "react-native-safe-area-context"
-import recipes from "../data/Recipes"
-import type { AppNavigation } from "../types/navigation"
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import recipes from "../data/Recipes";
+import type { AppNavigation } from "../types/navigation";
 
-const RECIPES_PER_PAGE = 10
+const RECIPES_PER_PAGE = 10;
 
 export default function RecipesPage({
   navigation,
 }: {
-  navigation: AppNavigation
+  navigation: AppNavigation;
 }) {
-  const insets = useSafeAreaInsets()
-  const [budget, setBudget] = useState("")
-  const [mealType, setMealType] = useState("")
-  const [time, setTime] = useState("")
-  const [currentPage, setCurrentPage] = useState(1)
-  const [filtersExpanded, setFiltersExpanded] = useState(false)
-  const scrollRef = useRef<ScrollView>(null)
+  const insets = useSafeAreaInsets();
+  const [budget, setBudget] = useState("");
+  const [mealType, setMealType] = useState("");
+  const [time, setTime] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [filtersExpanded, setFiltersExpanded] = useState(false);
+  const scrollRef = useRef<ScrollView>(null);
 
   const handleFilterInputFocus = (event: any) => {
-    const target = event?.target
+    const target = event?.target;
     if (!target) {
-      return
+      return;
     }
 
     setTimeout(() => {
-      ;(
-        scrollRef.current as any
-      )?.scrollResponderScrollNativeHandleToKeyboard?.(target, 120, true)
-    }, 120)
-  }
+      (scrollRef.current as any)?.scrollResponderScrollNativeHandleToKeyboard?.(
+        target,
+        120,
+        true,
+      );
+    }, 120);
+  };
 
-  const mealTypes = ["Breakfast", "Lunch", "Dinner", "Dessert", "Snack"]
+  const mealTypes = ["Breakfast", "Lunch", "Dinner", "Dessert", "Snack"];
 
   const filteredRecipes = useMemo(() => {
     return recipes.filter((recipe) => {
-      const budgetNum = budget ? parseFloat(budget) : null
-      const timeNum = time ? parseFloat(time) : null
+      const budgetNum = budget ? parseFloat(budget) : null;
+      const timeNum = time ? parseFloat(time) : null;
 
       if (budgetNum !== null && recipe.estimatedPrice > budgetNum) {
-        return false
+        return false;
       }
 
       if (timeNum !== null && recipe.estimatedTime > timeNum) {
-        return false
+        return false;
       }
 
       if (mealType && !recipe.categories?.includes(mealType)) {
-        return false
+        return false;
       }
 
-      return true
-    })
-  }, [budget, mealType, time])
+      return true;
+    });
+  }, [budget, mealType, time]);
 
   const totalPages = Math.max(
     1,
     Math.ceil(filteredRecipes.length / RECIPES_PER_PAGE),
-  )
-  const pageStartIndex = (currentPage - 1) * RECIPES_PER_PAGE
+  );
+  const pageStartIndex = (currentPage - 1) * RECIPES_PER_PAGE;
   const pagedRecipes = filteredRecipes.slice(
     pageStartIndex,
     pageStartIndex + RECIPES_PER_PAGE,
-  )
-  const pageEndIndex = pageStartIndex + pagedRecipes.length
+  );
+  const pageEndIndex = pageStartIndex + pagedRecipes.length;
 
   useEffect(() => {
-    setCurrentPage(1)
-  }, [budget, mealType, time])
+    setCurrentPage(1);
+  }, [budget, mealType, time]);
 
   useEffect(() => {
     if (currentPage > totalPages) {
-      setCurrentPage(totalPages)
+      setCurrentPage(totalPages);
     }
-  }, [currentPage, totalPages])
+  }, [currentPage, totalPages]);
 
   return (
     <KeyboardAvoidingView
@@ -128,12 +130,12 @@ export default function RecipesPage({
             <>
               {/* Budget Input */}
               <View style={styles.filterGroup}>
-                <Text style={styles.filterLabel}>Max Budget ($)</Text>
+                <Text style={styles.filterLabel}>Max Cost ($)</Text>
                 <TextInput
                   style={styles.input}
                   placeholder="e.g., 10"
                   placeholderTextColor="#999"
-                  keyboardType="decimal-pad"
+                  keyboardType="number-pad"
                   value={budget}
                   onChangeText={setBudget}
                   onFocus={handleFilterInputFocus}
@@ -142,7 +144,9 @@ export default function RecipesPage({
 
               {/* Time Input */}
               <View style={styles.filterGroup}>
-                <Text style={styles.filterLabel}>Max Time (minutes)</Text>
+                <Text style={styles.filterLabel}>
+                  Max Time to Prepare (minutes)
+                </Text>
                 <TextInput
                   style={styles.input}
                   placeholder="e.g., 30"
@@ -184,9 +188,9 @@ export default function RecipesPage({
               <TouchableOpacity
                 style={styles.clearButton}
                 onPress={() => {
-                  setBudget("")
-                  setMealType("")
-                  setTime("")
+                  setBudget("");
+                  setMealType("");
+                  setTime("");
                 }}
               >
                 <Text style={styles.clearButtonText}>Clear Filters</Text>
@@ -277,14 +281,29 @@ export default function RecipesPage({
                 )}
                 <View style={styles.recipeInfo}>
                   <Text style={styles.recipeName}>{recipe.name}</Text>
-                  {/* <Text style={styles.recipeDescription} numberOfLines={2}>
-                    {recipe.description}
-                  </Text> */}
                   <View style={styles.metaContainer}>
-                    <Text style={styles.meta}>
-                      ⏱ {recipe.estimatedTime} min
-                    </Text>
-                    <Text style={styles.meta}>💰 ${recipe.estimatedPrice}</Text>
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        gap: 4,
+                      }}
+                    >
+                      <Ionicons name="time-outline" size={20} color="#f05a7e" />
+                      <Text style={styles.meta}>
+                        {recipe.estimatedTime} min
+                      </Text>
+                    </View>
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        gap: 4,
+                      }}
+                    >
+                      <Ionicons name="cash-outline" size={20} color="#f05a7e" />
+                      <Text style={styles.meta}>${recipe.estimatedPrice}</Text>
+                    </View>
                   </View>
                   <View style={styles.categoriesContainer}>
                     {recipe.categories.map((cat, i) => (
@@ -300,7 +319,7 @@ export default function RecipesPage({
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
@@ -464,10 +483,12 @@ const styles = StyleSheet.create({
   metaContainer: {
     flexDirection: "row",
     marginBottom: 8,
+    alignItems: "center",
     gap: 12,
+    fontSize: 16,
   },
   meta: {
-    fontSize: 12,
+    fontSize: 16,
     color: "#777",
     fontWeight: "500",
   },
@@ -521,4 +542,4 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "600",
   },
-})
+});
