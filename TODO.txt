@@ -5,6 +5,13 @@ More date templates/Fix current date templates, add more activities
 Fix Google Places Querying
 
 Add Revenuecat api keys for apple and google play
+Change the homepage and find out where to put the premium button
+Let the user upload a picture for their date on the date history page
+Loading menu when date ideas are being generated
+Incorporate pictures on the date results page
+Search button in the saved ideas
+Date calendar button to show past and future dates on the date planner page
+Popup for date planner instead of just going from question to question
 
 Devlog 3 TODOs:
 Test the date planner generator

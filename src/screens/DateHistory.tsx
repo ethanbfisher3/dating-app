@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react"
 import {
   View,
   Text,
@@ -10,9 +10,9 @@ import {
   Alert,
   Platform,
   KeyboardAvoidingView,
-} from "react-native";
-import DateTimePicker from "@react-native-community/datetimepicker";
-import { Ionicons } from "@expo/vector-icons";
+} from "react-native"
+import DateTimePicker from "@react-native-community/datetimepicker"
+import { Ionicons } from "@expo/vector-icons"
 import {
   addRecordedDate,
   getRecordedDates,
@@ -20,130 +20,138 @@ import {
   subscribeRecordedDates,
   updateRecordedDate,
   type RecordedDate,
-} from "../data/dateHistoryStore";
-import type { AppNavigation } from "../types/navigation";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { usePremium } from "../hooks/usePremium";
-import PaywallModal from "../Components/PaywallModal";
+} from "../data/dateHistoryStore"
+import type { AppNavigation } from "../types/navigation"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
+import { usePremium } from "../hooks/usePremium"
+import PaywallModal from "../Components/PaywallModal"
 
 function getRatingColor(n: number): string {
   // hue 0 = red (1), hue 120 = green (10)
-  const hue = Math.round(((n - 1) / 9) * 120);
-  return `hsl(${hue}, 75%, 42%)`;
+  const hue = Math.round(((n - 1) / 9) * 120)
+  return `hsl(${hue}, 75%, 42%)`
 }
 
 export default function DateHistoryScreen({
   navigation,
 }: {
-  navigation: AppNavigation;
+  navigation: AppNavigation
 }) {
-  const [recordedDates, setRecordedDates] = useState<RecordedDate[]>([]);
-  const [modalVisible, setModalVisible] = useState(false);
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [editingDateId, setEditingDateId] = useState<string | null>(null);
-  const [paywallVisible, setPaywallVisible] = useState(false);
+  const [recordedDates, setRecordedDates] = useState<RecordedDate[]>([])
+  const [modalVisible, setModalVisible] = useState(false)
+  const [showDatePicker, setShowDatePicker] = useState(false)
+  const [editingDateId, setEditingDateId] = useState<string | null>(null)
+  const [paywallVisible, setPaywallVisible] = useState(false)
 
-  const { isUnlocked } = usePremium();
-  const FREE_TIER_LIMIT = 5;
+  const { isUnlocked } = usePremium()
+  const FREE_TIER_LIMIT = 5
 
   // Form state
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  const [whoWentWith, setWhoWentWith] = useState("");
-  const [whatYouDid, setWhatYouDid] = useState("");
-  const [moneySpent, setMoneySpent] = useState("");
-  const [rating, setRating] = useState<number | null>(null);
-  const [whatYouLiked, setWhatYouLiked] = useState("");
-  const [whatYouLearned, setWhatYouLearned] = useState("");
-  const modalScrollRef = useRef<ScrollView>(null);
+  const [selectedDate, setSelectedDate] = useState(new Date())
+  const [whoWentWith, setWhoWentWith] = useState("")
+  const [whatYouDid, setWhatYouDid] = useState("")
+  const [moneySpent, setMoneySpent] = useState("")
+  const [rating, setRating] = useState<number | null>(null)
+  const [whatYouLiked, setWhatYouLiked] = useState("")
+  const [whatYouLearned, setWhatYouLearned] = useState("")
+  const modalScrollRef = useRef<ScrollView>(null)
 
-  const insets = useSafeAreaInsets();
+  const insets = useSafeAreaInsets()
 
   useEffect(() => {
     // Load initial data
-    setRecordedDates(getRecordedDates());
+    setRecordedDates(getRecordedDates())
 
     // Subscribe to changes
     const unsubscribe = subscribeRecordedDates(() => {
-      setRecordedDates(getRecordedDates());
-    });
+      setRecordedDates(getRecordedDates())
+    })
 
-    return unsubscribe;
-  }, []);
+    return unsubscribe
+  }, [])
 
   const handleDateChange = (event: any, date?: Date) => {
-    if (date) {
-      setSelectedDate(date);
+    if (Platform.OS === "android") {
+      setShowDatePicker(false)
     }
-    setShowDatePicker(false);
-  };
+
+    const isConfirmed = Platform.OS === "ios" || event.type === "set"
+    if (isConfirmed && date) {
+      setSelectedDate(date)
+    }
+  }
 
   const resetForm = () => {
-    setWhoWentWith("");
-    setWhatYouDid("");
-    setMoneySpent("");
-    setRating(null);
-    setWhatYouLiked("");
-    setWhatYouLearned("");
-    setSelectedDate(new Date());
-    setShowDatePicker(false);
-  };
+    setWhoWentWith("")
+    setWhatYouDid("")
+    setMoneySpent("")
+    setRating(null)
+    setWhatYouLiked("")
+    setWhatYouLearned("")
+    setSelectedDate(new Date())
+    setShowDatePicker(false)
+  }
 
   const closeModal = () => {
-    setModalVisible(false);
-    setEditingDateId(null);
-    resetForm();
-  };
+    setModalVisible(false)
+    setEditingDateId(null)
+    resetForm()
+  }
 
   const openCreateModal = () => {
-    setEditingDateId(null);
-    resetForm();
-    setModalVisible(true);
-  };
+    setEditingDateId(null)
+    resetForm()
+    setModalVisible(true)
+  }
 
   const openEditModal = (date: RecordedDate) => {
-    setEditingDateId(date.id);
-    setSelectedDate(new Date(date.dateOfDate));
-    setWhoWentWith(date.whoWentWith);
-    setWhatYouDid(date.whatYouDid);
-    setMoneySpent(String(date.moneySpent));
-    setRating(date.rating);
-    setWhatYouLiked(date.whatYouLiked);
-    setWhatYouLearned(date.whatYouLearned);
-    setShowDatePicker(false);
-    setModalVisible(true);
-  };
+    setEditingDateId(date.id)
+    setSelectedDate(new Date(date.dateOfDate))
+    setWhoWentWith(date.whoWentWith)
+    setWhatYouDid(date.whatYouDid)
+    setMoneySpent(String(date.moneySpent))
+    setRating(date.rating)
+    setWhatYouLiked(date.whatYouLiked)
+    setWhatYouLearned(date.whatYouLearned)
+    setShowDatePicker(false)
+    setModalVisible(true)
+  }
 
   const handleSaveDate = () => {
     if (!whoWentWith.trim()) {
-      Alert.alert("Error", "Please enter who you went out with");
-      return;
+      Alert.alert("Error", "Please enter who you went out with")
+      return
     }
 
     if (!whatYouDid.trim()) {
-      Alert.alert("Error", "Please describe what you did on the date");
-      return;
+      Alert.alert("Error", "Please describe what you did on the date")
+      return
     }
 
     if (!moneySpent.trim()) {
-      Alert.alert("Error", "Please enter the amount spent");
-      return;
+      Alert.alert("Error", "Please enter the amount spent")
+      return
     }
 
-    const moneyValue = parseFloat(moneySpent);
+    const moneyValue = parseFloat(moneySpent)
     if (isNaN(moneyValue)) {
-      Alert.alert("Error", "Please enter a valid number for money spent");
-      return;
+      Alert.alert("Error", "Please enter a valid number for money spent")
+      return
     }
 
     if (!whatYouDid.trim()) {
-      Alert.alert("Error", "Please enter what you did");
-      return;
+      Alert.alert("Error", "Please enter what you did")
+      return
     }
 
     // Check if free user is at limit (editing doesn't count toward limit)
-    if (!editingDateId && !isUnlocked && recordedDates.length >= FREE_TIER_LIMIT) {
-      setPaywallVisible(true);
-      return;
+    if (
+      !editingDateId &&
+      !isUnlocked &&
+      recordedDates.length >= FREE_TIER_LIMIT
+    ) {
+      setPaywallVisible(true)
+      return
     }
 
     const datePayload = {
@@ -154,16 +162,16 @@ export default function DateHistoryScreen({
       rating,
       whatYouLiked: whatYouLiked.trim(),
       whatYouLearned: whatYouLearned.trim(),
-    };
-
-    if (editingDateId) {
-      updateRecordedDate(editingDateId, datePayload);
-    } else {
-      addRecordedDate(datePayload);
     }
 
-    closeModal();
-  };
+    if (editingDateId) {
+      updateRecordedDate(editingDateId, datePayload)
+    } else {
+      addRecordedDate(datePayload)
+    }
+
+    closeModal()
+  }
 
   const handleDeleteDate = (id: string) => {
     Alert.alert(
@@ -177,21 +185,21 @@ export default function DateHistoryScreen({
           style: "destructive",
         },
       ],
-    );
-  };
+    )
+  }
 
   const handleFormInputFocus = (event: any) => {
-    const target = event?.target;
+    const target = event?.target
     if (!target) {
-      return;
+      return
     }
 
     setTimeout(() => {
-      (
+      ;(
         modalScrollRef.current as any
-      )?.scrollResponderScrollNativeHandleToKeyboard?.(target, 120, true);
-    }, 120);
-  };
+      )?.scrollResponderScrollNativeHandleToKeyboard?.(target, 120, true)
+    }, 120)
+  }
 
   return (
     <View style={styles.container}>
@@ -377,17 +385,38 @@ export default function DateHistoryScreen({
                   <DateTimePicker
                     value={selectedDate}
                     mode="date"
-                    display={Platform.OS === "ios" ? "spinner" : "default"}
+                    display={Platform.OS === "ios" ? "inline" : "calendar"}
                     onChange={handleDateChange}
                     style={styles.datePicker}
+                    themeVariant={Platform.OS === "ios" ? "light" : undefined}
                     {...(Platform.OS === "ios"
                       ? {
                           textColor: "#1a1a1a",
                           accentColor: "#007AFF",
-                          themeVariant: "light" as const,
                         }
                       : {})}
                   />
+                  {Platform.OS === "ios" ? (
+                    <TouchableOpacity
+                      onPress={() => setShowDatePicker(false)}
+                      style={{
+                        alignItems: "center",
+                        paddingVertical: 12,
+                        borderTopWidth: 1,
+                        borderTopColor: "#dfe5eb",
+                      }}
+                    >
+                      <Text
+                        style={{
+                          color: "#007AFF",
+                          fontWeight: "700",
+                          fontSize: 16,
+                        }}
+                      >
+                        Done
+                      </Text>
+                    </TouchableOpacity>
+                  ) : null}
                 </View>
               )}
 
@@ -425,7 +454,7 @@ export default function DateHistoryScreen({
                     style={styles.moneyInput}
                     placeholder="0.00"
                     placeholderTextColor="#999"
-                    keyboardType="decimal-pad"
+                    keyboardType="number-pad"
                     value={moneySpent}
                     onChangeText={setMoneySpent}
                     onFocus={handleFormInputFocus}
@@ -437,8 +466,8 @@ export default function DateHistoryScreen({
                 <Text style={styles.formLabel}>Rate the date (1–10)</Text>
                 <View style={styles.ratingRow}>
                   {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => {
-                    const color = getRatingColor(n);
-                    const selected = rating === n;
+                    const color = getRatingColor(n)
+                    const selected = rating === n
                     return (
                       <TouchableOpacity
                         key={n}
@@ -458,7 +487,7 @@ export default function DateHistoryScreen({
                           {n}
                         </Text>
                       </TouchableOpacity>
-                    );
+                    )
                   })}
                 </View>
               </View>
@@ -520,7 +549,7 @@ export default function DateHistoryScreen({
         reason="date_history_limit"
       />
     </View>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -706,7 +735,7 @@ const styles = StyleSheet.create({
     color: "#1a1a1a",
   },
   datePickerContainer: {
-    marginTop: 8,
+    marginVertical: 8,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: "#dfe5eb",
@@ -801,4 +830,4 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#1a1a1a",
   },
-});
+})

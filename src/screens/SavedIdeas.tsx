@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react"
 import { Alert, ScrollView, Text, TouchableOpacity, View } from "react-native"
+import { Ionicons } from "@expo/vector-icons"
 import type { AppNavigation } from "../types/navigation"
 import IdeaPlaceLinks from "../Components/IdeaPlaceLinks"
 import {
@@ -9,6 +10,8 @@ import {
   type SavedDateIdea,
 } from "../data/savedIdeasStore"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
+import { usePremium } from "../hooks/usePremium"
+import PaywallModal from "../Components/PaywallModal"
 
 export default function SavedIdeas({
   navigation,
@@ -16,6 +19,8 @@ export default function SavedIdeas({
   navigation: AppNavigation
 }) {
   const [savedIdeas, setSavedIdeas] = useState<SavedDateIdea[]>(getSavedIdeas())
+  const [paywallVisible, setPaywallVisible] = useState(false)
+  const { isUnlocked } = usePremium()
 
   const insets = useSafeAreaInsets()
 
@@ -43,6 +48,73 @@ export default function SavedIdeas({
       >
         Saved Ideas
       </Text>
+
+      {!isUnlocked ? (
+        <TouchableOpacity
+          activeOpacity={0.9}
+          onPress={() => setPaywallVisible(true)}
+          style={{
+            backgroundColor: "#f0f7ff",
+            borderRadius: 12,
+            borderWidth: 2,
+            borderColor: "#007AFF",
+            padding: 16,
+            marginBottom: 20,
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 12,
+          }}
+        >
+          <Ionicons name="star" size={28} color="#007AFF" />
+          <View style={{ flex: 1 }}>
+            <Text
+              style={{
+                fontSize: 16,
+                fontWeight: "800",
+                color: "#007AFF",
+                marginBottom: 2,
+              }}
+            >
+              Unlock Premium
+            </Text>
+            <Text style={{ fontSize: 13, color: "#0051D5", fontWeight: "500" }}>
+              Save unlimited ideas for only $3.99
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color="#007AFF" />
+        </TouchableOpacity>
+      ) : (
+        <View
+          style={{
+            backgroundColor: "#eefaf0",
+            borderRadius: 12,
+            borderWidth: 2,
+            borderColor: "#2e9f5b",
+            padding: 16,
+            marginBottom: 20,
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 12,
+          }}
+        >
+          <Ionicons name="checkmark-circle" size={28} color="#2e9f5b" />
+          <View style={{ flex: 1 }}>
+            <Text
+              style={{
+                fontSize: 16,
+                fontWeight: "800",
+                color: "#2e9f5b",
+                marginBottom: 2,
+              }}
+            >
+              You are a premium user
+            </Text>
+            <Text style={{ fontSize: 13, color: "#1f7a45", fontWeight: "500" }}>
+              You can save unlimited date ideas.
+            </Text>
+          </View>
+        </View>
+      )}
 
       {savedIdeas.length === 0 ? (
         <View
@@ -157,6 +229,12 @@ export default function SavedIdeas({
           </View>
         )
       })}
+
+      <PaywallModal
+        visible={paywallVisible}
+        onClose={() => setPaywallVisible(false)}
+        reason="general"
+      />
     </ScrollView>
   )
 }

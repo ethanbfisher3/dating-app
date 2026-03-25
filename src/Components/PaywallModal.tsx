@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react"
 import {
   Modal,
   View,
@@ -8,20 +8,20 @@ import {
   StyleSheet,
   ActivityIndicator,
   Alert,
-} from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { usePremium } from "../hooks/usePremium";
-import { purchasePremium } from "../data/iapConfig";
+} from "react-native"
+import { Ionicons } from "@expo/vector-icons"
+import { usePremium } from "../hooks/usePremium"
+import { purchasePremium } from "../data/iapConfig"
 
 interface PaywallProps {
-  visible: boolean;
-  onClose: () => void;
-  onPurchase?: () => Promise<void>;
+  visible: boolean
+  onClose: () => void
+  onPurchase?: () => Promise<void>
   reason?:
     | "date_history_limit"
     | "mile_radius_limit"
     | "ideas_limit"
-    | "general";
+    | "general"
 }
 
 export default function PaywallModal({
@@ -30,8 +30,8 @@ export default function PaywallModal({
   onPurchase,
   reason = "general",
 }: PaywallProps) {
-  const [isProcessing, setIsProcessing] = useState(false);
-  const { unlockPremium } = usePremium();
+  const [isProcessing, setIsProcessing] = useState(false)
+  const { resetPremium } = usePremium()
 
   const reasonMessages: Record<string, { title: string; description: string }> =
     {
@@ -55,30 +55,56 @@ export default function PaywallModal({
         description:
           "Get unlimited date history, search radius, and idea generation.",
       },
-    };
+    }
 
-  const { title, description } = reasonMessages[reason];
+  const { title, description } = reasonMessages[reason]
 
   const handlePurchase = async () => {
-    setIsProcessing(true);
+    setIsProcessing(true)
     try {
-      const success = await purchasePremium();
-      if (success) {
+      const result = await purchasePremium()
+      if (result.status === "success") {
         Alert.alert(
           "Success!",
           "You've unlocked Premium. Enjoy unlimited features!",
-        );
-        onClose();
+        )
+        onClose()
+      } else if (result.status === "cancelled") {
+        Alert.alert(
+          "Purchase Cancelled",
+          "No worries, you can upgrade anytime.",
+        )
+      } else if (result.status === "not_found") {
+        Alert.alert(
+          "Product Not Available",
+          "We couldn't find your premium product in the current offering. Please check RevenueCat product/offering setup.",
+        )
       } else {
-        Alert.alert("Purchase Failed", "Please try again later.");
+        Alert.alert(
+          "Purchase Failed",
+          result.message || "Please try again later.",
+        )
       }
     } catch (error) {
-      console.error("Purchase error:", error);
-      Alert.alert("Error", "Something went wrong during purchase.");
+      console.error("Purchase error:", error)
+      Alert.alert("Error", "Something went wrong during purchase.")
     } finally {
-      setIsProcessing(false);
+      setIsProcessing(false)
     }
-  };
+  }
+
+  const handleResetPremium = async () => {
+    try {
+      await resetPremium()
+      Alert.alert(
+        "Premium Removed",
+        "Premium access has been reset for testing.",
+      )
+    } catch (error) {
+      console.error("Reset premium error:", error)
+      Alert.alert("Error", "Could not reset premium access.")
+    }
+  }
 
   return (
     <Modal
@@ -109,55 +135,83 @@ export default function PaywallModal({
                 <Ionicons
                   name="checkmark-circle"
                   size={24}
-                  color="#007AFF"
+                  color="#FF6B6B"
                   style={styles.featureIcon}
                 />
-                <Text style={styles.featureText}>
-                  Unlimited date history records
-                </Text>
+                <View style={styles.featureContent}>
+                  <Text style={styles.featureText}>Unlimited Date History</Text>
+                  <Text style={styles.featureSubtext}>
+                    Save as many dates as you want
+                  </Text>
+                </View>
               </View>
 
               <View style={styles.feature}>
                 <Ionicons
                   name="checkmark-circle"
                   size={24}
-                  color="#007AFF"
+                  color="#4ECDC4"
                   style={styles.featureIcon}
                 />
-                <Text style={styles.featureText}>
-                  Search up to 25+ miles away
-                </Text>
+                <View style={styles.featureContent}>
+                  <Text style={styles.featureText}>Extended Search Radius</Text>
+                  <Text style={styles.featureSubtext}>
+                    Search up to 25+ miles away
+                  </Text>
+                </View>
               </View>
 
               <View style={styles.feature}>
                 <Ionicons
                   name="checkmark-circle"
                   size={24}
-                  color="#007AFF"
+                  color="#95E1D3"
                   style={styles.featureIcon}
                 />
-                <Text style={styles.featureText}>
-                  Unlimited date ideas per month
-                </Text>
+                <View style={styles.featureContent}>
+                  <Text style={styles.featureText}>Unlimited Date Ideas</Text>
+                  <Text style={styles.featureSubtext}>
+                    Generate as many ideas as you want
+                  </Text>
+                </View>
               </View>
 
               <View style={styles.feature}>
                 <Ionicons
                   name="checkmark-circle"
                   size={24}
-                  color="#007AFF"
+                  color="#F7B731"
                   style={styles.featureIcon}
                 />
-                <Text style={styles.featureText}>One-time purchase</Text>
+                <View style={styles.featureContent}>
+                  <Text style={styles.featureText}>Save Unlimited Ideas</Text>
+                  <Text style={styles.featureSubtext}>
+                    Build your personal idea collection
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.feature}>
+                <Ionicons
+                  name="checkmark-circle"
+                  size={24}
+                  color="#A29BFE"
+                  style={styles.featureIcon}
+                />
+                <View style={styles.featureContent}>
+                  <Text style={styles.featureText}>One-Time Purchase</Text>
+                  <Text style={styles.featureSubtext}>
+                    No subscriptions or hidden fees
+                  </Text>
+                </View>
               </View>
             </View>
 
             {/* Price */}
             <View style={styles.priceContainer}>
-              <Text style={styles.priceLabel}>Limited Time Offer</Text>
+              <Text style={styles.priceLabel}>One-Time Payment</Text>
               <View style={styles.priceRow}>
                 <Text style={styles.price}>$3.99</Text>
-                <Text style={styles.pricePeriod}>one time</Text>
               </View>
             </View>
           </ScrollView>
@@ -184,10 +238,24 @@ export default function PaywallModal({
               )}
             </TouchableOpacity>
           </View>
+
+          {__DEV__ && (
+            <View style={styles.devFooter}>
+              <TouchableOpacity
+                style={styles.devResetButton}
+                onPress={handleResetPremium}
+                disabled={isProcessing}
+              >
+                <Text style={styles.devResetButtonText}>
+                  Remove Premium (DEV)
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
       </View>
     </Modal>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -235,17 +303,27 @@ const styles = StyleSheet.create({
   },
   feature: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     gap: 12,
+    marginBottom: 4,
   },
   featureIcon: {
     marginRight: 4,
+    marginTop: 2,
+  },
+  featureContent: {
+    flex: 1,
   },
   featureText: {
     fontSize: 15,
     color: "#2c3e50",
-    fontWeight: "500",
-    flex: 1,
+    fontWeight: "600",
+    marginBottom: 2,
+  },
+  featureSubtext: {
+    fontSize: 13,
+    color: "#888",
+    fontWeight: "400",
   },
   priceContainer: {
     backgroundColor: "#f0f7ff",
@@ -282,6 +360,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 12,
   },
+  devFooter: {
+    paddingHorizontal: 24,
+    paddingTop: 10,
+  },
   cancelButton: {
     flex: 1,
     borderWidth: 1,
@@ -310,4 +392,16 @@ const styles = StyleSheet.create({
   disabled: {
     opacity: 0.6,
   },
-});
+  devResetButton: {
+    borderWidth: 1,
+    borderColor: "#d93025",
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: "center",
+  },
+  devResetButtonText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#d93025",
+  },
+})

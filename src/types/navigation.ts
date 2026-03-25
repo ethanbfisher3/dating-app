@@ -39,6 +39,7 @@ export type RootStackParamList = {
     userLocation?: UserLocationParams | null
   }
   PlannedDateResults: PlannedDateResultsParams
+  DateCalendar: undefined
   RecipeDetail: { index: number }
   ActivityDetail: { id: string }
 }

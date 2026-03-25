@@ -1,8 +1,17 @@
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import { useState } from "react";
-import { ScrollView, Text, View, TouchableOpacity } from "react-native";
-import appInfo from "src/data/info";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons"
+import { useState } from "react"
+import {
+  ScrollView,
+  Text,
+  View,
+  TouchableOpacity,
+  Alert,
+  Image,
+} from "react-native"
+import appInfo from "src/data/info"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
+import { usePremium } from "../hooks/usePremium"
+import PaywallModal from "../Components/PaywallModal"
 
 export default function Info({ goToTab }) {
   const [expandedOffers, setExpandedOffers] = useState({
@@ -10,16 +19,31 @@ export default function Info({ goToTab }) {
     datePlanner: false,
     recipeIdeas: false,
     savedIdeas: false,
-  });
+  })
+  const [paywallVisible, setPaywallVisible] = useState(false)
+  const { isUnlocked, resetPremium } = usePremium()
 
-  const insets = useSafeAreaInsets();
+  const insets = useSafeAreaInsets()
 
   const toggleOffer = (offerKey: keyof typeof expandedOffers) => {
     setExpandedOffers((previous) => ({
       ...previous,
       [offerKey]: !previous[offerKey],
-    }));
-  };
+    }))
+  }
+
+  const handleRemovePremium = async () => {
+    try {
+      await resetPremium()
+      Alert.alert(
+        "Premium Removed",
+        "Premium access has been reset for testing.",
+      )
+    } catch (error) {
+      console.error("Reset premium error:", error)
+      Alert.alert("Error", "Could not reset premium access.")
+    }
+  }
 
   return (
     <ScrollView
@@ -28,6 +52,7 @@ export default function Info({ goToTab }) {
         paddingTop: insets.top,
         backgroundColor: "#fafbfc",
       }}
+      scrollEnabled={Object.values(expandedOffers).some((v) => v)}
     >
       <Text
         style={{
@@ -40,7 +65,18 @@ export default function Info({ goToTab }) {
         {appInfo.appName}
       </Text>
 
-      <View
+      <View style={{ width: "100%" }}>
+        <Image
+          source={require("../assets/images/date_planner_icon.png")}
+          style={{
+            height: 300,
+            width: "100%",
+            marginBottom: 20,
+            borderRadius: 12,
+          }}
+        />
+      </View>
+      {/* <View
         style={{
           backgroundColor: "#fff",
           padding: 20,
@@ -74,7 +110,7 @@ export default function Info({ goToTab }) {
           {appInfo.appName} is your ultimate companion for planning
           unforgettable dates that you'll never forget!
         </Text>
-      </View>
+      </View> */}
 
       <View
         style={{
@@ -302,46 +338,6 @@ export default function Info({ goToTab }) {
           )}
         </View>
 
-        {/* <TouchableOpacity
-          style={{ marginBottom: 12 }}
-          activeOpacity={0.8}
-          onPress={() => goToTab?.("Tips")}
-        >
-          <View style={{ flexDirection: "row" }}>
-            <Text
-              style={{
-                fontSize: 18,
-                fontWeight: "700",
-                color: "#1a1a1a",
-                marginBottom: 6,
-              }}
-            >
-              💡{" "}
-            </Text>
-            <Text
-              style={{
-                fontSize: 18,
-                fontWeight: "700",
-                color: "#1a1a1a",
-                marginBottom: 6,
-                textDecorationLine: "underline",
-              }}
-            >
-              Tips for finding a Date
-            </Text>
-          </View>
-          <Text
-            style={{
-              fontSize: 16,
-              lineHeight: 24,
-              color: "#555",
-              marginLeft: 12,
-            }}
-          >
-            Is dating tough for you? Here's some motivation!
-          </Text>
-        </TouchableOpacity> */}
-
         <View style={{ marginBottom: 12 }}>
           <View
             style={{
@@ -409,7 +405,7 @@ export default function Info({ goToTab }) {
         </View>
       </View>
 
-      <View
+      {/* <View
         style={{
           backgroundColor: "#fff",
           padding: 20,
@@ -438,47 +434,85 @@ export default function Info({ goToTab }) {
           everyone in the Provo area. From first dates to celebrating
           anniversaries, we're here to help you create moments that matter.
         </Text>
-      </View>
-
-      {/* <View
-        style={{
-          backgroundColor: "#fff",
-          padding: 20,
-          borderRadius: 12,
-          marginBottom: 32,
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.1,
-          shadowRadius: 4,
-          elevation: 2,
-        }}
-      >
-        <Text
-          style={{
-            fontSize: 24,
-            fontWeight: "800",
-            marginBottom: 12,
-            color: "#1e90ff",
-          }}
-        >
-          Get in Touch
-        </Text>
-        <Text style={{ fontSize: 17, lineHeight: 26, color: "#555" }}>
-          Have suggestions, questions, or ideas for new features? We'd love to
-          hear from you!
-        </Text>
-        <Text
-          style={{
-            fontSize: 17,
-            lineHeight: 26,
-            color: "#1e90ff",
-            fontWeight: "600",
-            marginTop: 10,
-          }}
-        >
-          byudating@outlook.com
-        </Text>
       </View> */}
+
+      {/* {!isUnlocked && (
+        <TouchableOpacity
+          activeOpacity={0.9}
+          onPress={() => setPaywallVisible(true)}
+          style={{
+            backgroundColor: "#FFD700",
+            padding: 20,
+            borderRadius: 12,
+            marginBottom: 20,
+            borderWidth: 2,
+            borderColor: "#FFC700",
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.2,
+            shadowRadius: 6,
+            elevation: 5,
+          }}
+        >
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+            <Ionicons name="star" size={32} color="#1a1a1a" />
+            <View style={{ flex: 1 }}>
+              <Text
+                style={{
+                  fontSize: 18,
+                  fontWeight: "800",
+                  color: "#1a1a1a",
+                  marginBottom: 4,
+                }}
+              >
+                Unlock Premium
+              </Text>
+              <Text
+                style={{
+                  fontSize: 14,
+                  color: "#333",
+                  fontWeight: "500",
+                }}
+              >
+                Get unlimited features for $3.99
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={24} color="#1a1a1a" />
+          </View>
+        </TouchableOpacity>
+      )} */}
+
+      {__DEV__ && isUnlocked && (
+        <TouchableOpacity
+          activeOpacity={0.9}
+          onPress={handleRemovePremium}
+          style={{
+            backgroundColor: "#fff5f5",
+            padding: 16,
+            borderRadius: 12,
+            marginBottom: 20,
+            borderWidth: 1,
+            borderColor: "#d93025",
+          }}
+        >
+          <Text
+            style={{
+              textAlign: "center",
+              color: "#d93025",
+              fontWeight: "800",
+              fontSize: 15,
+            }}
+          >
+            Remove Premium (DEV)
+          </Text>
+        </TouchableOpacity>
+      )}
+
+      <PaywallModal
+        visible={paywallVisible}
+        onClose={() => setPaywallVisible(false)}
+        reason="general"
+      />
     </ScrollView>
-  );
+  )
 }
