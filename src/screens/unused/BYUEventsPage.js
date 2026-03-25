@@ -1,11 +1,11 @@
 import React, { useState } from "react"
 // Replaced EventBox usage with DateIdeaBox component to unify styling
-import DateIdea from "../Components/DateIdeaBox"
+import DateIdea from "../../Components/DateIdeaBox"
 import getCategoryFromId, {
   categories,
   getCategoryIndexFromCategory,
-} from "../data/EventCategories"
-import useCalenderAPI from "../hooks/useBYUAPI"
+} from "../../data/EventCategories"
+import useCalenderAPI from "../../hooks/useBYUAPI"
 import BaddyProbability from "../data/BaddyProbability"
 import config from "../config"
 
@@ -293,12 +293,12 @@ const EventsPage = () => {
                 event.IsFree === "true"
                   ? "Free"
                   : event.LowPrice
-                  ? `$${event.LowPrice}${
-                      event.HighPrice && event.HighPrice !== event.LowPrice
-                        ? ` - $${event.HighPrice}`
-                        : ""
-                    }`
-                  : undefined
+                    ? `$${event.LowPrice}${
+                        event.HighPrice && event.HighPrice !== event.LowPrice
+                          ? ` - $${event.HighPrice}`
+                          : ""
+                      }`
+                    : undefined
               return (
                 <DateIdea
                   key={index}

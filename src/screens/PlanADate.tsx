@@ -196,7 +196,7 @@ export default function PlanADate({
           Plan a Date
         </Text>
 
-        <Text
+        {/* <Text
           style={{
             marginBottom: 22,
             fontSize: 17,
@@ -206,7 +206,7 @@ export default function PlanADate({
         >
           Use a single form to set your preferences, then generate your date
           ideas.
-        </Text>
+        </Text> */}
 
         <Image
           source={require("../assets/images/guy_asking_girl.jpg")}

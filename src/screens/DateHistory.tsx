@@ -10,6 +10,7 @@ import {
   Alert,
   Platform,
   KeyboardAvoidingView,
+  Image,
 } from "react-native"
 import DateTimePicker from "@react-native-community/datetimepicker"
 import { Ionicons } from "@expo/vector-icons"
@@ -211,8 +212,18 @@ export default function DateHistoryScreen({
       >
         <View style={styles.header}>
           <Text style={styles.title}>Date History</Text>
-          <Text style={styles.subtitle}>Record the dates you've been on</Text>
+          {/* <Text style={styles.subtitle}>Record the dates you've been on</Text> */}
         </View>
+
+        <Image
+          source={require("../assets/images/date_over.jpg")}
+          style={{
+            width: "100%",
+            height: 200,
+            borderRadius: 12,
+            paddingHorizontal: 24,
+          }}
+        />
 
         {recordedDates.length === 0 ? (
           <View style={styles.emptyState}>
@@ -582,7 +593,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 24,
-    paddingVertical: 60,
+    paddingTop: 24,
+    paddingBottom: 60,
   },
   emptyIcon: {
     marginBottom: 16,
@@ -608,8 +620,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 20,
     borderRadius: 12,
-    marginHorizontal: 24,
-    marginBottom: 24,
+    margin: 24,
     gap: 8,
   },
   addButtonText: {

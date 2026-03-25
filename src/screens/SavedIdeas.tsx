@@ -1,5 +1,12 @@
 import React, { useEffect, useState } from "react"
-import { Alert, ScrollView, Text, TouchableOpacity, View } from "react-native"
+import {
+  Alert,
+  Image,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import type { AppNavigation } from "../types/navigation"
 import IdeaPlaceLinks from "../Components/IdeaPlaceLinks"
@@ -48,6 +55,16 @@ export default function SavedIdeas({
       >
         Saved Ideas
       </Text>
+
+      <Image
+        source={require("../assets/images/date_idea_planning.jpg")}
+        style={{
+          width: "100%",
+          height: 200,
+          borderRadius: 12,
+          marginBottom: 20,
+        }}
+      />
 
       {!isUnlocked ? (
         <TouchableOpacity
