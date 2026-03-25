@@ -1,0 +1,268 @@
+import { useState } from "react";
+import { Text, TouchableOpacity, View } from "react-native";
+import IdeaPlaceLinks from "./IdeaPlaceLinks";
+import type { PlaceSummary } from "../hooks/useDatePlannerIdeas";
+import type { AppNavigation } from "../types/navigation";
+
+type DateIdeaStep = {
+  title: string;
+  slot: string;
+  startTime: string;
+  endTime: string;
+  durationMinutes: number;
+  place: PlaceSummary | null;
+  travelToNextMinutes: number | null;
+};
+
+type DateIdeaCardProps = {
+  index: number;
+  titlePrefix?: string;
+  filledTemplate: string;
+  schedule: DateIdeaStep[];
+  places: PlaceSummary[];
+  commuteToFirstMinutes?: number | null;
+  commuteFromLastMinutes?: number | null;
+  navigation: AppNavigation;
+  recipeIndex?: number;
+  onRecipePress?: (recipeIndex: number) => void;
+  onPrimaryAction?: () => void;
+  primaryActionLabel?: string;
+  primaryActionColor?: string;
+  onRegenerateStep?: (stepIndex: number) => void;
+  isRegeneratingStep?: (stepIndex: number) => boolean;
+};
+
+export default function DateIdeaCard({
+  index,
+  titlePrefix = "Idea",
+  filledTemplate,
+  schedule,
+  places,
+  commuteToFirstMinutes,
+  commuteFromLastMinutes,
+  navigation,
+  recipeIndex,
+  onRecipePress,
+  onPrimaryAction,
+  primaryActionLabel,
+  primaryActionColor = "#1e90ff",
+  onRegenerateStep,
+  isRegeneratingStep,
+}: DateIdeaCardProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  return (
+    <View
+      style={{
+        backgroundColor: "#fff",
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: "#dce6ef",
+        padding: 16,
+        marginBottom: 14,
+      }}
+    >
+      <View
+        style={{
+          flexDirection: "row",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: 8,
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 20,
+              fontWeight: "800",
+              color: "#1f2d3d",
+            }}
+          >
+            {titlePrefix} {index + 1}
+          </Text>
+        </View>
+
+        {onPrimaryAction && primaryActionLabel ? (
+          <TouchableOpacity
+            onPress={onPrimaryAction}
+            style={{
+              alignSelf: "flex-end",
+              backgroundColor: primaryActionColor,
+              borderRadius: 8,
+              paddingHorizontal: 12,
+              paddingVertical: 8,
+            }}
+          >
+            <Text style={{ color: "#fff", fontWeight: "700" }}>{primaryActionLabel}</Text>
+          </TouchableOpacity>
+        ) : null}
+      </View>
+
+      <Text
+        style={{
+          marginTop: 8,
+          fontSize: 17,
+          lineHeight: 26,
+          color: "#2c3e50",
+          fontWeight: "600",
+        }}
+      >
+        {filledTemplate}
+      </Text>
+
+      <TouchableOpacity onPress={() => setIsExpanded((prev) => !prev)} style={{ marginTop: 10, alignSelf: "flex-start" }}>
+        <Text
+          style={{
+            fontSize: 14,
+            color: "#1e90ff",
+            fontWeight: "700",
+          }}
+        >
+          {isExpanded ? "▲ Hide details" : "▼ Show details"}
+        </Text>
+      </TouchableOpacity>
+
+      {isExpanded && schedule.length ? (
+        <View style={{ marginTop: 12 }}>
+          <Text
+            style={{
+              fontSize: 15,
+              fontWeight: "700",
+              color: "#1f2d3d",
+              marginBottom: 8,
+            }}
+          >
+            Schedule
+          </Text>
+          {schedule.map((step, stepIndex) => (
+            <View
+              key={`${step.startTime}-${step.endTime}-${stepIndex}`}
+              style={{
+                marginBottom: 10,
+                padding: 10,
+                borderRadius: 8,
+                backgroundColor: "#f5f8fb",
+              }}
+            >
+              <View
+                style={{
+                  display: "flex",
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                }}
+              >
+                <View style={{ maxWidth: onRegenerateStep ? "70%" : "100%" }}>
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      fontWeight: "700",
+                      color: "#2c3e50",
+                      marginBottom: 4,
+                    }}
+                  >
+                    {step.startTime} - {step.endTime} ({step.durationMinutes} min)
+                  </Text>
+                  {stepIndex === 0 && commuteToFirstMinutes !== null && commuteToFirstMinutes !== 0 ? (
+                    <Text
+                      style={{
+                        marginBottom: 4,
+                        color: "#556677",
+                        fontSize: 13,
+                        fontWeight: "600",
+                      }}
+                    >
+                      Travel to first stop: ~{commuteToFirstMinutes} min
+                    </Text>
+                  ) : null}
+                  <Text style={{ fontSize: 14, color: "#2c3e50" }}>{step.title}</Text>
+
+                  {step.travelToNextMinutes !== null && step.travelToNextMinutes !== 0 ? (
+                    <Text
+                      style={{
+                        marginTop: 6,
+                        color: "#556677",
+                        fontSize: 13,
+                        fontWeight: "600",
+                      }}
+                    >
+                      Travel to next stop: ~{step.travelToNextMinutes} min
+                    </Text>
+                  ) : null}
+                </View>
+
+                {onRegenerateStep ? (
+                  <TouchableOpacity
+                    onPress={() => onRegenerateStep(stepIndex)}
+                    disabled={isRegeneratingStep?.(stepIndex)}
+                    style={{
+                      backgroundColor: isRegeneratingStep?.(stepIndex) ? "#ccc" : "#e63f67",
+                      borderRadius: 6,
+                      paddingVertical: 6,
+                      paddingHorizontal: 10,
+                      alignSelf: "flex-start",
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color: "#fff",
+                        fontWeight: "700",
+                        fontSize: 12,
+                      }}
+                    >
+                      {isRegeneratingStep?.(stepIndex) ? "Loading..." : "Regenerate"}
+                    </Text>
+                  </TouchableOpacity>
+                ) : null}
+              </View>
+
+              {stepIndex === schedule.length - 1 && commuteFromLastMinutes !== null && commuteFromLastMinutes !== 0 ? (
+                <Text
+                  style={{
+                    marginTop: 6,
+                    color: "#556677",
+                    fontSize: 13,
+                    fontWeight: "600",
+                  }}
+                >
+                  Travel from this place back home: ~{commuteFromLastMinutes} min
+                </Text>
+              ) : null}
+            </View>
+          ))}
+        </View>
+      ) : null}
+
+      {isExpanded && typeof recipeIndex === "number" ? (
+        <TouchableOpacity
+          onPress={() => {
+            if (onRecipePress) {
+              onRecipePress(recipeIndex);
+            } else {
+              navigation.navigate("RecipeDetail", { index: recipeIndex });
+            }
+          }}
+          style={{ marginTop: 8 }}
+        >
+          <Text
+            style={{
+              fontSize: 15,
+              color: "#1e90ff",
+              textDecorationLine: "underline",
+              fontWeight: "700",
+            }}
+          >
+            View recipe details
+          </Text>
+        </TouchableOpacity>
+      ) : null}
+
+      {isExpanded && places.length ? <IdeaPlaceLinks places={places} navigation={navigation} /> : null}
+    </View>
+  );
+}

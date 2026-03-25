@@ -1,15 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  Text,
-  StyleSheet,
-  View,
-  TouchableOpacity,
-  Image,
-  TextInput,
-} from "react-native";
+import { KeyboardAvoidingView, Platform, ScrollView, Text, StyleSheet, View, TouchableOpacity, Image, TextInput } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import recipes from "../data/Recipes";
@@ -17,11 +7,7 @@ import type { AppNavigation } from "../types/navigation";
 
 const RECIPES_PER_PAGE = 10;
 
-export default function RecipesPage({
-  navigation,
-}: {
-  navigation: AppNavigation;
-}) {
+export default function RecipesPage({ navigation }: { navigation: AppNavigation }) {
   const insets = useSafeAreaInsets();
   const [budget, setBudget] = useState("");
   const [mealType, setMealType] = useState("");
@@ -37,11 +23,7 @@ export default function RecipesPage({
     }
 
     setTimeout(() => {
-      (scrollRef.current as any)?.scrollResponderScrollNativeHandleToKeyboard?.(
-        target,
-        120,
-        true,
-      );
+      (scrollRef.current as any)?.scrollResponderScrollNativeHandleToKeyboard?.(target, 120, true);
     }, 120);
   };
 
@@ -68,15 +50,9 @@ export default function RecipesPage({
     });
   }, [budget, mealType, time]);
 
-  const totalPages = Math.max(
-    1,
-    Math.ceil(filteredRecipes.length / RECIPES_PER_PAGE),
-  );
+  const totalPages = Math.max(1, Math.ceil(filteredRecipes.length / RECIPES_PER_PAGE));
   const pageStartIndex = (currentPage - 1) * RECIPES_PER_PAGE;
-  const pagedRecipes = filteredRecipes.slice(
-    pageStartIndex,
-    pageStartIndex + RECIPES_PER_PAGE,
-  );
+  const pagedRecipes = filteredRecipes.slice(pageStartIndex, pageStartIndex + RECIPES_PER_PAGE);
   const pageEndIndex = pageStartIndex + pagedRecipes.length;
 
   useEffect(() => {
@@ -107,23 +83,27 @@ export default function RecipesPage({
       >
         <View style={styles.header}>
           <Text style={styles.title}>Recipe Ideas</Text>
-          <Text style={styles.subtitle}>
+          {/* <Text style={styles.subtitle}>
             Fast, simple, and affordable recipes to impress your date.
-          </Text>
+          </Text> */}
         </View>
+
+        <Image
+          source={require("../assets/images/cooking.jpg")}
+          style={{
+            width: "100%",
+            height: 200,
+            borderRadius: 12,
+            marginBottom: 24,
+            paddingHorizontal: 24,
+          }}
+        />
 
         {/* Filter Section */}
         <View style={styles.filterSection}>
-          <TouchableOpacity
-            style={styles.filterHeader}
-            onPress={() => setFiltersExpanded(!filtersExpanded)}
-          >
+          <TouchableOpacity style={styles.filterHeader} onPress={() => setFiltersExpanded(!filtersExpanded)}>
             <Text style={styles.filterTitle}>Filter Recipes</Text>
-            <Ionicons
-              name={filtersExpanded ? "chevron-up" : "chevron-down"}
-              size={24}
-              color="#1a1a1a"
-            />
+            <Ionicons name={filtersExpanded ? "chevron-up" : "chevron-down"} size={24} color="#1a1a1a" />
           </TouchableOpacity>
 
           {filtersExpanded && (
@@ -144,9 +124,7 @@ export default function RecipesPage({
 
               {/* Time Input */}
               <View style={styles.filterGroup}>
-                <Text style={styles.filterLabel}>
-                  Max Time to Prepare (minutes)
-                </Text>
+                <Text style={styles.filterLabel}>Max Time to Prepare (minutes)</Text>
                 <TextInput
                   style={styles.input}
                   placeholder="e.g., 30"
@@ -165,20 +143,10 @@ export default function RecipesPage({
                   {mealTypes.map((type) => (
                     <TouchableOpacity
                       key={type}
-                      style={[
-                        styles.mealTypeButton,
-                        mealType === type && styles.mealTypeButtonActive,
-                      ]}
+                      style={[styles.mealTypeButton, mealType === type && styles.mealTypeButtonActive]}
                       onPress={() => setMealType(mealType === type ? "" : type)}
                     >
-                      <Text
-                        style={[
-                          styles.mealTypeText,
-                          mealType === type && styles.mealTypeTextActive,
-                        ]}
-                      >
-                        {type}
-                      </Text>
+                      <Text style={[styles.mealTypeText, mealType === type && styles.mealTypeTextActive]}>{type}</Text>
                     </TouchableOpacity>
                   ))}
                 </View>
@@ -202,21 +170,11 @@ export default function RecipesPage({
         {filteredRecipes.length > RECIPES_PER_PAGE && (
           <View style={styles.paginationContainer}>
             <TouchableOpacity
-              style={[
-                styles.paginationButton,
-                currentPage === 1 && styles.paginationButtonDisabled,
-              ]}
+              style={[styles.paginationButton, currentPage === 1 && styles.paginationButtonDisabled]}
               onPress={() => setCurrentPage((page) => Math.max(1, page - 1))}
               disabled={currentPage === 1}
             >
-              <Text
-                style={[
-                  styles.paginationButtonText,
-                  currentPage === 1 && styles.paginationButtonTextDisabled,
-                ]}
-              >
-                Previous
-              </Text>
+              <Text style={[styles.paginationButtonText, currentPage === 1 && styles.paginationButtonTextDisabled]}>Previous</Text>
             </TouchableOpacity>
 
             <Text style={styles.pageIndicator}>
@@ -224,24 +182,11 @@ export default function RecipesPage({
             </Text>
 
             <TouchableOpacity
-              style={[
-                styles.paginationButton,
-                currentPage === totalPages && styles.paginationButtonDisabled,
-              ]}
-              onPress={() =>
-                setCurrentPage((page) => Math.min(totalPages, page + 1))
-              }
+              style={[styles.paginationButton, currentPage === totalPages && styles.paginationButtonDisabled]}
+              onPress={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
               disabled={currentPage === totalPages}
             >
-              <Text
-                style={[
-                  styles.paginationButtonText,
-                  currentPage === totalPages &&
-                    styles.paginationButtonTextDisabled,
-                ]}
-              >
-                Next
-              </Text>
+              <Text style={[styles.paginationButtonText, currentPage === totalPages && styles.paginationButtonTextDisabled]}>Next</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -251,15 +196,11 @@ export default function RecipesPage({
           <Text style={styles.resultCount}>
             {filteredRecipes.length} recipe
             {filteredRecipes.length !== 1 ? "s" : ""} found
-            {filteredRecipes.length > 0
-              ? ` • Showing ${pageStartIndex + 1}-${pageEndIndex}`
-              : ""}
+            {filteredRecipes.length > 0 ? ` • Showing ${pageStartIndex + 1}-${pageEndIndex}` : ""}
           </Text>
           {filteredRecipes.length === 0 ? (
             <View style={styles.noResults}>
-              <Text style={styles.noResultsText}>
-                No recipes match your filters. Try adjusting your preferences!
-              </Text>
+              <Text style={styles.noResultsText}>No recipes match your filters. Try adjusting your preferences!</Text>
             </View>
           ) : (
             pagedRecipes.map((recipe, index) => (
@@ -275,9 +216,7 @@ export default function RecipesPage({
                 {recipe.image ? (
                   <Image source={recipe.image} style={styles.recipeImage} />
                 ) : (
-                  <View
-                    style={[styles.recipeImage, { backgroundColor: "#e0e0e0" }]}
-                  />
+                  <View style={[styles.recipeImage, { backgroundColor: "#e0e0e0" }]} />
                 )}
                 <View style={styles.recipeInfo}>
                   <Text style={styles.recipeName}>{recipe.name}</Text>
@@ -290,9 +229,7 @@ export default function RecipesPage({
                       }}
                     >
                       <Ionicons name="time-outline" size={20} color="#f05a7e" />
-                      <Text style={styles.meta}>
-                        {recipe.estimatedTime} min
-                      </Text>
+                      <Text style={styles.meta}>{recipe.estimatedTime} min</Text>
                     </View>
                     <View
                       style={{

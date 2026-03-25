@@ -1,24 +1,19 @@
-Devlog 2 TODOs:
-MORE PICTURES
 Come up with a better name for the app
 More date templates/Fix current date templates, add more activities
-Fix Google Places Querying
+Add Revenuecat api keys for apple
+Test the date planner generator
 
-Add Revenuecat api keys for apple and google play
-Change the homepage and find out where to put the premium button
-Let the user upload a picture for their date on the date history page
-Loading menu when date ideas are being generated
+
+Maybe:
 Incorporate pictures on the date results page
 Search button in the saved ideas
-Date calendar button to show past and future dates on the date planner page
-Popup for date planner instead of just going from question to question
 
-Devlog 3 TODOs:
-Test the date planner generator
 
 Eventually:
 users can input their own date ideas
-users can upload pictures or reviews and there can be a 'recent dates in provo' section on the app to make it more like social media. Then, when a user is looking at date ideas or a place, it will show them dates that have taken place at that spot
+users can upload pictures or reviews and there can be a 'recent dates in provo' section on the app to make it more like social media. 
+Then, when a user is looking at date ideas or a place, it will show them dates that have taken place at that spot
 Ratings for recipes that you like (upvoting/downvoting)
 
-To make the app useable for anyone regardless of location, first check if the places contains places nearby the user, otherwise query the server to generate new places. Places should regenerate once every couple weeks just to keep everything updated
+To make the app useable for anyone regardless of location, first check if the places contains places nearby the user, 
+otherwise query the server to generate new places. Places should regenerate once every couple weeks just to keep everything updated

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react"
+import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -11,168 +11,195 @@ import {
   Platform,
   KeyboardAvoidingView,
   Image,
-} from "react-native"
-import DateTimePicker from "@react-native-community/datetimepicker"
-import { Ionicons } from "@expo/vector-icons"
+} from "react-native";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import { Ionicons } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
 import {
   addRecordedDate,
+  FREE_TIER_RECORDED_DATES_LIMIT,
   getRecordedDates,
   removeRecordedDate,
   subscribeRecordedDates,
   updateRecordedDate,
   type RecordedDate,
-} from "../data/dateHistoryStore"
-import type { AppNavigation } from "../types/navigation"
-import { useSafeAreaInsets } from "react-native-safe-area-context"
-import { usePremium } from "../hooks/usePremium"
-import PaywallModal from "../Components/PaywallModal"
+} from "../data/dateHistoryStore";
+import type { AppNavigation } from "../types/navigation";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { usePremium } from "../hooks/usePremium";
+import PaywallModal from "../Components/PaywallModal";
 
 function getRatingColor(n: number): string {
   // hue 0 = red (1), hue 120 = green (10)
-  const hue = Math.round(((n - 1) / 9) * 120)
-  return `hsl(${hue}, 75%, 42%)`
+  const hue = Math.round(((n - 1) / 9) * 120);
+  return `hsl(${hue}, 75%, 42%)`;
 }
 
 export default function DateHistoryScreen({
   navigation,
 }: {
-  navigation: AppNavigation
+  navigation: AppNavigation;
 }) {
-  const [recordedDates, setRecordedDates] = useState<RecordedDate[]>([])
-  const [modalVisible, setModalVisible] = useState(false)
-  const [showDatePicker, setShowDatePicker] = useState(false)
-  const [editingDateId, setEditingDateId] = useState<string | null>(null)
-  const [paywallVisible, setPaywallVisible] = useState(false)
+  const [recordedDates, setRecordedDates] = useState<RecordedDate[]>([]);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [editingDateId, setEditingDateId] = useState<string | null>(null);
+  const [paywallVisible, setPaywallVisible] = useState(false);
 
-  const { isUnlocked } = usePremium()
-  const FREE_TIER_LIMIT = 5
+  const { isUnlocked } = usePremium();
 
   // Form state
-  const [selectedDate, setSelectedDate] = useState(new Date())
-  const [whoWentWith, setWhoWentWith] = useState("")
-  const [whatYouDid, setWhatYouDid] = useState("")
-  const [moneySpent, setMoneySpent] = useState("")
-  const [rating, setRating] = useState<number | null>(null)
-  const [whatYouLiked, setWhatYouLiked] = useState("")
-  const [whatYouLearned, setWhatYouLearned] = useState("")
-  const modalScrollRef = useRef<ScrollView>(null)
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [whoWentWith, setWhoWentWith] = useState("");
+  const [whatYouDid, setWhatYouDid] = useState("");
+  const [dateImageUri, setDateImageUri] = useState<string | null>(null);
+  const [moneySpent, setMoneySpent] = useState("");
+  const [rating, setRating] = useState<number | null>(null);
+  const [whatYouLiked, setWhatYouLiked] = useState("");
+  const [whatYouLearned, setWhatYouLearned] = useState("");
+  const modalScrollRef = useRef<ScrollView>(null);
 
-  const insets = useSafeAreaInsets()
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     // Load initial data
-    setRecordedDates(getRecordedDates())
+    setRecordedDates(getRecordedDates());
 
     // Subscribe to changes
     const unsubscribe = subscribeRecordedDates(() => {
-      setRecordedDates(getRecordedDates())
-    })
+      setRecordedDates(getRecordedDates());
+    });
 
-    return unsubscribe
-  }, [])
+    return unsubscribe;
+  }, []);
 
   const handleDateChange = (event: any, date?: Date) => {
     if (Platform.OS === "android") {
-      setShowDatePicker(false)
+      setShowDatePicker(false);
     }
 
-    const isConfirmed = Platform.OS === "ios" || event.type === "set"
+    const isConfirmed = Platform.OS === "ios" || event.type === "set";
     if (isConfirmed && date) {
-      setSelectedDate(date)
+      setSelectedDate(date);
     }
-  }
+  };
 
   const resetForm = () => {
-    setWhoWentWith("")
-    setWhatYouDid("")
-    setMoneySpent("")
-    setRating(null)
-    setWhatYouLiked("")
-    setWhatYouLearned("")
-    setSelectedDate(new Date())
-    setShowDatePicker(false)
-  }
+    setWhoWentWith("");
+    setWhatYouDid("");
+    setDateImageUri(null);
+    setMoneySpent("");
+    setRating(null);
+    setWhatYouLiked("");
+    setWhatYouLearned("");
+    setSelectedDate(new Date());
+    setShowDatePicker(false);
+  };
 
   const closeModal = () => {
-    setModalVisible(false)
-    setEditingDateId(null)
-    resetForm()
-  }
+    setModalVisible(false);
+    setEditingDateId(null);
+    resetForm();
+  };
 
   const openCreateModal = () => {
-    setEditingDateId(null)
-    resetForm()
-    setModalVisible(true)
-  }
+    setEditingDateId(null);
+    resetForm();
+    setModalVisible(true);
+  };
 
   const openEditModal = (date: RecordedDate) => {
-    setEditingDateId(date.id)
-    setSelectedDate(new Date(date.dateOfDate))
-    setWhoWentWith(date.whoWentWith)
-    setWhatYouDid(date.whatYouDid)
-    setMoneySpent(String(date.moneySpent))
-    setRating(date.rating)
-    setWhatYouLiked(date.whatYouLiked)
-    setWhatYouLearned(date.whatYouLearned)
-    setShowDatePicker(false)
-    setModalVisible(true)
-  }
+    setEditingDateId(date.id);
+    setSelectedDate(new Date(date.dateOfDate));
+    setDateImageUri(date.imageUri ?? null);
+    setWhoWentWith(date.whoWentWith);
+    setWhatYouDid(date.whatYouDid);
+    setMoneySpent(String(date.moneySpent));
+    setRating(date.rating);
+    setWhatYouLiked(date.whatYouLiked);
+    setWhatYouLearned(date.whatYouLearned);
+    setShowDatePicker(false);
+    setModalVisible(true);
+  };
 
   const handleSaveDate = () => {
     if (!whoWentWith.trim()) {
-      Alert.alert("Error", "Please enter who you went out with")
-      return
+      Alert.alert("Error", "Please enter who you went out with");
+      return;
     }
 
     if (!whatYouDid.trim()) {
-      Alert.alert("Error", "Please describe what you did on the date")
-      return
+      Alert.alert("Error", "Please describe what you did on the date");
+      return;
     }
 
     if (!moneySpent.trim()) {
-      Alert.alert("Error", "Please enter the amount spent")
-      return
+      Alert.alert("Error", "Please enter the amount spent");
+      return;
     }
 
-    const moneyValue = parseFloat(moneySpent)
+    const moneyValue = parseFloat(moneySpent);
     if (isNaN(moneyValue)) {
-      Alert.alert("Error", "Please enter a valid number for money spent")
-      return
+      Alert.alert("Error", "Please enter a valid number for money spent");
+      return;
     }
 
     if (!whatYouDid.trim()) {
-      Alert.alert("Error", "Please enter what you did")
-      return
+      Alert.alert("Error", "Please enter what you did");
+      return;
     }
 
     // Check if free user is at limit (editing doesn't count toward limit)
     if (
       !editingDateId &&
       !isUnlocked &&
-      recordedDates.length >= FREE_TIER_LIMIT
+      recordedDates.length >= FREE_TIER_RECORDED_DATES_LIMIT
     ) {
-      setPaywallVisible(true)
-      return
+      setPaywallVisible(true);
+      return;
     }
 
     const datePayload = {
       dateOfDate: selectedDate.toISOString().split("T")[0],
+      imageUri: dateImageUri,
       whoWentWith: whoWentWith.trim(),
       whatYouDid: whatYouDid.trim(),
       moneySpent: moneyValue,
       rating,
       whatYouLiked: whatYouLiked.trim(),
       whatYouLearned: whatYouLearned.trim(),
-    }
+    };
 
     if (editingDateId) {
-      updateRecordedDate(editingDateId, datePayload)
+      updateRecordedDate(editingDateId, datePayload);
     } else {
-      addRecordedDate(datePayload)
+      addRecordedDate(datePayload);
     }
 
-    closeModal()
-  }
+    closeModal();
+  };
+
+  const handlePickDateImage = async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (!permission.granted) {
+      Alert.alert(
+        "Photo Access Needed",
+        "Please allow photo library access to attach a date photo.",
+      );
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      quality: 0.8,
+    });
+
+    if (!result.canceled && result.assets.length > 0) {
+      setDateImageUri(result.assets[0].uri);
+    }
+  };
 
   const handleDeleteDate = (id: string) => {
     Alert.alert(
@@ -186,21 +213,21 @@ export default function DateHistoryScreen({
           style: "destructive",
         },
       ],
-    )
-  }
+    );
+  };
 
   const handleFormInputFocus = (event: any) => {
-    const target = event?.target
+    const target = event?.target;
     if (!target) {
-      return
+      return;
     }
 
     setTimeout(() => {
-      ;(
+      (
         modalScrollRef.current as any
-      )?.scrollResponderScrollNativeHandleToKeyboard?.(target, 120, true)
-    }, 120)
-  }
+      )?.scrollResponderScrollNativeHandleToKeyboard?.(target, 120, true);
+    }, 120);
+  };
 
   return (
     <View style={styles.container}>
@@ -211,7 +238,12 @@ export default function DateHistoryScreen({
         ]}
       >
         <View style={styles.header}>
-          <Text style={styles.title}>Date History</Text>
+          <View style={styles.titleRow}>
+            <Text style={styles.title}>Date History</Text>
+            <Text style={styles.freeCounterText}>
+              ({recordedDates.length} / {FREE_TIER_RECORDED_DATES_LIMIT})
+            </Text>
+          </View>
           {/* <Text style={styles.subtitle}>Record the dates you've been on</Text> */}
         </View>
 
@@ -286,6 +318,13 @@ export default function DateHistoryScreen({
                       </TouchableOpacity>
                     </View>
                   </View>
+
+                  {date.imageUri ? (
+                    <Image
+                      source={{ uri: date.imageUri }}
+                      style={styles.dateEntryImage}
+                    />
+                  ) : null}
 
                   <View style={styles.dateCardContent}>
                     {date.whoWentWith ? (
@@ -458,6 +497,36 @@ export default function DateHistoryScreen({
               </View>
 
               <View style={styles.formSection}>
+                <Text style={styles.formLabel}>Date Photo (optional)</Text>
+                <TouchableOpacity
+                  style={styles.imagePickerButton}
+                  onPress={handlePickDateImage}
+                >
+                  <Ionicons name="image-outline" size={18} color="#007AFF" />
+                  <Text style={styles.imagePickerButtonText}>
+                    {dateImageUri ? "Change Photo" : "Add Photo"}
+                  </Text>
+                </TouchableOpacity>
+
+                {dateImageUri ? (
+                  <View>
+                    <Image
+                      source={{ uri: dateImageUri }}
+                      style={styles.formImagePreview}
+                    />
+                    <TouchableOpacity
+                      style={styles.removeImageButton}
+                      onPress={() => setDateImageUri(null)}
+                    >
+                      <Text style={styles.removeImageButtonText}>
+                        Remove Photo
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                ) : null}
+              </View>
+
+              <View style={styles.formSection}>
                 <Text style={styles.formLabel}>How much did you spend? *</Text>
                 <View style={styles.inputWithPrefix}>
                   <Text style={styles.currencyPrefix}>$</Text>
@@ -477,8 +546,8 @@ export default function DateHistoryScreen({
                 <Text style={styles.formLabel}>Rate the date (1–10)</Text>
                 <View style={styles.ratingRow}>
                   {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => {
-                    const color = getRatingColor(n)
-                    const selected = rating === n
+                    const color = getRatingColor(n);
+                    const selected = rating === n;
                     return (
                       <TouchableOpacity
                         key={n}
@@ -498,7 +567,7 @@ export default function DateHistoryScreen({
                           {n}
                         </Text>
                       </TouchableOpacity>
-                    )
+                    );
                   })}
                 </View>
               </View>
@@ -560,7 +629,7 @@ export default function DateHistoryScreen({
         reason="date_history_limit"
       />
     </View>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
@@ -588,6 +657,18 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     color: "#1a1a1a",
   },
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    gap: 8,
+    flexWrap: "wrap",
+  },
+  freeCounterText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#6b7280",
+    marginBottom: 14,
+  },
   emptyState: {
     flex: 1,
     alignItems: "center",
@@ -609,7 +690,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#666",
     textAlign: "center",
-    marginBottom: 32,
+    marginBottom: 16,
     lineHeight: 20,
   },
   addButton: {
@@ -641,6 +722,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
+  },
+  dateEntryImage: {
+    width: "100%",
+    height: 180,
+    borderRadius: 10,
+    marginBottom: 12,
   },
   dateCardHeader: {
     flexDirection: "row",
@@ -768,6 +855,43 @@ const styles = StyleSheet.create({
     backgroundColor: "#fafbfc",
     fontFamily: "System",
   },
+  imagePickerButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "#007AFF",
+    borderRadius: 8,
+    paddingVertical: 12,
+    backgroundColor: "#f0f7ff",
+    gap: 8,
+  },
+  imagePickerButtonText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#007AFF",
+  },
+  formImagePreview: {
+    width: "100%",
+    height: 170,
+    borderRadius: 10,
+    marginTop: 10,
+  },
+  removeImageButton: {
+    alignSelf: "flex-start",
+    marginTop: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    backgroundColor: "#fff1f2",
+    borderWidth: 1,
+    borderColor: "#fecdd3",
+  },
+  removeImageButtonText: {
+    color: "#be123c",
+    fontSize: 12,
+    fontWeight: "700",
+  },
   inputWithPrefix: {
     flexDirection: "row",
     alignItems: "center",
@@ -841,4 +965,4 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#1a1a1a",
   },
-})
+});

@@ -1,6 +1,7 @@
 export type RecordedDate = {
   id: string;
   dateOfDate: string; // ISO date string
+  imageUri?: string | null;
   whoWentWith: string;
   whatYouDid: string;
   moneySpent: number;
@@ -9,6 +10,8 @@ export type RecordedDate = {
   whatYouLearned: string;
   recordedAt: string; // ISO timestamp
 };
+
+export const FREE_TIER_RECORDED_DATES_LIMIT = 5;
 
 let recordedDates: RecordedDate[] = [];
 const listeners = new Set<() => void>();

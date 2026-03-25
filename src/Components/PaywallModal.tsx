@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState } from "react";
 import {
   Modal,
   View,
@@ -8,20 +8,24 @@ import {
   StyleSheet,
   ActivityIndicator,
   Alert,
-} from "react-native"
-import { Ionicons } from "@expo/vector-icons"
-import { usePremium } from "../hooks/usePremium"
-import { purchasePremium } from "../data/iapConfig"
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { usePremium } from "../hooks/usePremium";
+import { purchasePremium } from "../data/iapConfig";
+import { FREE_TIER_RECORDED_DATES_LIMIT } from "../data/dateHistoryStore";
+import { FREE_TIER_SAVED_IDEAS_LIMIT } from "../data/savedIdeasStore";
+
+const FREE_TIER_RADIUS_MILES = 5;
 
 interface PaywallProps {
-  visible: boolean
-  onClose: () => void
-  onPurchase?: () => Promise<void>
+  visible: boolean;
+  onClose: () => void;
+  onPurchase?: () => Promise<void>;
   reason?:
     | "date_history_limit"
     | "mile_radius_limit"
     | "ideas_limit"
-    | "general"
+    | "general";
 }
 
 export default function PaywallModal({
@@ -30,8 +34,8 @@ export default function PaywallModal({
   onPurchase,
   reason = "general",
 }: PaywallProps) {
-  const [isProcessing, setIsProcessing] = useState(false)
-  const { resetPremium } = usePremium()
+  const [isProcessing, setIsProcessing] = useState(false);
+  const { resetPremium } = usePremium();
 
   const reasonMessages: Record<string, { title: string; description: string }> =
     {
@@ -55,56 +59,69 @@ export default function PaywallModal({
         description:
           "Get unlimited date history, search radius, and idea generation.",
       },
-    }
+    };
 
-  const { title, description } = reasonMessages[reason]
+  const { title, description } = reasonMessages[reason];
 
   const handlePurchase = async () => {
-    setIsProcessing(true)
+    setIsProcessing(true);
     try {
-      const result = await purchasePremium()
+      const result = await purchasePremium();
+
+      const isTestPurchaseFailure =
+        result.status === "failed" &&
+        typeof result.message === "string" &&
+        result.message.includes(
+          "Test purchase failure: no real transaction occurred",
+        );
+
+      if (isTestPurchaseFailure) {
+        onClose();
+        return;
+      }
+
       if (result.status === "success") {
         Alert.alert(
           "Success!",
           "You've unlocked Premium. Enjoy unlimited features!",
-        )
-        onClose()
+        );
+        onClose();
       } else if (result.status === "cancelled") {
         Alert.alert(
           "Purchase Cancelled",
           "No worries, you can upgrade anytime.",
-        )
+        );
       } else if (result.status === "not_found") {
         Alert.alert(
           "Product Not Available",
           "We couldn't find your premium product in the current offering. Please check RevenueCat product/offering setup.",
-        )
+        );
       } else {
         Alert.alert(
           "Purchase Failed",
           result.message || "Please try again later.",
-        )
+        );
       }
     } catch (error) {
-      console.error("Purchase error:", error)
-      Alert.alert("Error", "Something went wrong during purchase.")
+      console.error("Purchase error:", error);
+      Alert.alert("Error", "Something went wrong during purchase.");
     } finally {
-      setIsProcessing(false)
+      setIsProcessing(false);
     }
-  }
+  };
 
   const handleResetPremium = async () => {
     try {
-      await resetPremium()
+      await resetPremium();
       Alert.alert(
         "Premium Removed",
         "Premium access has been reset for testing.",
-      )
+      );
     } catch (error) {
-      console.error("Reset premium error:", error)
-      Alert.alert("Error", "Could not reset premium access.")
+      console.error("Reset premium error:", error);
+      Alert.alert("Error", "Could not reset premium access.");
     }
-  }
+  };
 
   return (
     <Modal
@@ -128,6 +145,34 @@ export default function PaywallModal({
             {/* Title & Description */}
             <Text style={styles.title}>{title}</Text>
             <Text style={styles.description}>{description}</Text>
+
+            <View style={styles.comparisonCard}>
+              <Text style={styles.comparisonTitle}>
+                What You Get Today (Free)
+              </Text>
+              <Text style={styles.comparisonLine}>
+                • Date history: up to {FREE_TIER_RECORDED_DATES_LIMIT} records
+              </Text>
+              <Text style={styles.comparisonLine}>
+                • Saved ideas: up to {FREE_TIER_SAVED_IDEAS_LIMIT}
+              </Text>
+              <Text style={styles.comparisonLine}>
+                • Radius: up to {FREE_TIER_RADIUS_MILES} miles
+              </Text>
+
+              <Text style={styles.comparisonTitlePremium}>
+                What You Get With Premium
+              </Text>
+              <Text style={styles.comparisonLinePremium}>
+                • Unlimited date history
+              </Text>
+              <Text style={styles.comparisonLinePremium}>
+                • Unlimited saved ideas
+              </Text>
+              <Text style={styles.comparisonLinePremium}>
+                • Unlimited radius and date idea generation
+              </Text>
+            </View>
 
             {/* Feature List */}
             <View style={styles.featuresContainer}>
@@ -255,7 +300,7 @@ export default function PaywallModal({
         </View>
       </View>
     </Modal>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
@@ -296,6 +341,37 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 24,
     lineHeight: 22,
+  },
+  comparisonCard: {
+    backgroundColor: "#f8fafc",
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 16,
+  },
+  comparisonTitle: {
+    fontSize: 13,
+    fontWeight: "800",
+    color: "#475569",
+    marginBottom: 6,
+  },
+  comparisonLine: {
+    fontSize: 13,
+    color: "#64748b",
+    marginBottom: 3,
+  },
+  comparisonTitlePremium: {
+    fontSize: 13,
+    fontWeight: "800",
+    color: "#0f766e",
+    marginTop: 8,
+    marginBottom: 6,
+  },
+  comparisonLinePremium: {
+    fontSize: 13,
+    color: "#0f766e",
+    marginBottom: 3,
   },
   featuresContainer: {
     gap: 12,
@@ -404,4 +480,4 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#d93025",
   },
-})
+});

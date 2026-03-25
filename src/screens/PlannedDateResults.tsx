@@ -1,7 +1,8 @@
-import { useLayoutEffect, useRef, useState } from "react"
+import { useLayoutEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Image,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -10,25 +11,24 @@ import {
   TextInput,
   TouchableOpacity,
   View,
-} from "react-native"
-import DateTimePicker from "@react-native-community/datetimepicker"
+} from "react-native";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import type {
   AppScreenProps,
   PlannedDateResultsParams,
-} from "../types/navigation"
-import useDatePlannerIdeas, { PlaceSummary } from "../hooks/useDatePlannerIdeas"
+} from "../types/navigation";
+import useDatePlannerIdeas, {
+  PlaceSummary,
+} from "../hooks/useDatePlannerIdeas";
 import useFilledIdeas, {
   estimateTravelMinutesBetween,
-  estimateTravelMinutesFromUserLocation,
-  formatTimeLabel,
-  getPlaceCandidatesBySlot,
   getCandidatesForSlot,
-} from "../hooks/useFilledIdeas"
-import { saveDateIdea, canSaveIdea } from "../data/savedIdeasStore"
-import { premiumStore } from "../data/premiumStore"
-import { usePremium } from "../hooks/usePremium"
-import PaywallModal from "../Components/PaywallModal"
-import IdeaPlaceLinks from "../Components/IdeaPlaceLinks"
+} from "../hooks/useFilledIdeas";
+import { saveDateIdea, canSaveIdea } from "../data/savedIdeasStore";
+import { premiumStore } from "../data/premiumStore";
+import { usePremium } from "../hooks/usePremium";
+import PaywallModal from "../Components/PaywallModal";
+import DateIdeaCard from "../Components/DateIdeaCard";
 
 const DATE_CATEGORIES = [
   "Food",
@@ -38,7 +38,7 @@ const DATE_CATEGORIES = [
   "Learning",
   "Shopping",
   "Recreation",
-]
+];
 
 const DEV_PLACE_SLOT_TYPES: Record<string, string[]> = {
   meal: ["restaurant", "meal_takeaway", "cafe", "pizza_restaurant"],
@@ -46,97 +46,82 @@ const DEV_PLACE_SLOT_TYPES: Record<string, string[]> = {
   park: ["park", "hiking_area", "nature_preserve", "lake", "river"],
   learningSpot: ["museum", "library", "book_store", "art_gallery"],
   shop: ["shopping_mall", "department_store", "clothing_store", "store"],
-}
+};
 
 export default function PlannedDateResults({
   route,
   navigation,
 }: AppScreenProps<"PlannedDateResults">) {
-  const { isUnlocked } = usePremium()
-  const [paywallVisible, setPaywallVisible] = useState(false)
+  const { isUnlocked } = usePremium();
+  const [paywallVisible, setPaywallVisible] = useState(false);
   const [paywallReason, setPaywallReason] = useState<
     "date_history_limit" | "mile_radius_limit" | "ideas_limit" | "general"
-  >("general")
+  >("general");
 
   useLayoutEffect(() => {
     navigation.setOptions({
       headerBackTitle: "Back",
       title: "Date Ideas",
-    })
-  }, [navigation])
+    });
+  }, [navigation]);
 
   const [plannerParams, setPlannerParams] = useState<PlannedDateResultsParams>(
     route.params,
-  )
-  const [isEditModalVisible, setIsEditModalVisible] = useState(false)
-  const [showEditDatePicker, setShowEditDatePicker] = useState(false)
-  const [editError, setEditError] = useState<string | null>(null)
+  );
+  const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+  const [showEditDatePicker, setShowEditDatePicker] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
   const [draftSelectedDate, setDraftSelectedDate] = useState(
     route.params.selectedDate,
-  )
-  const initialStartHour24 = ((route.params.startHour % 24) + 24) % 24
-  const initialEndHour24 = ((route.params.endHour % 24) + 24) % 24
+  );
+  const initialStartHour24 = ((route.params.startHour % 24) + 24) % 24;
+  const initialEndHour24 = ((route.params.endHour % 24) + 24) % 24;
   const [draftStartHour12, setDraftStartHour12] = useState(
     String(initialStartHour24 % 12 === 0 ? 12 : initialStartHour24 % 12),
-  )
+  );
   const [draftStartPeriod, setDraftStartPeriod] = useState<"AM" | "PM">(
     initialStartHour24 < 12 ? "AM" : "PM",
-  )
+  );
   const [draftEndHour12, setDraftEndHour12] = useState(
     String(initialEndHour24 % 12 === 0 ? 12 : initialEndHour24 % 12),
-  )
+  );
   const [draftEndPeriod, setDraftEndPeriod] = useState<"AM" | "PM">(
     initialEndHour24 < 12 ? "AM" : "PM",
-  )
+  );
   const [draftMaxPrice, setDraftMaxPrice] = useState(
     String(route.params.maxPrice),
-  )
+  );
   const [draftMaxDistance, setDraftMaxDistance] = useState(
     String(route.params.maxDistance),
-  )
-  const [draftHasStarvingStudentCard, setDraftHasStarvingStudentCard] =
-    useState(route.params.hasStarvingStudentCard)
+  );
   const [draftCategoriesChecked, setDraftCategoriesChecked] = useState(
     DATE_CATEGORIES.map((category) =>
       route.params.categories.includes(category),
     ),
-  )
-  const [expandedIdeas, setExpandedIdeas] = useState<Set<number>>(new Set())
-  const [showDevMatches, setShowDevMatches] = useState(false)
-  const [showDevPlaces, setShowDevPlaces] = useState(false)
-  const [showDevActivities, setShowDevActivities] = useState(false)
-  const [showDevRecipes, setShowDevRecipes] = useState(false)
+  );
+  const [showDevMatches, setShowDevMatches] = useState(false);
+  const [showDevPlaces, setShowDevPlaces] = useState(false);
+  const [showDevActivities, setShowDevActivities] = useState(false);
+  const [showDevRecipes, setShowDevRecipes] = useState(false);
   const [regeneratingSteps, setRegeneratingSteps] = useState<Set<string>>(
     new Set(),
-  )
+  );
   const [modifiedIdeas, setModifiedIdeas] = useState<Map<number, any>>(
     new Map(),
-  )
-  const editModalScrollRef = useRef<ScrollView>(null)
-
-  const toggleIdeaExpanded = (index: number) => {
-    setExpandedIdeas((prev) => {
-      const next = new Set(prev)
-      if (next.has(index)) {
-        next.delete(index)
-      } else {
-        next.add(index)
-      }
-      return next
-    })
-  }
+  );
+  const editModalScrollRef = useRef<ScrollView>(null);
 
   const regenerateStep = async (
     ideaIndex: number,
     stepIndex: number,
     idea: any,
   ) => {
-    const stepKey = `${ideaIndex}-${stepIndex}`
-    const schedule = idea.schedule || []
-    const step = schedule[stepIndex]
-    if (!step) return
+    const stepKey = `${ideaIndex}-${stepIndex}`;
+    const schedule = idea.schedule || [];
+    const step = schedule[stepIndex];
+    if (!step) return;
 
-    setRegeneratingSteps((prev) => new Set(prev).add(stepKey))
+    setRegeneratingSteps((prev) => new Set(prev).add(stepKey));
 
     try {
       // Get candidates for the slot type
@@ -145,41 +130,41 @@ export default function PlannedDateResults({
         places,
         recipes,
         activities,
-      )
+      );
 
       if (!candidates.length) {
-        Alert.alert("No alternatives available for this item.")
+        Alert.alert("No alternatives available for this item.");
         setRegeneratingSteps((prev) => {
-          const next = new Set(prev)
-          next.delete(stepKey)
-          return next
-        })
-        return
+          const next = new Set(prev);
+          next.delete(stepKey);
+          return next;
+        });
+        return;
       }
 
       // Pick a random candidate
       const newCandidate =
-        candidates[Math.floor(Math.random() * candidates.length)]
+        candidates[Math.floor(Math.random() * candidates.length)];
 
       // Calculate new travel times
-      const prevStep = stepIndex > 0 ? schedule[stepIndex - 1] : null
+      const prevStep = stepIndex > 0 ? schedule[stepIndex - 1] : null;
       const nextStep =
-        stepIndex < schedule.length - 1 ? schedule[stepIndex + 1] : null
+        stepIndex < schedule.length - 1 ? schedule[stepIndex + 1] : null;
 
-      let newTravelToNextMinutes: number | null = null
-      let newTravelFromPrevMinutes: number | null = null
+      let newTravelToNextMinutes: number | null = null;
+      let newTravelFromPrevMinutes: number | null = null;
 
       if (nextStep) {
         newTravelToNextMinutes = estimateTravelMinutesBetween(
           newCandidate.place || null,
           nextStep.place || null,
-        )
+        );
         if (newTravelToNextMinutes === null) {
           newTravelToNextMinutes =
             newCandidate.place?.sourceKind === "place" ||
             nextStep.place?.sourceKind === "place"
               ? 10
-              : 0
+              : 0;
         }
       }
 
@@ -189,17 +174,17 @@ export default function PlannedDateResults({
         title: newCandidate.value,
         place: newCandidate.place,
         travelToNextMinutes: newTravelToNextMinutes,
-      }
+      };
 
       // If there's a previous step, update its travelToNextMinutes
-      const updatedSchedule = [...schedule]
-      updatedSchedule[stepIndex] = updatedStep
+      const updatedSchedule = [...schedule];
+      updatedSchedule[stepIndex] = updatedStep;
 
       if (prevStep && stepIndex > 0) {
         const prevTravelMinutes = estimateTravelMinutesBetween(
           prevStep.place || null,
           newCandidate.place || null,
-        )
+        );
         updatedSchedule[stepIndex - 1] = {
           ...prevStep,
           travelToNextMinutes:
@@ -209,60 +194,53 @@ export default function PlannedDateResults({
                   newCandidate.place?.sourceKind === "place"
                 ? 10
                 : 0,
-        }
+        };
       }
 
       // Rebuild the filledTemplate with the new step title
-      let updatedFilledTemplate = idea.filledTemplate || idea.template
+      let updatedFilledTemplate = idea.filledTemplate || idea.template;
       updatedFilledTemplate = updatedFilledTemplate.replace(
         step.title,
         newCandidate.value,
-      )
+      );
 
       // Update places record with the new place
-      const updatedPlaces = { ...idea.places }
-      const placeKey = `${step.slot}_${stepIndex + 1}`
-      updatedPlaces[placeKey] = newCandidate.place || null
+      const updatedPlaces = { ...idea.places };
+      const placeKey = `${step.slot}_${stepIndex + 1}`;
+      updatedPlaces[placeKey] = newCandidate.place || null;
 
       // Update modified ideas state with schedule, template, and places
       setModifiedIdeas((prev) => {
-        const newMap = new Map(prev)
-        const ideaMods = newMap.get(ideaIndex) || {}
+        const newMap = new Map(prev);
+        const ideaMods = newMap.get(ideaIndex) || {};
         newMap.set(ideaIndex, {
           ...ideaMods,
           schedule: updatedSchedule,
           filledTemplate: updatedFilledTemplate,
           places: updatedPlaces,
-        })
-        return newMap
-      })
+        });
+        return newMap;
+      });
 
-      Alert.alert(`Updated with ${newCandidate.value}!`)
+      Alert.alert(`Updated with ${newCandidate.value}!`);
     } finally {
       setRegeneratingSteps((prev) => {
-        const next = new Set(prev)
-        next.delete(stepKey)
-        return next
-      })
+        const next = new Set(prev);
+        next.delete(stepKey);
+        return next;
+      });
     }
-  }
+  };
 
-  const {
-    places,
-    recipes,
-    activities,
-    sourceFile,
-    isLoading,
-    error,
-    refetch,
-  } = useDatePlannerIdeas(plannerParams)
+  const { places, recipes, activities, sourceFile, isLoading, error, refetch } =
+    useDatePlannerIdeas(plannerParams);
 
   const filledIdeas = useFilledIdeas({
     params: plannerParams,
     places,
     recipes,
     activities,
-  })
+  });
 
   const {
     selectedDate,
@@ -271,13 +249,13 @@ export default function PlannedDateResults({
     maxPrice,
     maxDistance,
     categories,
-  } = plannerParams
+  } = plannerParams;
 
   const canQueryPlacesByLocation =
-    maxDistance > 0 && plannerParams.userLocation != null
+    maxDistance > 0 && plannerParams.userLocation != null;
   const devPlacesQueryLocationLabel = canQueryPlacesByLocation
     ? `${plannerParams.userLocation?.latitude.toFixed(6)}, ${plannerParams.userLocation?.longitude.toFixed(6)}`
-    : "Not used (missing location or distance <= 0)"
+    : "Not used (missing location or distance <= 0)";
 
   const devPlaceSlotCounts = Object.entries(DEV_PLACE_SLOT_TYPES).map(
     ([slot, allowedTypes]) => ({
@@ -286,106 +264,105 @@ export default function PlannedDateResults({
         place.types.some((type) => allowedTypes.includes(type)),
       ).length,
     }),
-  )
+  );
 
   const formatHour = (hour24: number) => {
-    const normalized = ((hour24 % 24) + 24) % 24
-    const period = normalized < 12 ? "AM" : "PM"
-    const hour12 = normalized % 12 === 0 ? 12 : normalized % 12
-    return `${hour12}:00 ${period}`
-  }
+    const normalized = ((hour24 % 24) + 24) % 24;
+    const period = normalized < 12 ? "AM" : "PM";
+    const hour12 = normalized % 12 === 0 ? 12 : normalized % 12;
+    return `${hour12}:00 ${period}`;
+  };
 
   const clampHour12 = (value: number) => {
-    if (Number.isNaN(value)) return 1
-    if (value < 1) return 1
-    if (value > 12) return 12
-    return value
-  }
+    if (Number.isNaN(value)) return 1;
+    if (value < 1) return 1;
+    if (value > 12) return 12;
+    return value;
+  };
 
   const convertTo24Hour = (hour12: number, period: "AM" | "PM") => {
     if (period === "AM") {
-      return hour12 === 12 ? 0 : hour12
+      return hour12 === 12 ? 0 : hour12;
     }
-    return hour12 === 12 ? 12 : hour12 + 12
-  }
+    return hour12 === 12 ? 12 : hour12 + 12;
+  };
 
   const toggleDraftCategory = (index: number) => {
     setDraftCategoriesChecked((current) => {
-      const updated = [...current]
-      updated[index] = !updated[index]
-      return updated
-    })
-  }
+      const updated = [...current];
+      updated[index] = !updated[index];
+      return updated;
+    });
+  };
 
   const openEditModal = () => {
-    const startHour24 = ((plannerParams.startHour % 24) + 24) % 24
-    const endHour24 = ((plannerParams.endHour % 24) + 24) % 24
+    const startHour24 = ((plannerParams.startHour % 24) + 24) % 24;
+    const endHour24 = ((plannerParams.endHour % 24) + 24) % 24;
 
-    setDraftSelectedDate(plannerParams.selectedDate)
-    setDraftStartHour12(String(startHour24 % 12 === 0 ? 12 : startHour24 % 12))
-    setDraftStartPeriod(startHour24 < 12 ? "AM" : "PM")
-    setDraftEndHour12(String(endHour24 % 12 === 0 ? 12 : endHour24 % 12))
-    setDraftEndPeriod(endHour24 < 12 ? "AM" : "PM")
-    setDraftMaxPrice(String(plannerParams.maxPrice))
-    setDraftMaxDistance(String(plannerParams.maxDistance))
-    setDraftHasStarvingStudentCard(plannerParams.hasStarvingStudentCard)
+    setDraftSelectedDate(plannerParams.selectedDate);
+    setDraftStartHour12(String(startHour24 % 12 === 0 ? 12 : startHour24 % 12));
+    setDraftStartPeriod(startHour24 < 12 ? "AM" : "PM");
+    setDraftEndHour12(String(endHour24 % 12 === 0 ? 12 : endHour24 % 12));
+    setDraftEndPeriod(endHour24 < 12 ? "AM" : "PM");
+    setDraftMaxPrice(String(plannerParams.maxPrice));
+    setDraftMaxDistance(String(plannerParams.maxDistance));
     setDraftCategoriesChecked(
       DATE_CATEGORIES.map((category) =>
         plannerParams.categories.includes(category),
       ),
-    )
-    setShowEditDatePicker(false)
-    setEditError(null)
-    setIsEditModalVisible(true)
-  }
+    );
+    setShowEditDatePicker(false);
+    setEditError(null);
+    setIsEditModalVisible(true);
+  };
 
   const applyEditsAndRegenerate = () => {
-    const nextStartHour12 = Number.parseInt(draftStartHour12, 10)
-    const nextEndHour12 = Number.parseInt(draftEndHour12, 10)
-    const nextMaxPrice = Number.parseInt(draftMaxPrice, 10)
-    let nextMaxDistance = Number.parseInt(draftMaxDistance, 10)
+    const nextStartHour12 = Number.parseInt(draftStartHour12, 10);
+    const nextEndHour12 = Number.parseInt(draftEndHour12, 10);
+    const nextMaxPrice = Number.parseInt(draftMaxPrice, 10);
+    let nextMaxDistance = Number.parseInt(draftMaxDistance, 10);
     const nextCategories = DATE_CATEGORIES.filter(
       (_, index) => draftCategoriesChecked[index],
-    )
+    );
 
     if (!/^\d{4}-\d{2}-\d{2}$/.test(draftSelectedDate)) {
-      setEditError("Date must be in YYYY-MM-DD format.")
-      return
+      setEditError("Date must be in YYYY-MM-DD format.");
+      return;
     }
 
     if (Number.isNaN(nextStartHour12) || Number.isNaN(nextEndHour12)) {
-      setEditError("Start and end hours are required.")
-      return
+      setEditError("Start and end hours are required.");
+      return;
     }
 
     if (
       clampHour12(nextStartHour12) !== nextStartHour12 ||
       clampHour12(nextEndHour12) !== nextEndHour12
     ) {
-      setEditError("Start and end hours must be between 1 and 12.")
-      return
+      setEditError("Start and end hours must be between 1 and 12.");
+      return;
     }
 
     if (Number.isNaN(nextMaxPrice) || nextMaxPrice < 0) {
-      setEditError("Budget must be a non-negative number.")
-      return
+      setEditError("Budget must be a non-negative number.");
+      return;
     }
 
     if (Number.isNaN(nextMaxDistance) || nextMaxDistance < 0) {
-      setEditError("Distance must be a non-negative number.")
-      return
+      setEditError("Distance must be a non-negative number.");
+      return;
     }
 
     // Enforce distance limit for free users
     if (!isUnlocked && nextMaxDistance > 5) {
-      setPaywallReason("mile_radius_limit")
-      setPaywallVisible(true)
-      return
+      setPaywallReason("mile_radius_limit");
+      setPaywallVisible(true);
+      return;
     }
 
     if (!nextCategories.length) {
-      setEditError("Add at least one category.")
-      return
+      setEditError("Add at least one category.");
+      return;
     }
 
     setPlannerParams({
@@ -394,30 +371,67 @@ export default function PlannedDateResults({
       endHour: convertTo24Hour(nextEndHour12, draftEndPeriod),
       maxPrice: nextMaxPrice,
       maxDistance: nextMaxDistance,
-      hasStarvingStudentCard: draftHasStarvingStudentCard,
       categories: nextCategories,
       userLocation: plannerParams.userLocation ?? null,
-    })
-    setIsEditModalVisible(false)
-    setEditError(null)
-  }
+    });
+    setIsEditModalVisible(false);
+    setEditError(null);
+  };
 
   const draftDateValue = (() => {
-    const parsed = new Date(`${draftSelectedDate}T12:00:00`)
-    return Number.isNaN(parsed.getTime()) ? new Date() : parsed
-  })()
+    const parsed = new Date(`${draftSelectedDate}T12:00:00`);
+    return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
+  })();
 
   const handleEditInputFocus = (event: any) => {
-    const target = event?.target
+    const target = event?.target;
     if (!target) {
-      return
+      return;
     }
 
     setTimeout(() => {
-      ;(
+      (
         editModalScrollRef.current as any
-      )?.scrollResponderScrollNativeHandleToKeyboard?.(target, 120, true)
-    }, 120)
+      )?.scrollResponderScrollNativeHandleToKeyboard?.(target, 120, true);
+    }, 120);
+  };
+
+  if (isLoading && !error) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: "#fafbfc",
+          justifyContent: "center",
+          alignItems: "center",
+          paddingHorizontal: 24,
+        }}
+      >
+        <ActivityIndicator size="large" color="#1e90ff" />
+        <Text
+          style={{
+            marginTop: 16,
+            color: "#1f2d3d",
+            fontSize: 20,
+            fontWeight: "800",
+            textAlign: "center",
+          }}
+        >
+          Generating Your Date Ideas...
+        </Text>
+        <Text
+          style={{
+            marginTop: 10,
+            color: "#556677",
+            fontSize: 15,
+            textAlign: "center",
+            lineHeight: 22,
+          }}
+        >
+          Finding places and building the best matches for your preferences.
+        </Text>
+      </View>
+    );
   }
 
   return (
@@ -439,7 +453,17 @@ export default function PlannedDateResults({
         Results
       </Text>
 
-      <Text
+      <Image
+        source={require("../assets/images/idea.jpg")}
+        style={{
+          width: "100%",
+          height: 200,
+          borderRadius: 12,
+          marginBottom: 20,
+        }}
+      />
+
+      {/* <Text
         style={{
           marginBottom: 16,
           fontSize: 17,
@@ -449,7 +473,7 @@ export default function PlannedDateResults({
       >
         Here are 10 generated date templates based on your categories, date, and
         time window.
-      </Text>
+      </Text> */}
 
       {places.length === 0 && (
         <Text
@@ -464,75 +488,23 @@ export default function PlannedDateResults({
         </Text>
       )}
 
-      <View
+      <TouchableOpacity
+        onPress={openEditModal}
         style={{
-          backgroundColor: "#ffffff",
-          borderWidth: 1,
-          borderColor: "#dce6ef",
-          borderRadius: 12,
-          padding: 14,
-          marginBottom: 16,
+          backgroundColor: "#1e90ff",
+          borderRadius: 10,
+          paddingVertical: 12,
+          alignItems: "center",
+          marginBottom: 10,
         }}
       >
-        <View
-          style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: 8,
-          }}
-        >
-          <Text
-            style={{
-              fontSize: 15,
-              fontWeight: "800",
-              color: "#1f2d3d",
-            }}
-          >
-            Your Inputs
-          </Text>
-          <TouchableOpacity
-            onPress={openEditModal}
-            style={{
-              backgroundColor: "#1e90ff",
-              borderRadius: 8,
-              paddingHorizontal: 12,
-              paddingVertical: 6,
-            }}
-          >
-            <Text style={{ color: "#fff", fontWeight: "700" }}>Edit</Text>
-          </TouchableOpacity>
-        </View>
-        <Text style={{ color: "#4b5b6b", marginBottom: 4 }}>
-          Date: {selectedDate}
+        <Text style={{ color: "#fff", fontWeight: "700", fontSize: 16 }}>
+          Edit Inputs
         </Text>
-        <Text style={{ color: "#4b5b6b", marginBottom: 4 }}>
-          Time: {formatHour(startHour)} - {formatHour(endHour)}
-        </Text>
-        <Text style={{ color: "#4b5b6b", marginBottom: 4 }}>
-          Budget: ${maxPrice}
-        </Text>
-        <Text style={{ color: "#4b5b6b", marginBottom: 4 }}>
-          Distance: {maxDistance} mile{maxDistance !== 1 ? "s" : ""}
-        </Text>
-        {__DEV__ ? (
-          <Text style={{ color: "#4b5b6b", marginBottom: 4 }}>
-            Places query location: {devPlacesQueryLocationLabel}
-          </Text>
-        ) : null}
-        {/* <Text style={{ color: "#4b5b6b", marginBottom: 4 }}>
-          Starving Student Card: {hasStarvingStudentCard ? "Yes" : "No"}
-        </Text> */}
-        <Text style={{ color: "#4b5b6b" }}>
-          Categories: {categories.join(", ")}
-        </Text>
-      </View>
+      </TouchableOpacity>
 
       <TouchableOpacity
-        onPress={() => {
-          setExpandedIdeas(new Set())
-          refetch()
-        }}
+        onPress={refetch}
         disabled={isLoading}
         style={{
           backgroundColor: "#28a745",
@@ -553,8 +525,8 @@ export default function PlannedDateResults({
         transparent
         animationType="fade"
         onRequestClose={() => {
-          setShowEditDatePicker(false)
-          setIsEditModalVisible(false)
+          setShowEditDatePicker(false);
+          setIsEditModalVisible(false);
         }}
       >
         <KeyboardAvoidingView
@@ -603,7 +575,7 @@ export default function PlannedDateResults({
                   borderWidth: 2,
                   borderColor: "#1e90ff",
                   borderRadius: 10,
-                  marginBottom: 10,
+                  marginBottom: 12,
                   backgroundColor: "#fff",
                 }}
               >
@@ -612,14 +584,38 @@ export default function PlannedDateResults({
                 </Text>
               </TouchableOpacity>
 
+              {showEditDatePicker ? (
+                <DateTimePicker
+                  value={draftDateValue}
+                  mode="date"
+                  display={Platform.OS === "ios" ? "spinner" : "default"}
+                  onChange={(event, value) => {
+                    if (Platform.OS !== "ios") {
+                      setShowEditDatePicker(false);
+                    }
+
+                    if (!value) {
+                      return;
+                    }
+
+                    const year = value.getFullYear();
+                    const month = String(value.getMonth() + 1).padStart(2, "0");
+                    const day = String(value.getDate()).padStart(2, "0");
+                    setDraftSelectedDate(`${year}-${month}-${day}`);
+                  }}
+                />
+              ) : null}
+
               <Text
                 style={{
-                  marginVertical: 8,
+                  marginBottom: 10,
                   fontSize: 16,
                   fontWeight: "600",
                   color: "#2c3e50",
                 }}
-              >{`${draftStartHour12} ${draftStartPeriod} - ${draftEndHour12} ${draftEndPeriod}`}</Text>
+              >
+                Time Window
+              </Text>
 
               <View style={{ flexDirection: "row", gap: 12, marginBottom: 12 }}>
                 <View style={{ flex: 1 }}>
@@ -631,69 +627,72 @@ export default function PlannedDateResults({
                       marginBottom: 6,
                     }}
                   >
-                    Start Time
+                    Start Hour
                   </Text>
-                  <View style={{ flexDirection: "row", gap: 8 }}>
-                    <TextInput
-                      style={{
-                        flex: 1,
-                        borderWidth: 2,
-                        borderColor: "#1e90ff",
-                        borderRadius: 10,
-                        padding: 12,
-                        fontSize: 18,
-                        backgroundColor: "#fff",
-                        textAlign: "center",
-                      }}
-                      keyboardType="numeric"
-                      value={draftStartHour12}
-                      onChangeText={(text) => {
-                        if (text.trim() === "") {
-                          setDraftStartHour12("")
-                          return
-                        }
-
-                        const parsed = parseInt(text, 10)
-                        if (Number.isNaN(parsed)) {
-                          setDraftStartHour12("")
-                          return
-                        }
-
-                        setDraftStartHour12(String(clampHour12(parsed)))
-                      }}
-                      placeholder="1-12"
-                      onFocus={handleEditInputFocus}
-                    />
-                    <TouchableOpacity
-                      onPress={() =>
-                        setDraftStartPeriod(
-                          draftStartPeriod === "AM" ? "PM" : "AM",
-                        )
-                      }
-                      style={{
-                        width: 60,
-                        borderWidth: 2,
-                        borderColor: "#1e90ff",
-                        borderRadius: 10,
-                        justifyContent: "center",
-                        alignItems: "center",
-                        backgroundColor:
-                          draftStartPeriod === "AM" ? "#1e90ff" : "#fff",
-                      }}
-                    >
-                      <Text
-                        style={{
-                          fontSize: 16,
-                          fontWeight: "700",
-                          color: draftStartPeriod === "AM" ? "#fff" : "#1e90ff",
-                        }}
-                      >
-                        {draftStartPeriod}
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
+                  <TextInput
+                    value={draftStartHour12}
+                    onChangeText={setDraftStartHour12}
+                    keyboardType="number-pad"
+                    onFocus={handleEditInputFocus}
+                    style={{
+                      borderWidth: 1,
+                      borderColor: "#dce6ef",
+                      borderRadius: 10,
+                      paddingHorizontal: 12,
+                      paddingVertical: 10,
+                      fontSize: 16,
+                    }}
+                  />
                 </View>
 
+                <View style={{ width: 96 }}>
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      fontWeight: "600",
+                      color: "#555",
+                      marginBottom: 6,
+                    }}
+                  >
+                    AM/PM
+                  </Text>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      borderWidth: 1,
+                      borderColor: "#dce6ef",
+                      borderRadius: 10,
+                      overflow: "hidden",
+                    }}
+                  >
+                    {(["AM", "PM"] as const).map((period) => (
+                      <TouchableOpacity
+                        key={`start-${period}`}
+                        onPress={() => setDraftStartPeriod(period)}
+                        style={{
+                          flex: 1,
+                          paddingVertical: 10,
+                          alignItems: "center",
+                          backgroundColor:
+                            draftStartPeriod === period ? "#1e90ff" : "#fff",
+                        }}
+                      >
+                        <Text
+                          style={{
+                            fontWeight: "700",
+                            color:
+                              draftStartPeriod === period ? "#fff" : "#1f2d3d",
+                          }}
+                        >
+                          {period}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+              </View>
+
+              <View style={{ flexDirection: "row", gap: 12, marginBottom: 12 }}>
                 <View style={{ flex: 1 }}>
                   <Text
                     style={{
@@ -703,108 +702,117 @@ export default function PlannedDateResults({
                       marginBottom: 6,
                     }}
                   >
-                    End Time
+                    End Hour
                   </Text>
-                  <View style={{ flexDirection: "row", gap: 8 }}>
-                    <TextInput
-                      style={{
-                        flex: 1,
-                        borderWidth: 2,
-                        borderColor: "#1e90ff",
-                        borderRadius: 10,
-                        padding: 12,
-                        fontSize: 18,
-                        backgroundColor: "#fff",
-                        textAlign: "center",
-                      }}
-                      keyboardType="numeric"
-                      value={draftEndHour12}
-                      onChangeText={(text) => {
-                        if (text.trim() === "") {
-                          setDraftEndHour12("")
-                          return
-                        }
+                  <TextInput
+                    value={draftEndHour12}
+                    onChangeText={setDraftEndHour12}
+                    keyboardType="number-pad"
+                    onFocus={handleEditInputFocus}
+                    style={{
+                      borderWidth: 1,
+                      borderColor: "#dce6ef",
+                      borderRadius: 10,
+                      paddingHorizontal: 12,
+                      paddingVertical: 10,
+                      fontSize: 16,
+                    }}
+                  />
+                </View>
 
-                        const parsed = parseInt(text, 10)
-                        if (Number.isNaN(parsed)) {
-                          setDraftEndHour12("")
-                          return
-                        }
-
-                        setDraftEndHour12(String(clampHour12(parsed)))
-                      }}
-                      placeholder="1-12"
-                      onFocus={handleEditInputFocus}
-                    />
-                    <TouchableOpacity
-                      onPress={() =>
-                        setDraftEndPeriod(draftEndPeriod === "AM" ? "PM" : "AM")
-                      }
-                      style={{
-                        width: 60,
-                        borderWidth: 2,
-                        borderColor: "#1e90ff",
-                        borderRadius: 10,
-                        justifyContent: "center",
-                        alignItems: "center",
-                        backgroundColor:
-                          draftEndPeriod === "AM" ? "#1e90ff" : "#fff",
-                      }}
-                    >
-                      <Text
+                <View style={{ width: 96 }}>
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      fontWeight: "600",
+                      color: "#555",
+                      marginBottom: 6,
+                    }}
+                  >
+                    AM/PM
+                  </Text>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      borderWidth: 1,
+                      borderColor: "#dce6ef",
+                      borderRadius: 10,
+                      overflow: "hidden",
+                    }}
+                  >
+                    {(["AM", "PM"] as const).map((period) => (
+                      <TouchableOpacity
+                        key={`end-${period}`}
+                        onPress={() => setDraftEndPeriod(period)}
                         style={{
-                          fontSize: 16,
-                          fontWeight: "700",
-                          color: draftEndPeriod === "AM" ? "#fff" : "#1e90ff",
+                          flex: 1,
+                          paddingVertical: 10,
+                          alignItems: "center",
+                          backgroundColor:
+                            draftEndPeriod === period ? "#1e90ff" : "#fff",
                         }}
                       >
-                        {draftEndPeriod}
-                      </Text>
-                    </TouchableOpacity>
+                        <Text
+                          style={{
+                            fontWeight: "700",
+                            color:
+                              draftEndPeriod === period ? "#fff" : "#1f2d3d",
+                          }}
+                        >
+                          {period}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
                   </View>
                 </View>
               </View>
 
-              <Text style={{ color: "#4b5b6b", marginBottom: 4 }}>Budget</Text>
-              <TextInput
-                value={draftMaxPrice}
-                onChangeText={setDraftMaxPrice}
-                keyboardType="number-pad"
-                onFocus={handleEditInputFocus}
-                style={{
-                  borderWidth: 1,
-                  borderColor: "#cdd9e5",
-                  borderRadius: 8,
-                  paddingHorizontal: 10,
-                  paddingVertical: 8,
-                  marginBottom: 10,
-                }}
-              />
-
-              <Text style={{ color: "#4b5b6b", marginBottom: 4 }}>
-                Distance (miles)
-              </Text>
-              <TextInput
-                value={draftMaxDistance}
-                onChangeText={setDraftMaxDistance}
-                keyboardType="number-pad"
-                onFocus={handleEditInputFocus}
-                style={{
-                  borderWidth: 1,
-                  borderColor: "#cdd9e5",
-                  borderRadius: 8,
-                  paddingHorizontal: 10,
-                  paddingVertical: 8,
-                  marginBottom: 10,
-                }}
-              />
+              <View style={{ flexDirection: "row", gap: 12, marginBottom: 12 }}>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: "#4b5b6b", marginBottom: 6 }}>
+                    Max Budget ($)
+                  </Text>
+                  <TextInput
+                    value={draftMaxPrice}
+                    onChangeText={setDraftMaxPrice}
+                    keyboardType="number-pad"
+                    onFocus={handleEditInputFocus}
+                    style={{
+                      borderWidth: 1,
+                      borderColor: "#dce6ef",
+                      borderRadius: 10,
+                      paddingHorizontal: 12,
+                      paddingVertical: 10,
+                      fontSize: 16,
+                    }}
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: "#4b5b6b", marginBottom: 6 }}>
+                    Max Distance (miles)
+                  </Text>
+                  <TextInput
+                    value={draftMaxDistance}
+                    onChangeText={setDraftMaxDistance}
+                    keyboardType="number-pad"
+                    onFocus={handleEditInputFocus}
+                    style={{
+                      borderWidth: 1,
+                      borderColor: "#dce6ef",
+                      borderRadius: 10,
+                      paddingHorizontal: 12,
+                      paddingVertical: 10,
+                      fontSize: 16,
+                    }}
+                  />
+                </View>
+              </View>
 
               <Text
                 style={{
-                  fontWeight: "700",
-                  fontSize: 16,
+                  color: "#4b5b6b",
                   marginBottom: 8,
-                  color: "#1a1a1a",
+                  fontWeight: "700",
                 }}
               >
                 Categories
@@ -813,36 +821,35 @@ export default function PlannedDateResults({
                 style={{
                   flexDirection: "row",
                   flexWrap: "wrap",
-                  gap: 10,
-                  marginBottom: 10,
+                  gap: 8,
+                  marginBottom: 16,
                 }}
               >
                 {DATE_CATEGORIES.map((category, index) => {
-                  const isSelected = draftCategoriesChecked[index]
+                  const checked = draftCategoriesChecked[index];
                   return (
                     <TouchableOpacity
                       key={category}
                       onPress={() => toggleDraftCategory(index)}
                       style={{
-                        backgroundColor: isSelected ? "#1e90ff" : "#ffffff",
-                        borderColor: isSelected ? "#1e90ff" : "#b8c2cc",
-                        borderWidth: 2,
+                        paddingHorizontal: 10,
+                        paddingVertical: 8,
                         borderRadius: 999,
-                        paddingVertical: 10,
-                        paddingHorizontal: 16,
+                        borderWidth: 1,
+                        borderColor: checked ? "#1e90ff" : "#dce6ef",
+                        backgroundColor: checked ? "#e8f3ff" : "#fff",
                       }}
                     >
                       <Text
                         style={{
-                          fontSize: 16,
-                          fontWeight: "700",
-                          color: isSelected ? "#ffffff" : "#2c3e50",
+                          color: checked ? "#1e90ff" : "#4b5b6b",
+                          fontWeight: checked ? "700" : "500",
                         }}
                       >
                         {category}
                       </Text>
                     </TouchableOpacity>
-                  )
+                  );
                 })}
               </View>
 
@@ -861,109 +868,46 @@ export default function PlannedDateResults({
               >
                 <TouchableOpacity
                   onPress={() => {
-                    setShowEditDatePicker(false)
-                    setIsEditModalVisible(false)
-                    setEditError(null)
+                    setShowEditDatePicker(false);
+                    setIsEditModalVisible(false);
                   }}
                   style={{
-                    backgroundColor: "#6c757d",
-                    borderRadius: 8,
-                    paddingHorizontal: 12,
+                    paddingHorizontal: 14,
                     paddingVertical: 10,
+                    borderRadius: 10,
+                    borderWidth: 1,
+                    borderColor: "#dce6ef",
+                    backgroundColor: "#fff",
                   }}
                 >
-                  <Text style={{ color: "#fff", fontWeight: "700" }}>
+                  <Text style={{ color: "#3b4a5a", fontWeight: "700" }}>
                     Cancel
                   </Text>
                 </TouchableOpacity>
+
                 <TouchableOpacity
                   onPress={applyEditsAndRegenerate}
                   style={{
-                    backgroundColor: "#28a745",
-                    borderRadius: 8,
-                    paddingHorizontal: 12,
+                    paddingHorizontal: 14,
                     paddingVertical: 10,
+                    borderRadius: 10,
+                    backgroundColor: "#1e90ff",
                   }}
                 >
                   <Text style={{ color: "#fff", fontWeight: "700" }}>
-                    Generate
+                    Apply & Regenerate
                   </Text>
                 </TouchableOpacity>
               </View>
             </ScrollView>
           </View>
-
-          {showEditDatePicker ? (
-            <View
-              style={{
-                position: "absolute",
-                top: 80,
-                left: 20,
-                right: 20,
-                backgroundColor: "rgba(0,0,0,0.2)",
-                padding: 8,
-                borderRadius: 12,
-              }}
-            >
-              <View
-                style={{
-                  backgroundColor: "#fff",
-                  borderRadius: 12,
-                  borderWidth: 1,
-                  borderColor: "#dce6ef",
-                  overflow: "hidden",
-                }}
-              >
-                <DateTimePicker
-                  value={draftDateValue}
-                  mode="date"
-                  display={Platform.OS === "ios" ? "inline" : "calendar"}
-                  themeVariant={Platform.OS === "ios" ? "light" : undefined}
-                  onChange={(event, date) => {
-                    if (Platform.OS === "android") {
-                      setShowEditDatePicker(false)
-                      if (event.type === "set" && date) {
-                        setDraftSelectedDate(date.toISOString().slice(0, 10))
-                      }
-                      return
-                    }
-
-                    if (date) {
-                      setDraftSelectedDate(date.toISOString().slice(0, 10))
-                    }
-                  }}
-                />
-                {Platform.OS === "ios" ? (
-                  <TouchableOpacity
-                    onPress={() => setShowEditDatePicker(false)}
-                    style={{
-                      alignItems: "center",
-                      paddingVertical: 12,
-                      borderTopWidth: 1,
-                      borderTopColor: "#dce6ef",
-                    }}
-                  >
-                    <Text
-                      style={{
-                        color: "#1e90ff",
-                        fontWeight: "700",
-                        fontSize: 16,
-                      }}
-                    >
-                      Done
-                    </Text>
-                  </TouchableOpacity>
-                ) : null}
-              </View>
-            </View>
-          ) : null}
         </KeyboardAvoidingView>
       </Modal>
 
       {__DEV__ ? (
         <View
           style={{
-            backgroundColor: "#ffffff",
+            backgroundColor: "#f6f9fc",
             borderWidth: 1,
             borderColor: "#dce6ef",
             borderRadius: 12,
@@ -974,21 +918,21 @@ export default function PlannedDateResults({
           <TouchableOpacity
             onPress={() => setShowDevMatches((prev) => !prev)}
             style={{
+              paddingHorizontal: 14,
+              paddingVertical: 12,
               flexDirection: "row",
               justifyContent: "space-between",
               alignItems: "center",
-              paddingHorizontal: 14,
-              paddingVertical: 12,
             }}
           >
             <Text
               style={{
-                fontSize: 15,
-                fontWeight: "800",
-                color: "#1f2d3d",
+                fontSize: 14,
+                fontWeight: "700",
+                color: "#2c3e50",
               }}
             >
-              Dev: Returned items ({places.length})
+              Debug Data
             </Text>
             <Text style={{ color: "#1e90ff", fontWeight: "700" }}>
               {showDevMatches ? "Hide" : "Show"}
@@ -1014,7 +958,11 @@ export default function PlannedDateResults({
                 }}
               >
                 <Text
-                  style={{ fontSize: 14, fontWeight: "700", color: "#2c3e50" }}
+                  style={{
+                    fontSize: 14,
+                    fontWeight: "700",
+                    color: "#2c3e50",
+                  }}
                 >
                   Places ({places.length})
                 </Text>
@@ -1091,7 +1039,11 @@ export default function PlannedDateResults({
                 }}
               >
                 <Text
-                  style={{ fontSize: 14, fontWeight: "700", color: "#2c3e50" }}
+                  style={{
+                    fontSize: 14,
+                    fontWeight: "700",
+                    color: "#2c3e50",
+                  }}
                 >
                   Activities ({activities.length})
                 </Text>
@@ -1134,7 +1086,11 @@ export default function PlannedDateResults({
                 }}
               >
                 <Text
-                  style={{ fontSize: 14, fontWeight: "700", color: "#2c3e50" }}
+                  style={{
+                    fontSize: 14,
+                    fontWeight: "700",
+                    color: "#2c3e50",
+                  }}
                 >
                   Recipes ({recipes.length})
                 </Text>
@@ -1225,253 +1181,45 @@ export default function PlannedDateResults({
 
       {!isLoading && !error
         ? filledIdeas.map((idea, index) => {
-            const modifiedPlaces = modifiedIdeas.get(index)?.places
-            const ideaPlacesRecord = modifiedPlaces || idea.places || {}
-            const places: PlaceSummary[] = Object.values(
-              ideaPlacesRecord,
-            ).filter(Boolean) as PlaceSummary[]
-            const modifiedSchedule = modifiedIdeas.get(index)?.schedule
-            const schedule = modifiedSchedule || idea.schedule || []
+            const modifiedPlaces = modifiedIdeas.get(index)?.places;
+            const ideaPlacesRecord = modifiedPlaces || idea.places || {};
+            const ideaPlaces = Object.values(ideaPlacesRecord).filter(Boolean);
+            const modifiedSchedule = modifiedIdeas.get(index)?.schedule;
+            const schedule = modifiedSchedule || idea.schedule || [];
             const modifiedFilledTemplate =
-              modifiedIdeas.get(index)?.filledTemplate
-            const filledTemplate = modifiedFilledTemplate || idea.filledTemplate
-            const isExpanded = expandedIdeas.has(index)
+              modifiedIdeas.get(index)?.filledTemplate;
+            const filledTemplate =
+              modifiedFilledTemplate || idea.filledTemplate;
 
             return (
-              <View
+              <DateIdeaCard
                 key={`${idea.filledTemplate}-${index}`}
-                style={{
-                  backgroundColor: "#fff",
-                  borderRadius: 12,
-                  borderWidth: 1,
-                  borderColor: "#dce6ef",
-                  padding: 16,
-                  marginBottom: 14,
+                index={index}
+                filledTemplate={filledTemplate}
+                schedule={schedule}
+                places={ideaPlaces as PlaceSummary[]}
+                commuteToFirstMinutes={idea.commuteToFirstMinutes}
+                commuteFromLastMinutes={idea.commuteFromLastMinutes}
+                navigation={navigation}
+                recipeIndex={idea.recipeIndex}
+                onPrimaryAction={() => {
+                  if (!canSaveIdea(isUnlocked)) {
+                    setPaywallReason("general");
+                    setPaywallVisible(true);
+                    return;
+                  }
+                  saveDateIdea(idea, plannerParams.selectedDate);
+                  Alert.alert("Date Idea Saved!");
                 }}
-              >
-                <View
-                  style={{
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                  }}
-                >
-                  <Text
-                    style={{
-                      fontSize: 20,
-                      fontWeight: "800",
-                      color: "#1f2d3d",
-                    }}
-                  >
-                    Idea {index + 1}
-                  </Text>
-
-                  <TouchableOpacity
-                    onPress={() => {
-                      if (!canSaveIdea(isUnlocked)) {
-                        setPaywallReason("general")
-                        setPaywallVisible(true)
-                        return
-                      }
-                      saveDateIdea(idea, plannerParams.selectedDate)
-                      Alert.alert("Date Idea Saved!")
-                    }}
-                    style={{
-                      alignSelf: "flex-end",
-                      backgroundColor: "#1e90ff",
-                      borderRadius: 8,
-                      paddingHorizontal: 12,
-                      paddingVertical: 8,
-                    }}
-                  >
-                    <Text style={{ color: "#fff", fontWeight: "700" }}>
-                      Save
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-                <Text
-                  style={{
-                    marginTop: 8,
-                    fontSize: 17,
-                    lineHeight: 26,
-                    color: "#2c3e50",
-                    fontWeight: "600",
-                  }}
-                >
-                  {filledTemplate}
-                </Text>
-
-                <TouchableOpacity
-                  onPress={() => toggleIdeaExpanded(index)}
-                  style={{ marginTop: 10, alignSelf: "flex-start" }}
-                >
-                  <Text
-                    style={{
-                      fontSize: 14,
-                      color: "#1e90ff",
-                      fontWeight: "700",
-                    }}
-                  >
-                    {isExpanded ? "▲ Hide details" : "▼ Show details"}
-                  </Text>
-                </TouchableOpacity>
-
-                {isExpanded && schedule.length ? (
-                  <View style={{ marginTop: 12 }}>
-                    <Text
-                      style={{
-                        fontSize: 15,
-                        fontWeight: "700",
-                        color: "#1f2d3d",
-                        marginBottom: 8,
-                      }}
-                    >
-                      Schedule
-                    </Text>
-                    {schedule.map((step, stepIndex) => (
-                      <View
-                        key={`${step.startTime}-${step.endTime}-${stepIndex}`}
-                        style={{
-                          marginBottom: 10,
-                          padding: 10,
-                          borderRadius: 8,
-                          backgroundColor: "#f5f8fb",
-                        }}
-                      >
-                        <View
-                          style={{
-                            display: "flex",
-                            flexDirection: "row",
-                            justifyContent: "space-between",
-                          }}
-                        >
-                          <View style={{ maxWidth: "70%" }}>
-                            <Text
-                              style={{
-                                fontSize: 14,
-                                fontWeight: "700",
-                                color: "#2c3e50",
-                                marginBottom: 4,
-                              }}
-                            >
-                              {step.startTime} - {step.endTime} (
-                              {step.durationMinutes} min)
-                            </Text>
-                            {stepIndex === 0 &&
-                            idea.commuteToFirstMinutes !== null &&
-                            idea.commuteToFirstMinutes !== 0 ? (
-                              <Text
-                                style={{
-                                  marginBottom: 4,
-                                  color: "#556677",
-                                  fontSize: 13,
-                                  fontWeight: "600",
-                                }}
-                              >
-                                Travel to first stop: ~
-                                {idea.commuteToFirstMinutes} min
-                              </Text>
-                            ) : null}
-                            <Text style={{ fontSize: 14, color: "#2c3e50" }}>
-                              {step.title}
-                            </Text>
-
-                            {step.travelToNextMinutes !== null &&
-                            step.travelToNextMinutes !== 0 ? (
-                              <Text
-                                style={{
-                                  marginTop: 6,
-                                  color: "#556677",
-                                  fontSize: 13,
-                                  fontWeight: "600",
-                                }}
-                              >
-                                Travel to next stop: ~{step.travelToNextMinutes}{" "}
-                                min
-                              </Text>
-                            ) : null}
-                          </View>
-
-                          <TouchableOpacity
-                            onPress={() =>
-                              regenerateStep(index, stepIndex, idea)
-                            }
-                            disabled={regeneratingSteps.has(
-                              `${index}-${stepIndex}`,
-                            )}
-                            style={{
-                              backgroundColor: regeneratingSteps.has(
-                                `${index}-${stepIndex}`,
-                              )
-                                ? "#ccc"
-                                : "#e63f67",
-                              borderRadius: 6,
-                              paddingVertical: 6,
-                              paddingHorizontal: 10,
-                              alignSelf: "flex-start",
-                            }}
-                          >
-                            <Text
-                              style={{
-                                color: "#fff",
-                                fontWeight: "700",
-                                fontSize: 12,
-                              }}
-                            >
-                              {regeneratingSteps.has(`${index}-${stepIndex}`)
-                                ? "Loading..."
-                                : "Regenerate"}
-                            </Text>
-                          </TouchableOpacity>
-                        </View>
-
-                        {stepIndex === schedule.length - 1 &&
-                        idea.commuteFromLastMinutes !== null &&
-                        idea.commuteFromLastMinutes !== 0 ? (
-                          <Text
-                            style={{
-                              marginTop: 6,
-                              color: "#556677",
-                              fontSize: 13,
-                              fontWeight: "600",
-                            }}
-                          >
-                            Travel from this place back home: ~
-                            {idea.commuteFromLastMinutes} min
-                          </Text>
-                        ) : null}
-                      </View>
-                    ))}
-                  </View>
-                ) : null}
-
-                {isExpanded && typeof idea.recipeIndex === "number" ? (
-                  <TouchableOpacity
-                    onPress={() =>
-                      navigation.navigate("RecipeDetail", {
-                        index: idea.recipeIndex,
-                      })
-                    }
-                    style={{ marginTop: 8 }}
-                  >
-                    <Text
-                      style={{
-                        fontSize: 15,
-                        color: "#1e90ff",
-                        textDecorationLine: "underline",
-                        fontWeight: "700",
-                      }}
-                    >
-                      View recipe details
-                    </Text>
-                  </TouchableOpacity>
-                ) : null}
-
-                {isExpanded && places.length ? (
-                  <IdeaPlaceLinks places={places} navigation={navigation} />
-                ) : null}
-              </View>
-            )
+                primaryActionLabel="Save"
+                onRegenerateStep={(stepIndex) =>
+                  regenerateStep(index, stepIndex, idea)
+                }
+                isRegeneratingStep={(stepIndex) =>
+                  regeneratingSteps.has(`${index}-${stepIndex}`)
+                }
+              />
+            );
           })
         : null}
 
@@ -1481,5 +1229,5 @@ export default function PlannedDateResults({
         reason={paywallReason}
       />
     </ScrollView>
-  )
+  );
 }

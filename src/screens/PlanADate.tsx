@@ -1,119 +1,120 @@
-import React, { useEffect, useMemo, useState } from "react"
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Alert,
   Image,
   KeyboardAvoidingView,
-  Modal,
   Platform,
   ScrollView,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
-} from "react-native"
-import DateTimePicker from "@react-native-community/datetimepicker"
-import * as Location from "expo-location"
-import type { AppNavigation } from "../types/navigation"
-import { DATE_CATEGORIES, timesAreInvalid } from "../utils/utils"
-import { useSafeAreaInsets } from "react-native-safe-area-context"
-import { usePremium } from "../hooks/usePremium"
-import { addPlannedDate } from "../data/plannedDatesStore"
+} from "react-native";
+import * as Location from "expo-location";
+import { Ionicons } from "@expo/vector-icons";
+import type { AppNavigation } from "../types/navigation";
+import { DATE_CATEGORIES, timesAreInvalid } from "../utils/utils";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { usePremium } from "../hooks/usePremium";
+import { addPlannedDate } from "../data/plannedDatesStore";
+import PaywallModal from "../Components/PaywallModal";
+import PlanDateInputsModal from "../Components/PlanDateInputsModal";
 
 export default function PlanADate({
   navigation,
 }: {
-  navigation: AppNavigation
+  navigation: AppNavigation;
 }) {
-  const { isUnlocked } = usePremium()
-  const insets = useSafeAreaInsets()
+  const { isUnlocked } = usePremium();
+  const insets = useSafeAreaInsets();
 
-  const [isModalVisible, setIsModalVisible] = useState(false)
-  const [maxPrice, setMaxPrice] = useState<string>("20")
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null)
-  const [showDatePicker, setShowDatePicker] = useState(false)
-  const [startHour12, setStartHour12] = useState<string>("12")
-  const [startPeriod, setStartPeriod] = useState<"AM" | "PM">("PM")
-  const [endHour12, setEndHour12] = useState<string>("6")
-  const [endPeriod, setEndPeriod] = useState<"AM" | "PM">("PM")
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [maxPrice, setMaxPrice] = useState<string>("20");
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [startHour12, setStartHour12] = useState<string>("12");
+  const [startPeriod, setStartPeriod] = useState<"AM" | "PM">("PM");
+  const [endHour12, setEndHour12] = useState<string>("6");
+  const [endPeriod, setEndPeriod] = useState<"AM" | "PM">("PM");
   const [maxDistance, setMaxDistance] = useState<string>(
     isUnlocked ? "10" : "5",
-  )
+  );
   const [actualUserLocation, setActualUserLocation] = useState<{
-    latitude: number
-    longitude: number
-  } | null>(null)
-  const [useMyAddressEnabled, setUseMyAddressEnabled] = useState(true)
+    latitude: number;
+    longitude: number;
+  } | null>(null);
+  const [useMyAddressEnabled, setUseMyAddressEnabled] = useState(true);
   const [categoriesChecked, setCategoriesChecked] = useState(
     Array(DATE_CATEGORIES.length).fill(true),
-  )
+  );
+  const [isGeneratingIdeas, setIsGeneratingIdeas] = useState(false);
+  const [paywallVisible, setPaywallVisible] = useState(false);
 
   useEffect(() => {
     const loadLocation = async () => {
       try {
-        const { status } = await Location.requestForegroundPermissionsAsync()
+        const { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== "granted") {
-          return
+          return;
         }
 
         const position = await Location.getCurrentPositionAsync({
           accuracy: Location.Accuracy.Balanced,
-        })
+        });
 
         setActualUserLocation({
           latitude: position.coords.latitude,
           longitude: position.coords.longitude,
-        })
+        });
       } catch {}
-    }
+    };
 
-    loadLocation()
-  }, [])
+    loadLocation();
+  }, []);
 
   useEffect(() => {
     setMaxDistance((prev) => {
-      if (isUnlocked) return prev === "5" ? "10" : prev
-      return Number.parseInt(prev, 10) > 5 ? "5" : prev
-    })
-  }, [isUnlocked])
-
+      if (isUnlocked) return prev === "5" ? "10" : prev;
+      return Number.parseInt(prev, 10) > 5 ? "5" : prev;
+    });
+  }, [isUnlocked]);
   const selectedCategoriesCount = useMemo(
     () => categoriesChecked.filter(Boolean).length,
     [categoriesChecked],
-  )
+  );
 
   const clampHour12 = (value: number) => {
-    if (Number.isNaN(value)) return 1
-    if (value < 1) return 1
-    if (value > 12) return 12
-    return value
-  }
+    if (Number.isNaN(value)) return 1;
+    if (value < 1) return 1;
+    if (value > 12) return 12;
+    return value;
+  };
 
   const convertTo24Hour = (hour12: number, period: "AM" | "PM") => {
-    let hour24 = hour12
+    let hour24 = hour12;
     if (period === "AM") {
-      hour24 = hour12 === 12 ? 0 : hour12
+      hour24 = hour12 === 12 ? 0 : hour12;
     } else {
-      hour24 = hour12 === 12 ? 12 : hour12 + 12
+      hour24 = hour12 === 12 ? 12 : hour12 + 12;
     }
-    return hour24
-  }
+    return hour24;
+  };
 
   const toggleCategory = (index: number) => {
-    const updated = [...categoriesChecked]
-    updated[index] = !updated[index]
-    setCategoriesChecked(updated)
-  }
+    const updated = [...categoriesChecked];
+    updated[index] = !updated[index];
+    setCategoriesChecked(updated);
+  };
 
   const handleGenerateIdeas = () => {
     if (!selectedDate) {
-      Alert.alert("Missing Date", "Please select a date.")
-      return
+      Alert.alert("Missing Date", "Please select a date.");
+      return;
     }
 
-    const parsedPrice = Number.parseInt(maxPrice, 10)
+    const parsedPrice = Number.parseInt(maxPrice, 10);
     if (Number.isNaN(parsedPrice) || parsedPrice < 0) {
-      Alert.alert("Invalid Budget", "Please enter a valid budget.")
-      return
+      Alert.alert("Invalid Budget", "Please enter a valid budget.");
+      return;
     }
 
     if (
@@ -121,42 +122,44 @@ export default function PlanADate({
       Number.isNaN(Number.parseInt(endHour12, 10)) ||
       timesAreInvalid(startHour12, endHour12, startPeriod, endPeriod)
     ) {
-      Alert.alert("Invalid Time", "Please enter valid start and end times.")
-      return
+      Alert.alert("Invalid Time", "Please enter valid start and end times.");
+      return;
     }
 
-    const parsedDistance = Number.parseInt(maxDistance, 10)
+    const parsedDistance = Number.parseInt(maxDistance, 10);
     if (Number.isNaN(parsedDistance) || parsedDistance < 0) {
-      Alert.alert("Invalid Distance", "Please enter a valid distance.")
-      return
+      Alert.alert("Invalid Distance", "Please enter a valid distance.");
+      return;
     }
 
     const selectedCategories = DATE_CATEGORIES.filter(
       (_, i) => categoriesChecked[i],
-    )
+    );
     if (!selectedCategories.length) {
-      Alert.alert("No Categories", "Please select at least one category.")
-      return
+      Alert.alert("No Categories", "Please select at least one category.");
+      return;
     }
 
     const start24 = convertTo24Hour(
       Number.parseInt(startHour12, 10),
       startPeriod,
-    )
-    const end24 = convertTo24Hour(Number.parseInt(endHour12, 10), endPeriod)
-    const selectedDateIso = selectedDate.toISOString().slice(0, 10)
+    );
+    const end24 = convertTo24Hour(Number.parseInt(endHour12, 10), endPeriod);
+    const selectedDateIso = selectedDate.toISOString().slice(0, 10);
 
-    let finalMaxDistance = parsedDistance
+    let finalMaxDistance = parsedDistance;
     if (!isUnlocked && finalMaxDistance > 5) {
-      finalMaxDistance = 5
+      finalMaxDistance = 5;
       Alert.alert(
         "Distance Limited",
         "Premium users can search up to 25+ miles. Free tier is limited to 5 miles.",
-      )
+      );
     }
 
-    addPlannedDate(selectedDateIso)
-    setIsModalVisible(false)
+    setIsGeneratingIdeas(true);
+    addPlannedDate(selectedDateIso);
+    setShowDatePicker(false);
+    setIsModalVisible(false);
 
     navigation.navigate("PlannedDateResults", {
       maxPrice: parsedPrice,
@@ -166,8 +169,10 @@ export default function PlanADate({
       maxDistance: finalMaxDistance,
       categories: selectedCategories,
       userLocation: useMyAddressEnabled ? actualUserLocation : null,
-    })
-  }
+    });
+
+    setTimeout(() => setIsGeneratingIdeas(false), 500);
+  };
 
   return (
     <KeyboardAvoidingView
@@ -255,6 +260,77 @@ export default function PlanADate({
           </Text>
         </TouchableOpacity>
 
+        {!isUnlocked ? (
+          <TouchableOpacity
+            activeOpacity={0.9}
+            onPress={() => setPaywallVisible(true)}
+            style={{
+              backgroundColor: "#f0f7ff",
+              borderRadius: 12,
+              borderWidth: 2,
+              borderColor: "#007AFF",
+              padding: 16,
+              marginBottom: 20,
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 12,
+            }}
+          >
+            <Ionicons name="star" size={28} color="#007AFF" />
+            <View style={{ flex: 1 }}>
+              <Text
+                style={{
+                  fontSize: 16,
+                  fontWeight: "800",
+                  color: "#007AFF",
+                  marginBottom: 2,
+                }}
+              >
+                Unlock Premium
+              </Text>
+              <Text
+                style={{ fontSize: 13, color: "#0051D5", fontWeight: "500" }}
+              >
+                Save unlimited ideas for only $3.99
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#007AFF" />
+          </TouchableOpacity>
+        ) : (
+          <View
+            style={{
+              backgroundColor: "#eefaf0",
+              borderRadius: 12,
+              borderWidth: 2,
+              borderColor: "#2e9f5b",
+              padding: 16,
+              marginBottom: 20,
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 12,
+            }}
+          >
+            <Ionicons name="checkmark-circle" size={28} color="#2e9f5b" />
+            <View style={{ flex: 1 }}>
+              <Text
+                style={{
+                  fontSize: 16,
+                  fontWeight: "800",
+                  color: "#2e9f5b",
+                  marginBottom: 2,
+                }}
+              >
+                You are a premium user
+              </Text>
+              <Text
+                style={{ fontSize: 13, color: "#1f7a45", fontWeight: "500" }}
+              >
+                You can save unlimited date ideas.
+              </Text>
+            </View>
+          </View>
+        )}
+
         {__DEV__ && (
           <TouchableOpacity
             style={{
@@ -281,375 +357,64 @@ export default function PlanADate({
           </TouchableOpacity>
         )}
 
-        <Modal
+        <PlanDateInputsModal
           visible={isModalVisible}
-          transparent
-          animationType="slide"
-          onRequestClose={() => {
-            setShowDatePicker(false)
-            setIsModalVisible(false)
+          showDatePicker={showDatePicker}
+          selectedDate={selectedDate}
+          maxPrice={maxPrice}
+          startHour12={startHour12}
+          startPeriod={startPeriod}
+          endHour12={endHour12}
+          endPeriod={endPeriod}
+          maxDistance={maxDistance}
+          categoriesChecked={categoriesChecked}
+          selectedCategoriesCount={selectedCategoriesCount}
+          isGeneratingIdeas={isGeneratingIdeas}
+          onClose={() => {
+            setShowDatePicker(false);
+            setIsModalVisible(false);
           }}
-        >
-          <KeyboardAvoidingView
-            style={{
-              flex: 1,
-              backgroundColor: "rgba(0,0,0,0.35)",
-              justifyContent: "center",
-              padding: 20,
-            }}
-            behavior={Platform.OS === "ios" ? "padding" : "height"}
-            keyboardVerticalOffset={Platform.OS === "ios" ? 24 : 0}
-          >
-            <View
-              style={{
-                backgroundColor: "#fff",
-                borderRadius: 12,
-                borderWidth: 1,
-                borderColor: "#dce6ef",
-                maxHeight: "90%",
-                overflow: "hidden",
-              }}
-            >
-              <ScrollView
-                showsVerticalScrollIndicator
-                contentContainerStyle={{ padding: 16 }}
-                keyboardShouldPersistTaps="handled"
-              >
-                <View
-                  style={{
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    marginBottom: 10,
-                  }}
-                >
-                  <Text
-                    style={{
-                      fontSize: 22,
-                      fontWeight: "800",
-                      color: "#1f2d3d",
-                    }}
-                  >
-                    Plan Date
-                  </Text>
-                  <TouchableOpacity
-                    onPress={() => {
-                      setShowDatePicker(false)
-                      setIsModalVisible(false)
-                    }}
-                  >
-                    <Text
-                      style={{
-                        color: "#6b7280",
-                        fontSize: 16,
-                        fontWeight: "700",
-                      }}
-                    >
-                      Close
-                    </Text>
-                  </TouchableOpacity>
-                </View>
+          onShowDatePicker={() => setShowDatePicker(true)}
+          onHideDatePicker={() => setShowDatePicker(false)}
+          onDateChange={(value) => setSelectedDate(value)}
+          onChangeMaxPrice={setMaxPrice}
+          onChangeStartHour12={(text) => {
+            if (text.trim() === "") {
+              setStartHour12("");
+              return;
+            }
+            const parsed = Number.parseInt(text, 10);
+            if (Number.isNaN(parsed)) {
+              setStartHour12("");
+              return;
+            }
+            setStartHour12(String(clampHour12(parsed)));
+          }}
+          onChangeEndHour12={(text) => {
+            if (text.trim() === "") {
+              setEndHour12("");
+              return;
+            }
+            const parsed = Number.parseInt(text, 10);
+            if (Number.isNaN(parsed)) {
+              setEndHour12("");
+              return;
+            }
+            setEndHour12(String(clampHour12(parsed)));
+          }}
+          onSetStartPeriod={setStartPeriod}
+          onSetEndPeriod={setEndPeriod}
+          onChangeMaxDistance={setMaxDistance}
+          onToggleCategory={toggleCategory}
+          onSubmit={handleGenerateIdeas}
+        />
 
-                <Text style={{ color: "#4b5b6b", marginBottom: 4 }}>Date</Text>
-                <TouchableOpacity
-                  onPress={() => setShowDatePicker(true)}
-                  style={{
-                    padding: 12,
-                    borderWidth: 2,
-                    borderColor: "#1e90ff",
-                    borderRadius: 10,
-                    marginBottom: 12,
-                    backgroundColor: "#fff",
-                  }}
-                >
-                  <Text
-                    style={{
-                      fontSize: 16,
-                      color: selectedDate ? "#1a1a1a" : "#9ca3af",
-                    }}
-                  >
-                    {selectedDate
-                      ? selectedDate.toLocaleDateString()
-                      : "Select a date"}
-                  </Text>
-                </TouchableOpacity>
-
-                {showDatePicker && (
-                  <View
-                    style={{
-                      backgroundColor: "#fff",
-                      borderRadius: 10,
-                      overflow: "hidden",
-                      marginBottom: 12,
-                    }}
-                  >
-                    <DateTimePicker
-                      value={selectedDate || new Date()}
-                      mode="date"
-                      display={Platform.OS === "ios" ? "inline" : "calendar"}
-                      themeVariant={Platform.OS === "ios" ? "light" : undefined}
-                      onChange={(event, date) => {
-                        if (Platform.OS === "android") {
-                          setShowDatePicker(false)
-                        }
-
-                        const isConfirmed =
-                          Platform.OS === "ios" || event.type === "set"
-                        if (isConfirmed && date) {
-                          setSelectedDate(date)
-                        }
-                      }}
-                    />
-                    {Platform.OS === "ios" ? (
-                      <TouchableOpacity
-                        onPress={() => setShowDatePicker(false)}
-                        style={{
-                          alignItems: "center",
-                          paddingVertical: 12,
-                          borderTopWidth: 1,
-                          borderTopColor: "#dce6ef",
-                        }}
-                      >
-                        <Text
-                          style={{
-                            color: "#1e90ff",
-                            fontWeight: "700",
-                            fontSize: 16,
-                          }}
-                        >
-                          Done
-                        </Text>
-                      </TouchableOpacity>
-                    ) : null}
-                  </View>
-                )}
-
-                <Text style={{ color: "#4b5b6b", marginBottom: 4 }}>
-                  Budget
-                </Text>
-                <TextInput
-                  value={maxPrice}
-                  onChangeText={setMaxPrice}
-                  keyboardType="number-pad"
-                  style={{
-                    borderWidth: 1,
-                    borderColor: "#cdd9e5",
-                    borderRadius: 8,
-                    paddingHorizontal: 10,
-                    paddingVertical: 10,
-                    marginBottom: 12,
-                  }}
-                  placeholder="Enter your budget"
-                />
-
-                <Text style={{ color: "#4b5b6b", marginBottom: 6 }}>Time</Text>
-                <View
-                  style={{ flexDirection: "row", gap: 10, marginBottom: 12 }}
-                >
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ color: "#6b7280", marginBottom: 4 }}>
-                      Start
-                    </Text>
-                    <View style={{ flexDirection: "row", gap: 8 }}>
-                      <TextInput
-                        value={startHour12}
-                        onChangeText={(text) => {
-                          if (text.trim() === "") {
-                            setStartHour12("")
-                            return
-                          }
-                          const parsed = Number.parseInt(text, 10)
-                          if (Number.isNaN(parsed)) {
-                            setStartHour12("")
-                            return
-                          }
-                          setStartHour12(String(clampHour12(parsed)))
-                        }}
-                        keyboardType="number-pad"
-                        style={{
-                          flex: 1,
-                          borderWidth: 1,
-                          borderColor: "#cdd9e5",
-                          borderRadius: 8,
-                          paddingHorizontal: 10,
-                          paddingVertical: 10,
-                          textAlign: "center",
-                        }}
-                        placeholder="1-12"
-                      />
-                      <TouchableOpacity
-                        onPress={() =>
-                          setStartPeriod((prev) =>
-                            prev === "AM" ? "PM" : "AM",
-                          )
-                        }
-                        style={{
-                          width: 58,
-                          borderWidth: 1,
-                          borderColor: "#1e90ff",
-                          borderRadius: 8,
-                          justifyContent: "center",
-                          alignItems: "center",
-                          backgroundColor:
-                            startPeriod === "AM" ? "#1e90ff" : "#fff",
-                        }}
-                      >
-                        <Text
-                          style={{
-                            fontWeight: "700",
-                            color: startPeriod === "AM" ? "#fff" : "#1e90ff",
-                          }}
-                        >
-                          {startPeriod}
-                        </Text>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ color: "#6b7280", marginBottom: 4 }}>
-                      End
-                    </Text>
-                    <View style={{ flexDirection: "row", gap: 8 }}>
-                      <TextInput
-                        value={endHour12}
-                        onChangeText={(text) => {
-                          if (text.trim() === "") {
-                            setEndHour12("")
-                            return
-                          }
-                          const parsed = Number.parseInt(text, 10)
-                          if (Number.isNaN(parsed)) {
-                            setEndHour12("")
-                            return
-                          }
-                          setEndHour12(String(clampHour12(parsed)))
-                        }}
-                        keyboardType="number-pad"
-                        style={{
-                          flex: 1,
-                          borderWidth: 1,
-                          borderColor: "#cdd9e5",
-                          borderRadius: 8,
-                          paddingHorizontal: 10,
-                          paddingVertical: 10,
-                          textAlign: "center",
-                        }}
-                        placeholder="1-12"
-                      />
-                      <TouchableOpacity
-                        onPress={() =>
-                          setEndPeriod((prev) => (prev === "AM" ? "PM" : "AM"))
-                        }
-                        style={{
-                          width: 58,
-                          borderWidth: 1,
-                          borderColor: "#1e90ff",
-                          borderRadius: 8,
-                          justifyContent: "center",
-                          alignItems: "center",
-                          backgroundColor:
-                            endPeriod === "AM" ? "#1e90ff" : "#fff",
-                        }}
-                      >
-                        <Text
-                          style={{
-                            fontWeight: "700",
-                            color: endPeriod === "AM" ? "#fff" : "#1e90ff",
-                          }}
-                        >
-                          {endPeriod}
-                        </Text>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                </View>
-
-                <Text style={{ color: "#4b5b6b", marginBottom: 4 }}>
-                  Distance (miles)
-                </Text>
-                <TextInput
-                  value={maxDistance}
-                  onChangeText={setMaxDistance}
-                  keyboardType="number-pad"
-                  style={{
-                    borderWidth: 1,
-                    borderColor: "#cdd9e5",
-                    borderRadius: 8,
-                    paddingHorizontal: 10,
-                    paddingVertical: 10,
-                    marginBottom: 10,
-                  }}
-                />
-
-                <Text
-                  style={{
-                    fontWeight: "700",
-                    fontSize: 16,
-                    marginBottom: 8,
-                    color: "#1a1a1a",
-                  }}
-                >
-                  Categories ({selectedCategoriesCount} selected)
-                </Text>
-                <View
-                  style={{
-                    flexDirection: "row",
-                    flexWrap: "wrap",
-                    gap: 10,
-                    marginBottom: 16,
-                  }}
-                >
-                  {DATE_CATEGORIES.map((category, index) => {
-                    const isSelected = categoriesChecked[index]
-                    return (
-                      <TouchableOpacity
-                        key={category}
-                        onPress={() => toggleCategory(index)}
-                        style={{
-                          backgroundColor: isSelected ? "#1e90ff" : "#fff",
-                          borderColor: isSelected ? "#1e90ff" : "#b8c2cc",
-                          borderWidth: 2,
-                          borderRadius: 999,
-                          paddingVertical: 9,
-                          paddingHorizontal: 14,
-                        }}
-                      >
-                        <Text
-                          style={{
-                            fontSize: 15,
-                            fontWeight: "700",
-                            color: isSelected ? "#fff" : "#2c3e50",
-                          }}
-                        >
-                          {category}
-                        </Text>
-                      </TouchableOpacity>
-                    )
-                  })}
-                </View>
-
-                <TouchableOpacity
-                  onPress={handleGenerateIdeas}
-                  style={{
-                    backgroundColor: "#28a745",
-                    borderRadius: 10,
-                    paddingVertical: 14,
-                    alignItems: "center",
-                    marginBottom: 4,
-                  }}
-                >
-                  <Text
-                    style={{ color: "#fff", fontWeight: "800", fontSize: 16 }}
-                  >
-                    Generate Date Ideas
-                  </Text>
-                </TouchableOpacity>
-              </ScrollView>
-            </View>
-          </KeyboardAvoidingView>
-        </Modal>
+        <PaywallModal
+          visible={paywallVisible}
+          onClose={() => setPaywallVisible(false)}
+          reason="general"
+        />
       </ScrollView>
     </KeyboardAvoidingView>
-  )
+  );
 }

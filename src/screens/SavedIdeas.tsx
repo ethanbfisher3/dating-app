@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useState } from "react";
 import {
   Alert,
   Image,
@@ -6,36 +6,40 @@ import {
   Text,
   TouchableOpacity,
   View,
-} from "react-native"
-import { Ionicons } from "@expo/vector-icons"
-import type { AppNavigation } from "../types/navigation"
-import IdeaPlaceLinks from "../Components/IdeaPlaceLinks"
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import type { AppNavigation } from "../types/navigation";
+import DateIdeaCard from "../Components/DateIdeaCard";
+import { activities } from "../data/activities";
+import type { PlaceSummary } from "../hooks/useDatePlannerIdeas";
 import {
+  FREE_TIER_SAVED_IDEAS_LIMIT,
   getSavedIdeas,
   removeSavedIdea,
   subscribeSavedIdeas,
   type SavedDateIdea,
-} from "../data/savedIdeasStore"
-import { useSafeAreaInsets } from "react-native-safe-area-context"
-import { usePremium } from "../hooks/usePremium"
-import PaywallModal from "../Components/PaywallModal"
+} from "../data/savedIdeasStore";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { usePremium } from "../hooks/usePremium";
+import PaywallModal from "../Components/PaywallModal";
 
 export default function SavedIdeas({
   navigation,
 }: {
-  navigation: AppNavigation
+  navigation: AppNavigation;
 }) {
-  const [savedIdeas, setSavedIdeas] = useState<SavedDateIdea[]>(getSavedIdeas())
-  const [paywallVisible, setPaywallVisible] = useState(false)
-  const { isUnlocked } = usePremium()
+  const [savedIdeas, setSavedIdeas] =
+    useState<SavedDateIdea[]>(getSavedIdeas());
+  const [paywallVisible, setPaywallVisible] = useState(false);
+  const { isUnlocked } = usePremium();
 
-  const insets = useSafeAreaInsets()
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     return subscribeSavedIdeas(() => {
-      setSavedIdeas(getSavedIdeas())
-    })
-  }, [])
+      setSavedIdeas(getSavedIdeas());
+    });
+  }, []);
 
   return (
     <ScrollView
@@ -45,19 +49,40 @@ export default function SavedIdeas({
         backgroundColor: "#fafbfc",
       }}
     >
-      <Text
+      <View
         style={{
-          fontWeight: "900",
-          fontSize: 36,
+          flexDirection: "row",
+          alignItems: "flex-end",
+          flexWrap: "wrap",
+          gap: 8,
           marginVertical: 24,
-          color: "#1a1a1a",
         }}
       >
-        Saved Ideas
-      </Text>
+        <Text
+          style={{
+            fontWeight: "900",
+            fontSize: 36,
+            color: "#1a1a1a",
+          }}
+        >
+          Saved Ideas
+        </Text>
+        {!isUnlocked ? (
+          <Text
+            style={{
+              fontSize: 13,
+              fontWeight: "600",
+              color: "#6b7280",
+              marginBottom: 6,
+            }}
+          >
+            ({savedIdeas.length} / {FREE_TIER_SAVED_IDEAS_LIMIT})
+          </Text>
+        ) : null}
+      </View>
 
       <Image
-        source={require("../assets/images/date_idea_planning.jpg")}
+        source={require("../assets/images/thinking.jpg")}
         style={{
           width: "100%",
           height: 200,
@@ -150,101 +175,44 @@ export default function SavedIdeas({
       ) : null}
 
       {savedIdeas.map((idea, index) => {
-        const places = Object.values(idea.places || {}).filter(Boolean)
+        const places = Object.values(idea.places || {}).filter(
+          (place): place is PlaceSummary => Boolean(place),
+        );
+        const schedule = idea.schedule || [];
 
         return (
-          <View
+          <DateIdeaCard
             key={idea.id}
-            style={{
-              backgroundColor: "#fff",
-              borderRadius: 12,
-              borderWidth: 1,
-              borderColor: "#dce6ef",
-              padding: 16,
-              marginBottom: 14,
+            index={index}
+            titlePrefix="Saved Idea"
+            filledTemplate={idea.filledTemplate}
+            schedule={schedule}
+            places={places}
+            commuteToFirstMinutes={idea.commuteToFirstMinutes}
+            commuteFromLastMinutes={idea.commuteFromLastMinutes}
+            navigation={navigation}
+            recipeIndex={idea.recipeIndex}
+            primaryActionLabel="Remove"
+            primaryActionColor="#dc3545"
+            onPrimaryAction={() => {
+              Alert.alert(
+                "Remove date idea?",
+                "Are you sure you want to remove this saved idea?",
+                [
+                  {
+                    text: "Cancel",
+                    style: "cancel",
+                  },
+                  {
+                    text: "Remove",
+                    style: "destructive",
+                    onPress: () => removeSavedIdea(idea.id),
+                  },
+                ],
+              );
             }}
-          >
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <Text
-                style={{ fontSize: 20, fontWeight: "800", color: "#1f2d3d" }}
-              >
-                Saved Idea {index + 1}
-              </Text>
-
-              <TouchableOpacity
-                onPress={() => {
-                  Alert.alert(
-                    "Remove date idea?",
-                    "Are you sure you want to remove this saved idea?",
-                    [
-                      {
-                        text: "Cancel",
-                        style: "cancel",
-                      },
-                      {
-                        text: "Remove",
-                        style: "destructive",
-                        onPress: () => removeSavedIdea(idea.id),
-                      },
-                    ],
-                  )
-                }}
-                style={{
-                  alignSelf: "flex-end",
-                  backgroundColor: "#dc3545",
-                  borderRadius: 8,
-                  paddingHorizontal: 12,
-                  paddingVertical: 8,
-                }}
-              >
-                <Text style={{ color: "#fff", fontWeight: "700" }}>Remove</Text>
-              </TouchableOpacity>
-            </View>
-            <Text
-              style={{
-                marginTop: 8,
-                fontSize: 17,
-                lineHeight: 26,
-                color: "#2c3e50",
-                fontWeight: "600",
-              }}
-            >
-              {idea.filledTemplate}
-            </Text>
-
-            {typeof idea.recipeIndex === "number" ? (
-              <TouchableOpacity
-                onPress={() =>
-                  navigation.navigate("RecipeDetail", {
-                    index: idea.recipeIndex as number,
-                  })
-                }
-                style={{ marginTop: 8 }}
-              >
-                <Text
-                  style={{
-                    fontSize: 15,
-                    color: "#1e90ff",
-                    textDecorationLine: "underline",
-                    fontWeight: "700",
-                  }}
-                >
-                  View recipe details
-                </Text>
-              </TouchableOpacity>
-            ) : null}
-
-            {places.length ? (
-              <IdeaPlaceLinks places={places} navigation={navigation} />
-            ) : null}
-          </View>
-        )
+          />
+        );
       })}
 
       <PaywallModal
@@ -253,5 +221,5 @@ export default function SavedIdeas({
         reason="general"
       />
     </ScrollView>
-  )
+  );
 }
