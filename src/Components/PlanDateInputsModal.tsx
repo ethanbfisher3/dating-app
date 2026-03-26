@@ -1,14 +1,5 @@
 import React from "react";
-import {
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  ScrollView,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { KeyboardAvoidingView, Modal, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { DATE_CATEGORIES } from "../utils/utils";
 
@@ -65,13 +56,19 @@ export default function PlanDateInputsModal({
   onToggleCategory,
   onSubmit,
 }: PlanDateInputsModalProps) {
+  const handleDateChange = (event: any, value?: Date) => {
+    if (Platform.OS === "android") {
+      onHideDatePicker();
+    }
+
+    const isConfirmed = Platform.OS === "ios" || event?.type === "set";
+    if (isConfirmed && value) {
+      onDateChange(value);
+    }
+  };
+
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}
-    >
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <KeyboardAvoidingView
         style={{
           flex: 1,
@@ -128,28 +125,61 @@ export default function PlanDateInputsModal({
                 }}
               >
                 {selectedDate
-                  ? selectedDate.toISOString().slice(0, 10)
+                  ? selectedDate.toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    })
                   : "Select a date"}
               </Text>
             </TouchableOpacity>
 
             {showDatePicker ? (
-              <DateTimePicker
-                value={selectedDate || new Date()}
-                mode="date"
-                display={Platform.OS === "ios" ? "spinner" : "default"}
-                onChange={(event, value) => {
-                  if (Platform.OS !== "ios") {
-                    onHideDatePicker();
-                  }
-
-                  if (!value) {
-                    return;
-                  }
-
-                  onDateChange(value);
+              <View
+                style={{
+                  borderWidth: 1,
+                  borderColor: "#dfe5eb",
+                  borderRadius: 10,
+                  marginBottom: 12,
+                  overflow: "hidden",
+                  backgroundColor: "#fff",
                 }}
-              />
+              >
+                <DateTimePicker
+                  value={selectedDate || new Date()}
+                  mode="date"
+                  display={Platform.OS === "ios" ? "inline" : "calendar"}
+                  onChange={handleDateChange}
+                  themeVariant={Platform.OS === "ios" ? "light" : undefined}
+                  {...(Platform.OS === "ios"
+                    ? {
+                        textColor: "#1a1a1a",
+                        accentColor: "#007AFF",
+                      }
+                    : {})}
+                />
+                {Platform.OS === "ios" ? (
+                  <TouchableOpacity
+                    onPress={onHideDatePicker}
+                    style={{
+                      alignItems: "center",
+                      paddingVertical: 12,
+                      borderTopWidth: 1,
+                      borderTopColor: "#dfe5eb",
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color: "#007AFF",
+                        fontWeight: "700",
+                        fontSize: 16,
+                      }}
+                    >
+                      Done
+                    </Text>
+                  </TouchableOpacity>
+                ) : null}
+              </View>
             ) : null}
 
             <Text
@@ -218,8 +248,7 @@ export default function PlanDateInputsModal({
                         flex: 1,
                         paddingVertical: 10,
                         alignItems: "center",
-                        backgroundColor:
-                          startPeriod === period ? "#1e90ff" : "#fff",
+                        backgroundColor: startPeriod === period ? "#1e90ff" : "#fff",
                       }}
                     >
                       <Text
@@ -291,8 +320,7 @@ export default function PlanDateInputsModal({
                         flex: 1,
                         paddingVertical: 10,
                         alignItems: "center",
-                        backgroundColor:
-                          endPeriod === period ? "#1e90ff" : "#fff",
+                        backgroundColor: endPeriod === period ? "#1e90ff" : "#fff",
                       }}
                     >
                       <Text
@@ -311,9 +339,7 @@ export default function PlanDateInputsModal({
 
             <View style={{ flexDirection: "row", gap: 12, marginBottom: 12 }}>
               <View style={{ flex: 1 }}>
-                <Text style={{ color: "#4b5b6b", marginBottom: 6 }}>
-                  Max Budget ($)
-                </Text>
+                <Text style={{ color: "#4b5b6b", marginBottom: 6 }}>Max Budget ($)</Text>
                 <TextInput
                   value={maxPrice}
                   onChangeText={onChangeMaxPrice}
@@ -329,9 +355,7 @@ export default function PlanDateInputsModal({
                 />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={{ color: "#4b5b6b", marginBottom: 6 }}>
-                  Max Distance (miles)
-                </Text>
+                <Text style={{ color: "#4b5b6b", marginBottom: 6 }}>Max Distance (miles)</Text>
                 <TextInput
                   value={maxDistance}
                   onChangeText={onChangeMaxDistance}
@@ -411,9 +435,7 @@ export default function PlanDateInputsModal({
                   backgroundColor: "#fff",
                 }}
               >
-                <Text style={{ color: "#3b4a5a", fontWeight: "700" }}>
-                  Cancel
-                </Text>
+                <Text style={{ color: "#3b4a5a", fontWeight: "700" }}>Cancel</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -427,9 +449,7 @@ export default function PlanDateInputsModal({
                   opacity: isGeneratingIdeas ? 0.7 : 1,
                 }}
               >
-                <Text style={{ color: "#fff", fontWeight: "700" }}>
-                  {isGeneratingIdeas ? "Generate Date Ideas..." : "Generate"}
-                </Text>
+                <Text style={{ color: "#fff", fontWeight: "700" }}>{isGeneratingIdeas ? "Generate Date Ideas..." : "Generate"}</Text>
               </TouchableOpacity>
             </View>
           </ScrollView>

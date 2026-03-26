@@ -3,6 +3,7 @@ import { KeyboardAvoidingView, Platform, ScrollView, Text, StyleSheet, View, Tou
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import recipes from "../data/Recipes";
+import { resolveRecipeImage } from "../data/recipeImageResolver";
 import type { AppNavigation } from "../types/navigation";
 
 const RECIPES_PER_PAGE = 10;
@@ -214,7 +215,7 @@ export default function RecipesPage({ navigation }: { navigation: AppNavigation 
                 }
               >
                 {recipe.image ? (
-                  <Image source={recipe.image} style={styles.recipeImage} />
+                  <Image source={resolveRecipeImage(recipe.image)} style={styles.recipeImage} />
                 ) : (
                   <View style={[styles.recipeImage, { backgroundColor: "#e0e0e0" }]} />
                 )}

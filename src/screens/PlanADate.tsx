@@ -1,14 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import {
-  Alert,
-  Image,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Alert, Image, KeyboardAvoidingView, Platform, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import * as Location from "expo-location";
 import { Ionicons } from "@expo/vector-icons";
 import type { AppNavigation } from "../types/navigation";
@@ -19,33 +10,25 @@ import { addPlannedDate } from "../data/plannedDatesStore";
 import PaywallModal from "../Components/PaywallModal";
 import PlanDateInputsModal from "../Components/PlanDateInputsModal";
 
-export default function PlanADate({
-  navigation,
-}: {
-  navigation: AppNavigation;
-}) {
+export default function PlanADate({ navigation }: { navigation: AppNavigation }) {
   const { isUnlocked } = usePremium();
   const insets = useSafeAreaInsets();
 
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [maxPrice, setMaxPrice] = useState<string>("20");
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [startHour12, setStartHour12] = useState<string>("12");
+  const [startHour12, setStartHour12] = useState<string>("6");
   const [startPeriod, setStartPeriod] = useState<"AM" | "PM">("PM");
-  const [endHour12, setEndHour12] = useState<string>("6");
+  const [endHour12, setEndHour12] = useState<string>("9");
   const [endPeriod, setEndPeriod] = useState<"AM" | "PM">("PM");
-  const [maxDistance, setMaxDistance] = useState<string>(
-    isUnlocked ? "10" : "5",
-  );
+  const [maxDistance, setMaxDistance] = useState<string>(isUnlocked ? "10" : "5");
   const [actualUserLocation, setActualUserLocation] = useState<{
     latitude: number;
     longitude: number;
   } | null>(null);
   const [useMyAddressEnabled, setUseMyAddressEnabled] = useState(true);
-  const [categoriesChecked, setCategoriesChecked] = useState(
-    Array(DATE_CATEGORIES.length).fill(true),
-  );
+  const [categoriesChecked, setCategoriesChecked] = useState(Array(DATE_CATEGORIES.length).fill(true));
   const [isGeneratingIdeas, setIsGeneratingIdeas] = useState(false);
   const [paywallVisible, setPaywallVisible] = useState(false);
 
@@ -77,10 +60,7 @@ export default function PlanADate({
       return Number.parseInt(prev, 10) > 5 ? "5" : prev;
     });
   }, [isUnlocked]);
-  const selectedCategoriesCount = useMemo(
-    () => categoriesChecked.filter(Boolean).length,
-    [categoriesChecked],
-  );
+  const selectedCategoriesCount = useMemo(() => categoriesChecked.filter(Boolean).length, [categoriesChecked]);
 
   const clampHour12 = (value: number) => {
     if (Number.isNaN(value)) return 1;
@@ -132,28 +112,20 @@ export default function PlanADate({
       return;
     }
 
-    const selectedCategories = DATE_CATEGORIES.filter(
-      (_, i) => categoriesChecked[i],
-    );
+    const selectedCategories = DATE_CATEGORIES.filter((_, i) => categoriesChecked[i]);
     if (!selectedCategories.length) {
       Alert.alert("No Categories", "Please select at least one category.");
       return;
     }
 
-    const start24 = convertTo24Hour(
-      Number.parseInt(startHour12, 10),
-      startPeriod,
-    );
+    const start24 = convertTo24Hour(Number.parseInt(startHour12, 10), startPeriod);
     const end24 = convertTo24Hour(Number.parseInt(endHour12, 10), endPeriod);
     const selectedDateIso = selectedDate.toISOString().slice(0, 10);
 
     let finalMaxDistance = parsedDistance;
     if (!isUnlocked && finalMaxDistance > 5) {
       finalMaxDistance = 5;
-      Alert.alert(
-        "Distance Limited",
-        "Premium users can search up to 25+ miles. Free tier is limited to 5 miles.",
-      );
+      Alert.alert("Distance Limited", "Premium users can search up to 25+ miles. Free tier is limited to 5 miles.");
     }
 
     setIsGeneratingIdeas(true);
@@ -236,9 +208,7 @@ export default function PlanADate({
             alignItems: "center",
           }}
         >
-          <Text style={{ color: "#fff", fontSize: 18, fontWeight: "800" }}>
-            Plan Date
-          </Text>
+          <Text style={{ color: "#fff", fontSize: 18, fontWeight: "800" }}>Plan Date</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -255,9 +225,7 @@ export default function PlanADate({
             alignItems: "center",
           }}
         >
-          <Text style={{ color: "#1e90ff", fontSize: 17, fontWeight: "800" }}>
-            View Date Calendar
-          </Text>
+          <Text style={{ color: "#1e90ff", fontSize: 17, fontWeight: "800" }}>View Date Calendar</Text>
         </TouchableOpacity>
 
         {!isUnlocked ? (
@@ -288,11 +256,7 @@ export default function PlanADate({
               >
                 Unlock Premium
               </Text>
-              <Text
-                style={{ fontSize: 13, color: "#0051D5", fontWeight: "500" }}
-              >
-                Save unlimited ideas for only $3.99
-              </Text>
+              <Text style={{ fontSize: 13, color: "#0051D5", fontWeight: "500" }}>Save unlimited ideas for only $3.99</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color="#007AFF" />
           </TouchableOpacity>
@@ -322,11 +286,7 @@ export default function PlanADate({
               >
                 You are a premium user
               </Text>
-              <Text
-                style={{ fontSize: 13, color: "#1f7a45", fontWeight: "500" }}
-              >
-                You can save unlimited date ideas.
-              </Text>
+              <Text style={{ fontSize: 13, color: "#1f7a45", fontWeight: "500" }}>You can save unlimited date ideas.</Text>
             </View>
           </View>
         )}
@@ -409,11 +369,7 @@ export default function PlanADate({
           onSubmit={handleGenerateIdeas}
         />
 
-        <PaywallModal
-          visible={paywallVisible}
-          onClose={() => setPaywallVisible(false)}
-          reason="general"
-        />
+        <PaywallModal visible={paywallVisible} onClose={() => setPaywallVisible(false)} reason="general" />
       </ScrollView>
     </KeyboardAvoidingView>
   );

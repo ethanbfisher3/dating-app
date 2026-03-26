@@ -24,7 +24,7 @@ const recipes: Recipe[] = [
     estimatedTime: 10,
     categories: ["Lunch", "Dinner"],
     description: "Spicy buffalo chicken wrapped with cool, creamy dressing.",
-    image: require("../assets/images/recipes/256/buffalo_chicken_wrap.jpg"),
+    image: "recipes/256/buffalo_chicken_wrap.jpg",
   },
   {
     name: "Veggie Omelette",
@@ -46,7 +46,7 @@ const recipes: Recipe[] = [
     estimatedTime: 10,
     categories: ["Breakfast"],
     description: "A healthy veggie-packed omelette with melted cheese.",
-    image: require("../assets/images/recipes/256/veggie_omelette.jpg"),
+    image: "recipes/256/veggie_omelette.jpg",
   },
   {
     name: "Chicken and Rice Soup",
@@ -67,7 +67,7 @@ const recipes: Recipe[] = [
     estimatedTime: 20,
     categories: ["Lunch", "Dinner"],
     description: "Warm and comforting chicken and rice soup.",
-    image: require("../assets/images/recipes/256/chicken_rice_soup.jpg"),
+    image: "recipes/256/chicken_rice_soup.jpg",
   },
   {
     name: "Cheesy Broccoli Rice",
@@ -83,7 +83,7 @@ const recipes: Recipe[] = [
     estimatedTime: 15,
     categories: ["Lunch", "Dinner", "Side"],
     description: "Creamy, cheesy rice with tender broccoli.",
-    image: require("../assets/images/recipes/256/cheesy_broccoli_rice.jpg"),
+    image: "recipes/256/cheesy_broccoli_rice.jpg",
   },
   {
     name: "Ham Breakfast Scramble",
@@ -98,7 +98,7 @@ const recipes: Recipe[] = [
     estimatedTime: 8,
     categories: ["Breakfast"],
     description: "A hearty breakfast scramble with ham and cheese.",
-    image: require("../assets/images/recipes/256/ham_breakfast_scramble.jpg"),
+    image: "recipes/256/ham_breakfast_scramble.jpg",
   },
   {
     name: "Simple Sliders",
@@ -114,7 +114,7 @@ const recipes: Recipe[] = [
     estimatedTime: 15,
     categories: ["Lunch", "Dinner"],
     description: "Mini burgers that are quick, fun, and filling.",
-    image: require("../assets/images/recipes/256/simple_sliders.jpg"),
+    image: "recipes/256/simple_sliders.jpg",
   },
   {
     name: "Egg Salad Sandwich",
@@ -135,7 +135,7 @@ const recipes: Recipe[] = [
     estimatedTime: 10,
     categories: ["Lunch"],
     description: "Classic egg salad sandwich that's creamy and simple.",
-    image: require("../assets/images/recipes/256/egg_salad_sandwich.jpg"),
+    image: "recipes/256/egg_salad_sandwich.jpg",
   },
   {
     name: "Cinnamon Toast",
@@ -150,7 +150,7 @@ const recipes: Recipe[] = [
     estimatedTime: 5,
     categories: ["Breakfast", "Snack"],
     description: "Sweet and simple cinnamon toast for a quick treat.",
-    image: require("../assets/images/recipes/256/cinnamon_toast.jpg"),
+    image: "recipes/256/cinnamon_toast.jpg",
   },
   {
     name: "Garlic Bread",
@@ -165,7 +165,7 @@ const recipes: Recipe[] = [
     estimatedTime: 15,
     categories: ["Side", "Snack"],
     description: "Buttery garlic bread that's crispy and flavorful.",
-    image: require("../assets/images/recipes/256/garlic_bread.jpg"),
+    image: "recipes/256/garlic_bread.jpg",
   },
   {
     name: "Bean and Cheese Burrito",
@@ -180,7 +180,7 @@ const recipes: Recipe[] = [
     estimatedTime: 10,
     categories: ["Lunch", "Dinner"],
     description: "A simple and filling bean and cheese burrito.",
-    image: require("../assets/images/recipes/256/bean_and_cheese_burrito.jpg"),
+    image: "recipes/256/bean_and_cheese_burrito.jpg",
   },
   {
     name: "Teriyaki Chicken and Rice",
@@ -201,7 +201,7 @@ const recipes: Recipe[] = [
     estimatedTime: 25,
     categories: ["Lunch", "Dinner"],
     description: "A sweet and savory chicken bowl with rice and veggies.",
-    image: require("../assets/images/recipes/256/teriyaki_chicken.jpg"),
+    image: "recipes/256/teriyaki_chicken.jpg",
   },
   {
     name: "Ham and Cheese Wrap",
@@ -217,7 +217,7 @@ const recipes: Recipe[] = [
     estimatedTime: 5,
     categories: ["Lunch"],
     description: "Quick and easy ham and cheese wrap for busy days.",
-    image: require("../assets/images/recipes/256/ham_and_cheese_burrito.jpg"),
+    image: "recipes/256/ham_and_cheese_burrito.jpg",
   },
   {
     name: "Peanut Butter Banana Toast",
@@ -232,7 +232,7 @@ const recipes: Recipe[] = [
     estimatedTime: 5,
     categories: ["Breakfast", "Snack"],
     description: "A sweet and filling toast with peanut butter and bananas.",
-    image: require("../assets/images/recipes/256/peanut_butter_banana_toast.jpg"),
+    image: "recipes/256/peanut_butter_banana_toast.jpg",
   },
   {
     name: "Chicken Caesar Wrap",
@@ -248,7 +248,7 @@ const recipes: Recipe[] = [
     estimatedTime: 10,
     categories: ["Lunch", "Dinner"],
     description: "A portable Caesar salad wrapped in a tortilla.",
-    image: require("../assets/images/recipes/256/chicken_caesar_wrap.jpg"),
+    image: "recipes/256/chicken_caesar_wrap.jpg",
   },
   {
     name: "Cheesy Scrambled Eggs",
@@ -270,7 +270,7 @@ const recipes: Recipe[] = [
     estimatedTime: 7,
     categories: ["Breakfast"],
     description: "Creamy scrambled eggs with melted cheese.",
-    image: require("../assets/images/recipes/256/cheesy_scrambled_eggs.jpg"),
+    image: "recipes/256/cheesy_scrambled_eggs.jpg",
   },
   {
     name: "Greek Yogurt Parfait",
@@ -285,7 +285,7 @@ const recipes: Recipe[] = [
     estimatedTime: 5,
     categories: ["Breakfast", "Snack"],
     description: "A healthy and refreshing yogurt parfait.",
-    image: require("../assets/images/recipes/256/greek_yogurt_parfait.jpg"),
+    image: "recipes/256/greek_yogurt_parfait.jpg",
   },
   {
     name: "BBQ Chicken Sandwich",
@@ -300,7 +300,7 @@ const recipes: Recipe[] = [
     estimatedTime: 15,
     categories: ["Lunch", "Dinner"],
     description: "Sweet and smoky BBQ chicken sandwich.",
-    image: require("../assets/images/recipes/256/bbq_chicken_sandwich.jpg"),
+    image: "recipes/256/bbq_chicken_sandwich.jpg",
   },
   {
     name: "Garlic Roasted Vegetables",
@@ -321,7 +321,7 @@ const recipes: Recipe[] = [
     estimatedTime: 25,
     categories: ["Dinner", "Side"],
     description: "Simple roasted vegetables with garlic flavor.",
-    image: require("../assets/images/recipes/256/garlic_roasted_vegetables.jpg"),
+    image: "recipes/256/garlic_roasted_vegetables.jpg",
   },
   {
     name: "Spaghetti",
@@ -336,11 +336,11 @@ const recipes: Recipe[] = [
     estimatedTime: 30,
     categories: ["Lunch", "Dinner"],
     description: "Spaghetti is a fast, cheap, and simple meal!",
-    image: require("../assets/images/recipes/256/spaghetti.jpg"),
+    image: "recipes/256/spaghetti.jpg",
   },
   {
     name: "Eggs, Beans, and Salsa",
-    image: require("../assets/images/recipes/256/eggs_beans_salsa.jpg"),
+    image: "recipes/256/eggs_beans_salsa.jpg",
     estimatedTime: 10,
     categories: ["Breakfast", "Lunch", "Dinner"],
     estimatedPrice: 5,
@@ -350,7 +350,7 @@ const recipes: Recipe[] = [
   },
   {
     name: "BLT's",
-    image: require("../assets/images/recipes/256/blt.jpg"),
+    image: "recipes/256/blt.jpg",
     ingredients: {
       Bacon: "1/4 pound",
       Lettuce: "1 cup",
@@ -366,7 +366,7 @@ const recipes: Recipe[] = [
   },
   {
     name: "Brownies",
-    image: require("../assets/images/recipes/256/brownies.jpg"),
+    image: "recipes/256/brownies.jpg",
     ingredients: { "Brownie Mix": "1 box", Eggs: "2", Oil: "1/4 cup" },
     categories: ["Dessert"],
     estimatedTime: 30,
@@ -376,7 +376,7 @@ const recipes: Recipe[] = [
   },
   {
     name: "Chicken Tacos",
-    image: require("../assets/images/recipes/256/chicken_taco.jpg"),
+    image: "recipes/256/chicken_taco.jpg",
     ingredients: {
       Chicken: "1 pound",
       Beans: "1 can",
@@ -413,7 +413,7 @@ const recipes: Recipe[] = [
     estimatedTime: 15,
     categories: ["Lunch", "Dinner"],
     description: "Simple yet elegant garlic butter pasta that's ready in just 15 minutes.",
-    image: require("../assets/images/recipes/256/garlic_butter_noodles.jpg"),
+    image: "recipes/256/garlic_butter_noodles.jpg",
   },
   {
     name: "Avocado Toast",
@@ -435,7 +435,7 @@ const recipes: Recipe[] = [
     estimatedTime: 10,
     categories: ["Breakfast", "Lunch"],
     description: "Creamy avocado toast with a hint of lemon - a healthy and Instagram-worthy breakfast.",
-    image: require("../assets/images/recipes/256/avocado_toast.jpg"),
+    image: "recipes/256/avocado_toast.jpg",
   },
   {
     name: "Caprese Salad",
@@ -459,7 +459,7 @@ const recipes: Recipe[] = [
     estimatedTime: 10,
     categories: ["Lunch", "Dinner"],
     description: "A fresh and elegant Italian salad with tomatoes, mozzarella, and basil.",
-    image: require("../assets/images/recipes/256/caprese_salad.jpg"),
+    image: "recipes/256/caprese_salad.jpg",
   },
   {
     name: "One-Pan Chicken Fajitas",
@@ -487,7 +487,7 @@ const recipes: Recipe[] = [
     estimatedTime: 25,
     categories: ["Dinner"],
     description: "Easy one-pan chicken fajitas with colorful peppers and authentic Mexican flavors.",
-    image: require("../assets/images/recipes/256/fajitas.jpg"),
+    image: "recipes/256/fajitas.jpg",
   },
   {
     name: "Cheesy Nachos",
@@ -509,7 +509,7 @@ const recipes: Recipe[] = [
     estimatedTime: 15,
     categories: ["Snack", "Dinner"],
     description: "Loaded nachos with melted cheese and fresh toppings - perfect for game day or movie night.",
-    image: require("../assets/images/recipes/256/cheesy_nachos.jpg"),
+    image: "recipes/256/cheesy_nachos.jpg",
   },
   {
     name: "Chicken Alfredo",
@@ -536,7 +536,7 @@ const recipes: Recipe[] = [
     estimatedTime: 25,
     categories: ["Dinner"],
     description: "Creamy and indulgent chicken alfredo pasta that's restaurant-quality and perfect for a special date night.",
-    image: require("../assets/images/recipes/256/chicken_alfredo.jpg"),
+    image: "recipes/256/chicken_alfredo.jpg",
   },
   {
     name: "Banana Pancakes",
@@ -561,7 +561,7 @@ const recipes: Recipe[] = [
     estimatedTime: 15,
     categories: ["Breakfast"],
     description: "Fluffy and naturally sweet banana pancakes that make for a delightful breakfast in bed.",
-    image: require("../assets/images/recipes/256/banana_pancakes.jpg"),
+    image: "recipes/256/banana_pancakes.jpg",
   },
   {
     name: "Breakfast Burrito",
@@ -583,7 +583,7 @@ const recipes: Recipe[] = [
     estimatedTime: 10,
     categories: ["Breakfast"],
     description: "A hearty and portable breakfast burrito packed with protein and flavor.",
-    image: require("../assets/images/recipes/256/breakfast_burrito.jpg"),
+    image: "recipes/256/breakfast_burrito.jpg",
   },
   {
     name: "Chocolate Mug Cake",
@@ -609,7 +609,7 @@ const recipes: Recipe[] = [
     estimatedTime: 5,
     categories: ["Dessert"],
     description: "A quick and decadent chocolate cake that cooks in just 1 minute - perfect for instant dessert cravings.",
-    image: require("../assets/images/recipes/256/chocolate_mug_cake.jpg"),
+    image: "recipes/256/chocolate_mug_cake.jpg",
   },
   {
     name: "Peanut Butter Cookies",
@@ -631,7 +631,7 @@ const recipes: Recipe[] = [
     estimatedTime: 15,
     categories: ["Dessert"],
     description: "Classic peanut butter cookies with the signature criss-cross pattern - chewy, nutty, and irresistible.",
-    image: require("../assets/images/recipes/256/peanut_butter_cookies.jpg"),
+    image: "recipes/256/peanut_butter_cookies.jpg",
   },
 
   {
@@ -653,7 +653,7 @@ const recipes: Recipe[] = [
     estimatedTime: 10,
     categories: ["Dessert"],
     description: "Gooey and crispy Rice Krispies treats that bring back childhood memories and are perfect for sharing.",
-    image: require("../assets/images/recipes/256/rice_krispie_treats.jpg"),
+    image: "recipes/256/rice_krispie_treats.jpg",
   },
   {
     name: "Apple Cinnamon Nachos",
@@ -675,7 +675,7 @@ const recipes: Recipe[] = [
     estimatedTime: 10,
     categories: ["Dessert"],
     description: "A fun and healthy dessert twist on nachos using fresh apples with cinnamon and caramel.",
-    image: require("../assets/images/recipes/256/cinnamon_apples.jpg"),
+    image: "recipes/256/cinnamon_apples.jpg",
   },
   {
     name: "S'mores Bars",
@@ -699,7 +699,7 @@ const recipes: Recipe[] = [
     estimatedTime: 20,
     categories: ["Dessert"],
     description: "All the flavors of campfire s'mores in convenient bar form - gooey marshmallows, chocolate, and graham crackers.",
-    image: require("../assets/images/recipes/256/smores_bar.jpg"),
+    image: "recipes/256/smores_bar.jpg",
   },
   {
     name: "Chocolate-Dipped Strawberries",
@@ -719,7 +719,7 @@ const recipes: Recipe[] = [
     estimatedTime: 15,
     categories: ["Dessert"],
     description: "Elegant chocolate-dipped strawberries that are perfect for romantic occasions and special dates.",
-    image: require("../assets/images/recipes/256/chocolate_strawberries.jpg"),
+    image: "recipes/256/chocolate_strawberries.jpg",
   },
   {
     name: "No-Bake Cheesecake",
@@ -742,7 +742,7 @@ const recipes: Recipe[] = [
     estimatedTime: 20,
     categories: ["Dessert"],
     description: "Creamy and smooth no-bake cheesecake that's easy to make and perfect for any occasion.",
-    image: require("../assets/images/recipes/256/no_bake_cheesecake.jpg"),
+    image: "recipes/256/no_bake_cheesecake.jpg",
   },
   {
     name: "Chocolate-Covered Bananas",
@@ -761,7 +761,7 @@ const recipes: Recipe[] = [
     estimatedTime: 10,
     categories: ["Dessert"],
     description: "Frozen chocolate-covered banana slices that are a healthy and delicious frozen treat.",
-    image: require("../assets/images/recipes/256/chocolate-covered-bananas.jpg"),
+    image: "recipes/256/chocolate-covered-bananas.jpg",
   },
   {
     name: "Cinnamon Sugar Donuts",
@@ -789,7 +789,7 @@ const recipes: Recipe[] = [
     estimatedTime: 20,
     categories: ["Dessert"],
     description: "Homemade baked donuts with a sweet cinnamon sugar coating - perfect for breakfast or dessert.",
-    image: require("../assets/images/recipes/256/cinnamon_doughnuts.jpg"),
+    image: "recipes/256/cinnamon_doughnuts.jpg",
   },
 
   // AI Generated Recipes
@@ -809,7 +809,7 @@ const recipes: Recipe[] = [
     estimatedTime: 10,
     categories: ["Lunch", "Dinner"],
     description: "A classic grilled cheese sandwich that's golden, gooey, and comforting.",
-    image: require("../assets/images/recipes/256/grilled_cheese.jpg"),
+    image: "recipes/256/grilled_cheese.jpg",
   },
   {
     name: "Tuna Salad",
@@ -827,7 +827,7 @@ const recipes: Recipe[] = [
     estimatedTime: 10,
     categories: ["Lunch"],
     description: "A quick and protein-packed tuna salad that's great on its own or in a sandwich.",
-    image: require("../assets/images/recipes/256/tuna_salad.jpg"),
+    image: "recipes/256/tuna_salad.jpg",
   },
   {
     name: "Veggie Stir Fry",
@@ -849,7 +849,7 @@ const recipes: Recipe[] = [
     estimatedTime: 15,
     categories: ["Lunch", "Dinner"],
     description: "Colorful, quick, and healthy veggie stir fry in under 20 minutes.",
-    image: require("../assets/images/recipes/256/stir_fry.jpg"),
+    image: "recipes/256/stir_fry.jpg",
   },
 
   {
@@ -873,7 +873,7 @@ const recipes: Recipe[] = [
     estimatedTime: 7,
     categories: ["Breakfast"],
     description: "A fluffy omelette that's easy to customize and quick to make.",
-    image: require("../assets/images/recipes/256/omelette.jpg"),
+    image: "recipes/256/omelette.jpg",
   },
   {
     name: "Chickpea Salad",
@@ -896,7 +896,7 @@ const recipes: Recipe[] = [
     estimatedTime: 10,
     categories: ["Lunch", "Dinner", "Salad"],
     description: "A refreshing Mediterranean salad loaded with protein and flavor.",
-    image: require("../assets/images/recipes/256/chickpea_salad.jpg"),
+    image: "recipes/256/chickpea_salad.jpg",
   },
   {
     name: "Baked Sweet Potato",
@@ -918,7 +918,7 @@ const recipes: Recipe[] = [
     estimatedTime: 60,
     categories: ["Lunch", "Dinner", "Vegetarian"],
     description: "Simple, nourishing, and naturally sweet baked sweet potato.",
-    image: require("../assets/images/recipes/256/baked_sweet_potato.jpg"),
+    image: "recipes/256/baked_sweet_potato.jpg",
   },
   {
     name: "Quesadilla",
@@ -938,7 +938,7 @@ const recipes: Recipe[] = [
     estimatedTime: 10,
     categories: ["Lunch", "Snack"],
     description: "Crispy, cheesy, and endlessly customizable quesadilla.",
-    image: require("../assets/images/recipes/256/quesadilla.jpg"),
+    image: "recipes/256/quesadilla.jpg",
   },
   {
     name: "Fruit Smoothie",
@@ -954,7 +954,7 @@ const recipes: Recipe[] = [
     estimatedTime: 5,
     categories: ["Breakfast", "Snack"],
     description: "Refreshing and naturally sweet fruit smoothie for any time of day.",
-    image: require("../assets/images/recipes/256/smoothie.jpg"),
+    image: "recipes/256/smoothie.jpg",
   },
   {
     name: "Egg Fried Rice",
@@ -976,7 +976,7 @@ const recipes: Recipe[] = [
     estimatedTime: 15,
     categories: ["Lunch", "Dinner"],
     description: "Fast, filling, and budget-friendly egg fried rice using leftovers.",
-    image: require("../assets/images/recipes/256/fried_rice.jpg"),
+    image: "recipes/256/fried_rice.jpg",
   },
   {
     name: "Turkey Sandwich",
@@ -993,7 +993,7 @@ const recipes: Recipe[] = [
     estimatedTime: 5,
     categories: ["Lunch"],
     description: "A quick, protein-packed turkey sandwich that's ideal for on-the-go meals.",
-    image: require("../assets/images/recipes/256/turkey_sandwich.jpg"),
+    image: "recipes/256/turkey_sandwich.jpg",
   },
   {
     name: "Mini Pita Pizzas",
@@ -1013,7 +1013,7 @@ const recipes: Recipe[] = [
     estimatedTime: 15,
     categories: ["Lunch", "Snack", "Dinner"],
     description: "Easy, fun-to-make mini pizzas using pita bread.",
-    image: require("../assets/images/recipes/256/pita_pizzas.jpg"),
+    image: "recipes/256/pita_pizzas.jpg",
   },
   {
     name: "Cucumber Sandwiches",
@@ -1033,7 +1033,7 @@ const recipes: Recipe[] = [
     estimatedTime: 7,
     categories: ["Snack", "Lunch"],
     description: "Light, refreshing cucumber sandwiches perfect for tea time or summer snacks.",
-    image: require("../assets/images/recipes/256/cucumber_sandwiches.jpg"),
+    image: "recipes/256/cucumber_sandwiches.jpg",
   },
   {
     name: "Taco Salad",
@@ -1055,7 +1055,7 @@ const recipes: Recipe[] = [
     estimatedTime: 15,
     categories: ["Lunch", "Dinner"],
     description: "A crunchy, spicy taco-inspired salad that comes together quickly.",
-    image: require("../assets/images/recipes/256/taco_salad.jpg"),
+    image: "recipes/256/taco_salad.jpg",
   },
   {
     name: "Stuffed Bell Peppers",
@@ -1079,7 +1079,7 @@ const recipes: Recipe[] = [
     estimatedTime: 40,
     categories: ["Dinner"],
     description: "A hearty and flavorful dinner with meat, rice, and melty cheese inside roasted peppers.",
-    image: require("../assets/images/recipes/256/stuffed_peppers.jpg"),
+    image: "recipes/256/stuffed_peppers.jpg",
   },
 
   {
@@ -1104,7 +1104,7 @@ const recipes: Recipe[] = [
     estimatedTime: 20,
     categories: ["Lunch", "Dinner"],
     description: "Classic comfort food—tangy and savory beef filling piled into soft buns.",
-    image: require("../assets/images/recipes/256/sloppy_joe.jpg"),
+    image: "recipes/256/sloppy_joe.jpg",
   },
   {
     name: "Zucchini Fritters",
@@ -1126,7 +1126,7 @@ const recipes: Recipe[] = [
     estimatedTime: 20,
     categories: ["Lunch", "Dinner", "Snack"],
     description: "Crispy zucchini fritters make a tasty side or vegetarian main dish.",
-    image: require("../assets/images/recipes/256/zucchini_fritters.jpg"),
+    image: "recipes/256/zucchini_fritters.jpg",
   },
 ].sort((a, b) => a.name.localeCompare(b.name));
 
