@@ -2,10 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { PlannedDateResultsParams } from "../types/navigation";
 import activities, { Activity } from "../data/activities";
 import recipes, { Recipe } from "../data/Recipes";
-import useBYUAPI, {
-  BYUCalendarEvent,
-  BYUCalendarEventsResponse,
-} from "./useBYUAPI";
+import useBYUAPI, { BYUCalendarEvent, BYUCalendarEventsResponse } from "./useBYUAPI";
 import type { DateCategory } from "src/utils/utils";
 
 // Default location: BYU campus area (Provo, Utah)
@@ -47,17 +44,15 @@ function toPlannerWindowBounds(params: PlannedDateResultsParams): {
     end.setDate(end.getDate() + 1);
   }
 
-  const selectedDateKey = `${parsed.getFullYear()}-${String(
-    parsed.getMonth() + 1,
-  ).padStart(2, "0")}-${String(parsed.getDate()).padStart(2, "0")}`;
+  const selectedDateKey = `${parsed.getFullYear()}-${String(parsed.getMonth() + 1).padStart(
+    2,
+    "0",
+  )}-${String(parsed.getDate()).padStart(2, "0")}`;
 
   return { start: start.getTime(), end: end.getTime(), selectedDateKey };
 }
 
-function filterBYUEventsByPlannerWindow(
-  events: BYUEventSummary[],
-  params: PlannedDateResultsParams,
-): BYUEventSummary[] {
+function filterBYUEventsByPlannerWindow(events: BYUEventSummary[], params: PlannedDateResultsParams): BYUEventSummary[] {
   const bounds = toPlannerWindowBounds(params);
   if (!bounds) {
     return events;
@@ -74,20 +69,16 @@ function filterBYUEventsByPlannerWindow(
     }
 
     const eventStartDate = new Date(eventStart);
-    const eventStartDateKey = `${eventStartDate.getFullYear()}-${String(
-      eventStartDate.getMonth() + 1,
-    ).padStart(2, "0")}-${String(eventStartDate.getDate()).padStart(2, "0")}`;
+    const eventStartDateKey = `${eventStartDate.getFullYear()}-${String(eventStartDate.getMonth() + 1).padStart(
+      2,
+      "0",
+    )}-${String(eventStartDate.getDate()).padStart(2, "0")}`;
     if (eventStartDateKey !== bounds.selectedDateKey) {
       return false;
     }
 
-    const parsedEventEnd = event.endDateTime
-      ? new Date(event.endDateTime).getTime()
-      : Number.NaN;
-    const eventEnd =
-      Number.isNaN(parsedEventEnd) || parsedEventEnd <= eventStart
-        ? eventStart + 60 * 60 * 1000
-        : parsedEventEnd;
+    const parsedEventEnd = event.endDateTime ? new Date(event.endDateTime).getTime() : Number.NaN;
+    const eventEnd = Number.isNaN(parsedEventEnd) || parsedEventEnd <= eventStart ? eventStart + 60 * 60 * 1000 : parsedEventEnd;
 
     return eventStart < bounds.end && eventEnd > bounds.start;
   });
@@ -128,83 +119,22 @@ const CATEGORY_TYPE_MAP: Record<string, string[]> = {
     "pizza_restaurant",
     "sandwich_shop",
   ],
-  Outdoors: [
-    "park",
-    "hiking_area",
-    "campground",
-    "nature_preserve",
-    "river",
-    "lake",
-    "scenic_spot",
-  ],
-  Sports: [
-    "gym",
-    "sports_club",
-    "sports_complex",
-    "sports_activity_location",
-    "golf_course",
-    "tennis_court",
-  ],
-  Nature: [
-    "park",
-    "hiking_area",
-    "lake",
-    "river",
-    "nature_preserve",
-    "mountain_peak",
-    "tourist_attraction",
-  ],
+  Outdoors: ["park", "hiking_area", "campground", "nature_preserve", "river", "lake", "scenic_spot"],
+  Sports: ["gym", "sports_club", "sports_complex", "sports_activity_location", "golf_course", "tennis_court"],
+  Nature: ["park", "hiking_area", "lake", "river", "nature_preserve", "mountain_peak", "tourist_attraction"],
   Learning: ["museum", "library", "book_store", "art_gallery"],
-  Shopping: [
-    "shopping_mall",
-    "department_store",
-    "clothing_store",
-    "gift_shop",
-    "toy_store",
-    "store",
-  ],
-  Recreation: [
-    "movie_theater",
-    "tourist_attraction",
-    "video_arcade",
-    "amusement_park",
-    "playground",
-    "bowling_alley",
-  ],
+  Shopping: ["shopping_mall", "department_store", "clothing_store", "gift_shop", "toy_store", "store"],
+  Recreation: ["movie_theater", "tourist_attraction", "video_arcade", "amusement_park", "playground", "bowling_alley"],
 };
 
-const MONTHS = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
-];
+const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
-const DAYS = [
-  "Sunday",
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
-];
+const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
-const BYU_EVENTS_URL =
-  "https://calendar.byu.edu/api/Events.json?categories=all&price=1000";
+const BYU_EVENTS_URL = "https://calendar.byu.edu/api/Events.json?categories=all&price=1000";
 const MAX_PLACES_RETURNED = 50;
 
-function normalizeBYUEvents(
-  payload: BYUCalendarEventsResponse | BYUCalendarEvent[] | null,
-): BYUCalendarEvent[] {
+function normalizeBYUEvents(payload: BYUCalendarEventsResponse | BYUCalendarEvent[] | null): BYUCalendarEvent[] {
   if (!payload) {
     return [];
   }
@@ -220,28 +150,17 @@ function normalizeBYUEvents(
   return [];
 }
 
-function toBYUEventSummary(
-  event: BYUCalendarEvent,
-  index: number,
-): BYUEventSummary {
+function toBYUEventSummary(event: BYUCalendarEvent, index: number): BYUEventSummary {
   const title = (event as any).Title || event.title || `BYU Event ${index + 1}`;
   const startDateTime = (event as any).StartDateTime || event.start || null;
   const endDateTime = (event as any).EndDateTime || event.end || null;
-  const description =
-    (event as any).Description || event.description || event.summary || "";
+  const description = (event as any).Description || event.description || event.summary || "";
   const location = (event as any).Location || event.location || "";
   const url = (event as any).Url || (event as any).Link || event.url || "";
   const categoryId = (event as any).CategoryId;
-  const eventId = String(
-    (event as any).EventId ?? event.id ?? `${title}_${index}`,
-  );
+  const eventId = String((event as any).EventId ?? event.id ?? `${title}_${index}`);
   const priceRaw = (event as any).Price ?? event.price;
-  const parsedPrice =
-    typeof priceRaw === "number"
-      ? priceRaw
-      : typeof priceRaw === "string"
-        ? Number.parseFloat(priceRaw)
-        : Number.NaN;
+  const parsedPrice = typeof priceRaw === "number" ? priceRaw : typeof priceRaw === "string" ? Number.parseFloat(priceRaw) : Number.NaN;
 
   return {
     id: eventId,
@@ -251,11 +170,7 @@ function toBYUEventSummary(
     endDateTime,
     location,
     categories:
-      categoryId !== undefined && categoryId !== null
-        ? [String(categoryId)]
-        : Array.isArray(event.categories)
-          ? event.categories
-          : [],
+      categoryId !== undefined && categoryId !== null ? [String(categoryId)] : Array.isArray(event.categories) ? event.categories : [],
     url,
     price: Number.isNaN(parsedPrice) ? null : parsedPrice,
   };
@@ -282,15 +197,8 @@ function normalizeHour12(hour12: number, period: string): number {
   return period.toUpperCase() === "PM" ? hour + 12 : hour;
 }
 
-function isActivityTimeCompatible(
-  activity: Activity,
-  startHour: number,
-  endHour: number,
-): boolean {
-  if (
-    !Array.isArray(activity.bestTimesOfDay) ||
-    !activity.bestTimesOfDay.length
-  ) {
+function isActivityTimeCompatible(activity: Activity, startHour: number, endHour: number): boolean {
+  if (!Array.isArray(activity.bestTimesOfDay) || !activity.bestTimesOfDay.length) {
     return true;
   }
 
@@ -317,22 +225,14 @@ function isActivityTimeCompatible(
   });
 }
 
-function haversineMiles(
-  lat1: number,
-  lng1: number,
-  lat2: number,
-  lng2: number,
-): number {
+function haversineMiles(lat1: number, lng1: number, lat2: number, lng2: number): number {
   const toRadians = (degrees: number) => (degrees * Math.PI) / 180;
   const earthRadiusMiles = 3958.8;
   const dLat = toRadians(lat2 - lat1);
   const dLng = toRadians(lng2 - lng1);
   const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(toRadians(lat1)) *
-      Math.cos(toRadians(lat2)) *
-      Math.sin(dLng / 2) *
-      Math.sin(dLng / 2);
+    Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return earthRadiusMiles * c;
 }
@@ -361,27 +261,63 @@ function toPlaceSummary(place: PlannerPlace): PlaceSummary {
     rating: typeof place.rating === "number" ? place.rating : null,
     sourceKind: "place",
     location: {
-      latitude:
-        typeof place.location?.latitude === "number"
-          ? place.location.latitude
-          : null,
-      longitude:
-        typeof place.location?.longitude === "number"
-          ? place.location.longitude
-          : null,
+      latitude: typeof place.location?.latitude === "number" ? place.location.latitude : null,
+      longitude: typeof place.location?.longitude === "number" ? place.location.longitude : null,
     },
   };
 }
 
-function placeMatchesCategories(
-  place: PlannerPlace,
-  categories: string[],
-): boolean {
+function placeMatchesCategories(place: PlannerPlace, categories: string[]): boolean {
   const typeSet = new Set(Array.isArray(place.types) ? place.types : []);
   return categories.some((category) => {
     const allowedTypes = CATEGORY_TYPE_MAP[category] || [];
     return allowedTypes.some((type) => typeSet.has(type));
   });
+}
+
+function placeIsAffordable(place: PlannerPlace, maxPrice: number): boolean {
+  // If no budget constraint or unlimited budget, all places are affordable
+  if (maxPrice === Number.POSITIVE_INFINITY || maxPrice > 100) {
+    return true;
+  }
+
+  // If budget is 0, only include free places (parks, libraries, etc.) or places without price info
+  if (maxPrice === 0) {
+    // Free types that don't require payment
+    const freeTypes = [
+      "park",
+      "hiking_area",
+      "library",
+      "nature_preserve",
+      "lake",
+      "river",
+      "beach",
+      "playground",
+      "trail",
+      "scenic_spot",
+      "mountain_peak",
+    ];
+
+    const typeSet = new Set(Array.isArray(place.types) ? place.types : []);
+    const hasFreType = freeTypes.some((type) => typeSet.has(type));
+
+    // If it's a free-type place, include it. If it has a price level, exclude it
+    return hasFreType;
+  }
+
+  // For other budgets, filter based on price level
+  const priceLevel = place.priceLevel || "";
+
+  if (!priceLevel) return true;
+
+  // Approximate budget thresholds per person
+  if (maxPrice <= 15) {
+    return priceLevel === "PRICE_LEVEL_INEXPENSIVE";
+  } else if (maxPrice <= 40) {
+    return priceLevel === "PRICE_LEVEL_INEXPENSIVE" || priceLevel === "PRICE_LEVEL_MODERATE";
+  }
+
+  return true;
 }
 
 const getAvailableAtHomeIdeas = (
@@ -390,34 +326,21 @@ const getAvailableAtHomeIdeas = (
   recipes: Recipe[];
   activities: Activity[];
 } => {
-  const budget =
-    typeof params.maxPrice === "number" && !Number.isNaN(params.maxPrice)
-      ? params.maxPrice
-      : Number.POSITIVE_INFINITY;
+  const budget = typeof params.maxPrice === "number" && !Number.isNaN(params.maxPrice) ? params.maxPrice : Number.POSITIVE_INFINITY;
 
-  const totalMinutes = computeWindowDurationMinutes(
-    params.startHour,
-    params.endHour,
-  );
+  const totalMinutes = computeWindowDurationMinutes(params.startHour, params.endHour);
 
   const parsedDate = new Date(`${toIsoDate(params.selectedDate)}T12:00:00`);
   const monthName = MONTHS[parsedDate.getMonth()] || "";
   const weekdayName = DAYS[parsedDate.getDay()] || "";
 
   const affordableRecipes = recipes.filter(
-    (recipe) =>
-      params.categories.includes("Food") &&
-      recipe.estimatedPrice <= budget &&
-      recipe.estimatedTime <= totalMinutes,
+    (recipe) => params.categories.includes("Food") && recipe.estimatedPrice <= budget && recipe.estimatedTime <= totalMinutes,
   );
 
   const affordableActivities = activities
     .filter((activity) => activity.cost <= budget)
-    .filter((activity) =>
-      activity.categories.some((category) =>
-        params.categories.includes(category as DateCategory),
-      ),
-    )
+    .filter((activity) => activity.categories.some((category) => params.categories.includes(category as DateCategory)))
     .filter((activity) => {
       const minDuration = activity.durationMinutes?.min ?? 0;
       return minDuration <= totalMinutes;
@@ -436,9 +359,7 @@ const getAvailableAtHomeIdeas = (
 
       return weekdayName ? activity.bestDaysOfWeek.includes(weekdayName) : true;
     })
-    .filter((activity) =>
-      isActivityTimeCompatible(activity, params.startHour, params.endHour),
-    );
+    .filter((activity) => isActivityTimeCompatible(activity, params.startHour, params.endHour));
 
   return { recipes: affordableRecipes, activities: affordableActivities };
 };
@@ -477,28 +398,16 @@ export default function useDatePlannerIdeas(params: PlannedDateResultsParams): {
   const [sourceFile, setSourceFile] = useState("src/data/places/places.json");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const byuEventsRaw = useBYUAPI<
-    BYUCalendarEventsResponse | BYUCalendarEvent[]
-  >(BYU_EVENTS_URL, params);
+  const byuEventsRaw = useBYUAPI<BYUCalendarEventsResponse | BYUCalendarEvent[]>(BYU_EVENTS_URL, params);
 
-  const atHomeOptions = useMemo(
-    () => getAvailableAtHomeIdeas(params),
-    [params],
-  );
+  const atHomeOptions = useMemo(() => getAvailableAtHomeIdeas(params), [params]);
 
   const byuEvents = useMemo(
-    () =>
-      filterBYUEventsByPlannerWindow(
-        normalizeBYUEvents(byuEventsRaw).map(toBYUEventSummary),
-        params,
-      ),
+    () => filterBYUEventsByPlannerWindow(normalizeBYUEvents(byuEventsRaw).map(toBYUEventSummary), params),
     [byuEventsRaw, params],
   );
 
-  const byuEventPlaces = useMemo(
-    () => byuEvents.map(toBYUEventPlaceSummary),
-    [byuEvents],
-  );
+  const byuEventPlaces = useMemo(() => byuEvents.map(toBYUEventPlaceSummary), [byuEvents]);
 
   const fetchIdeas = useCallback(async () => {
     setIsLoading(true);
@@ -516,6 +425,7 @@ export default function useDatePlannerIdeas(params: PlannedDateResultsParams): {
 
         const filteredLocalPlaces = localPlaces
           .filter((place) => placeMatchesCategories(place, params.categories))
+          .filter((place) => placeIsAffordable(place, params.maxPrice))
           .filter((place) => {
             const latitude = place.location?.latitude;
             const longitude = place.location?.longitude;
@@ -525,28 +435,19 @@ export default function useDatePlannerIdeas(params: PlannedDateResultsParams): {
               return false;
             }
 
-            const milesAway = haversineMiles(
-              userLocationForFiltering.latitude,
-              userLocationForFiltering.longitude,
-              latitude,
-              longitude,
-            );
+            const milesAway = haversineMiles(userLocationForFiltering.latitude, userLocationForFiltering.longitude, latitude, longitude);
 
             return milesAway <= params.maxDistance;
           })
           .map(toPlaceSummary);
 
-        const combinedPlaces = dedupePlaceSummariesById([
-          ...filteredLocalPlaces,
-          ...byuEventPlaces,
-        ]).slice(0, MAX_PLACES_RETURNED);
+        const combinedPlaces = randomlySelectPlaces(
+          dedupePlaceSummariesById([...filteredLocalPlaces, ...byuEventPlaces]),
+          MAX_PLACES_RETURNED,
+        );
 
         setMatchedPlaces(combinedPlaces);
-        setSourceFile(
-          byuEventPlaces.length
-            ? "src/data/places/places.json + BYU Calendar API"
-            : "src/data/places/places.json",
-        );
+        setSourceFile(byuEventPlaces.length ? "src/data/places/places.json + BYU Calendar API" : "src/data/places/places.json");
       }
     } catch (fetchError: any) {
       setError(fetchError?.message || "Failed to fetch date planner ideas.");
@@ -583,6 +484,21 @@ function dedupePlaceSummariesById(places: PlaceSummary[]): PlaceSummary[] {
     seen.add(place.id);
     return true;
   });
+}
+
+function randomlySelectPlaces(places: PlaceSummary[], count: number): PlaceSummary[] {
+  if (places.length <= count) {
+    return places;
+  }
+
+  // Fisher-Yates shuffle
+  const shuffled = [...places];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+
+  return shuffled.slice(0, count);
 }
 
 export { useDatePlannerIdeas };

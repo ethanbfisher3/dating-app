@@ -35,11 +35,7 @@ function getRatingColor(n: number): string {
   return `hsl(${hue}, 75%, 42%)`;
 }
 
-export default function DateHistoryScreen({
-  navigation,
-}: {
-  navigation: AppNavigation;
-}) {
+export default function DateHistoryScreen({ navigation }: { navigation: AppNavigation }) {
   const [recordedDates, setRecordedDates] = useState<RecordedDate[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -150,11 +146,7 @@ export default function DateHistoryScreen({
     }
 
     // Check if free user is at limit (editing doesn't count toward limit)
-    if (
-      !editingDateId &&
-      !isUnlocked &&
-      recordedDates.length >= FREE_TIER_RECORDED_DATES_LIMIT
-    ) {
+    if (!editingDateId && !isUnlocked && recordedDates.length >= FREE_TIER_RECORDED_DATES_LIMIT) {
       setPaywallVisible(true);
       return;
     }
@@ -183,10 +175,7 @@ export default function DateHistoryScreen({
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
     if (!permission.granted) {
-      Alert.alert(
-        "Photo Access Needed",
-        "Please allow photo library access to attach a date photo.",
-      );
+      Alert.alert("Photo Access Needed", "Please allow photo library access to attach a date photo.");
       return;
     }
 
@@ -202,18 +191,14 @@ export default function DateHistoryScreen({
   };
 
   const handleDeleteDate = (id: string) => {
-    Alert.alert(
-      "Delete Date",
-      "Are you sure you want to delete this date record?",
-      [
-        { text: "Cancel", onPress: () => {}, style: "cancel" },
-        {
-          text: "Delete",
-          onPress: () => removeRecordedDate(id),
-          style: "destructive",
-        },
-      ],
-    );
+    Alert.alert("Delete Date", "Are you sure you want to delete this date record?", [
+      { text: "Cancel", onPress: () => {}, style: "cancel" },
+      {
+        text: "Delete",
+        onPress: () => removeRecordedDate(id),
+        style: "destructive",
+      },
+    ]);
   };
 
   const handleFormInputFocus = (event: any) => {
@@ -223,20 +208,13 @@ export default function DateHistoryScreen({
     }
 
     setTimeout(() => {
-      (
-        modalScrollRef.current as any
-      )?.scrollResponderScrollNativeHandleToKeyboard?.(target, 120, true);
+      (modalScrollRef.current as any)?.scrollResponderScrollNativeHandleToKeyboard?.(target, 120, true);
     }, 120);
   };
 
   return (
     <View style={styles.container}>
-      <ScrollView
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingTop: insets.top },
-        ]}
-      >
+      <ScrollView contentContainerStyle={[{ padding: 24 }, styles.scrollContent, { paddingTop: insets.top }]}>
         <View style={styles.header}>
           <View style={styles.titleRow}>
             <Text style={styles.title}>Date History</Text>
@@ -253,39 +231,26 @@ export default function DateHistoryScreen({
             width: "100%",
             height: 200,
             borderRadius: 12,
-            paddingHorizontal: 24,
           }}
         />
 
         {recordedDates.length === 0 ? (
           <View style={styles.emptyState}>
-            <Ionicons
-              name="heart-outline"
-              size={64}
-              color="#ccc"
-              style={styles.emptyIcon}
-            />
+            <Ionicons name="heart-outline" size={64} color="#ccc" style={styles.emptyIcon} />
             <Text style={styles.emptyTitle}>No Dates Recorded Yet</Text>
             <Text style={styles.emptyDescription}>
-              Use this space to keep track of the dates you've been on. Record
-              what you did, how much you spent, and what you learned!
+              Use this space to keep track of the dates you've been on. Record what you did, how much you spent, and what you learned!
             </Text>
-            <TouchableOpacity
-              style={styles.addButton}
-              onPress={openCreateModal}
-            >
+            <TouchableOpacity style={styles.addButton} onPress={openCreateModal}>
               <Ionicons name="add" size={24} color="#fff" />
-              <Text style={styles.addButtonText}>Add Your First Date</Text>
+              <Text style={styles.addButtonText}>Record Your First Date</Text>
             </TouchableOpacity>
           </View>
         ) : (
           <>
-            <TouchableOpacity
-              style={styles.addButton}
-              onPress={openCreateModal}
-            >
+            <TouchableOpacity style={styles.addButton} onPress={openCreateModal}>
               <Ionicons name="add" size={24} color="#fff" />
-              <Text style={styles.addButtonText}>Add Date</Text>
+              <Text style={styles.addButtonText}>Record Date</Text>
             </TouchableOpacity>
 
             <View style={styles.datesContainer}>
@@ -301,54 +266,33 @@ export default function DateHistoryScreen({
                     </Text>
                     <View style={styles.cardActions}>
                       <TouchableOpacity onPress={() => openEditModal(date)}>
-                        <Ionicons
-                          name="create-outline"
-                          size={20}
-                          color="#007AFF"
-                        />
+                        <Ionicons name="create-outline" size={20} color="#007AFF" />
                       </TouchableOpacity>
-                      <TouchableOpacity
-                        onPress={() => handleDeleteDate(date.id)}
-                      >
-                        <Ionicons
-                          name="trash-outline"
-                          size={20}
-                          color="#ff3b30"
-                        />
+                      <TouchableOpacity onPress={() => handleDeleteDate(date.id)}>
+                        <Ionicons name="trash-outline" size={20} color="#ff3b30" />
                       </TouchableOpacity>
                     </View>
                   </View>
 
-                  {date.imageUri ? (
-                    <Image
-                      source={{ uri: date.imageUri }}
-                      style={styles.dateEntryImage}
-                    />
-                  ) : null}
+                  {date.imageUri ? <Image source={{ uri: date.imageUri }} style={styles.dateEntryImage} /> : null}
 
                   <View style={styles.dateCardContent}>
                     {date.whoWentWith ? (
                       <View style={styles.section}>
                         <Text style={styles.sectionLabel}>Went With</Text>
-                        <Text style={styles.sectionText}>
-                          {date.whoWentWith}
-                        </Text>
+                        <Text style={styles.sectionText}>{date.whoWentWith}</Text>
                       </View>
                     ) : null}
 
                     <View style={styles.section}>
                       <Text style={styles.sectionLabel}>Money Spent</Text>
-                      <Text style={styles.sectionText}>
-                        ${date.moneySpent.toFixed(2)}
-                      </Text>
+                      <Text style={styles.sectionText}>${date.moneySpent.toFixed(2)}</Text>
                     </View>
 
                     {date.rating != null && (
                       <View style={styles.section}>
                         <Text style={styles.sectionLabel}>Rating</Text>
-                        <Text style={styles.sectionText}>
-                          {date.rating} / 10
-                        </Text>
+                        <Text style={styles.sectionText}>{date.rating} / 10</Text>
                       </View>
                     )}
 
@@ -360,20 +304,14 @@ export default function DateHistoryScreen({
                     {date.whatYouLiked ? (
                       <View style={styles.section}>
                         <Text style={styles.sectionLabel}>What You Liked</Text>
-                        <Text style={styles.sectionText}>
-                          {date.whatYouLiked}
-                        </Text>
+                        <Text style={styles.sectionText}>{date.whatYouLiked}</Text>
                       </View>
                     ) : null}
 
                     {date.whatYouLearned ? (
                       <View style={styles.section}>
-                        <Text style={styles.sectionLabel}>
-                          What You Learned
-                        </Text>
-                        <Text style={styles.sectionText}>
-                          {date.whatYouLearned}
-                        </Text>
+                        <Text style={styles.sectionLabel}>What You Learned</Text>
+                        <Text style={styles.sectionText}>{date.whatYouLearned}</Text>
                       </View>
                     ) : null}
                   </View>
@@ -384,12 +322,7 @@ export default function DateHistoryScreen({
         )}
       </ScrollView>
 
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={closeModal}
-      >
+      <Modal animationType="slide" transparent={true} visible={modalVisible} onRequestClose={closeModal}>
         <KeyboardAvoidingView
           style={styles.modalContainer}
           behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -397,9 +330,7 @@ export default function DateHistoryScreen({
         >
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>
-                {editingDateId ? "Edit Date" : "Record a Date"}
-              </Text>
+              <Text style={styles.modalTitle}>{editingDateId ? "Edit Date" : "Record a Date"}</Text>
               <TouchableOpacity onPress={closeModal}>
                 <Ionicons name="close" size={28} color="#1a1a1a" />
               </TouchableOpacity>
@@ -415,10 +346,7 @@ export default function DateHistoryScreen({
             >
               <View style={styles.formSection}>
                 <Text style={styles.formLabel}>When was the date? *</Text>
-                <TouchableOpacity
-                  style={styles.dateButton}
-                  onPress={() => setShowDatePicker(true)}
-                >
+                <TouchableOpacity style={styles.dateButton} onPress={() => setShowDatePicker(true)}>
                   <Ionicons name="calendar" size={20} color="#007AFF" />
                   <Text style={styles.dateButtonText}>
                     {selectedDate.toLocaleDateString("en-US", {
@@ -498,29 +426,16 @@ export default function DateHistoryScreen({
 
               <View style={styles.formSection}>
                 <Text style={styles.formLabel}>Date Photo (optional)</Text>
-                <TouchableOpacity
-                  style={styles.imagePickerButton}
-                  onPress={handlePickDateImage}
-                >
+                <TouchableOpacity style={styles.imagePickerButton} onPress={handlePickDateImage}>
                   <Ionicons name="image-outline" size={18} color="#007AFF" />
-                  <Text style={styles.imagePickerButtonText}>
-                    {dateImageUri ? "Change Photo" : "Add Photo"}
-                  </Text>
+                  <Text style={styles.imagePickerButtonText}>{dateImageUri ? "Change Photo" : "Add Photo"}</Text>
                 </TouchableOpacity>
 
                 {dateImageUri ? (
                   <View>
-                    <Image
-                      source={{ uri: dateImageUri }}
-                      style={styles.formImagePreview}
-                    />
-                    <TouchableOpacity
-                      style={styles.removeImageButton}
-                      onPress={() => setDateImageUri(null)}
-                    >
-                      <Text style={styles.removeImageButtonText}>
-                        Remove Photo
-                      </Text>
+                    <Image source={{ uri: dateImageUri }} style={styles.formImagePreview} />
+                    <TouchableOpacity style={styles.removeImageButton} onPress={() => setDateImageUri(null)}>
+                      <Text style={styles.removeImageButtonText}>Remove Photo</Text>
                     </TouchableOpacity>
                   </View>
                 ) : null}
@@ -551,21 +466,10 @@ export default function DateHistoryScreen({
                     return (
                       <TouchableOpacity
                         key={n}
-                        style={[
-                          styles.ratingButton,
-                          { borderColor: color },
-                          selected && { backgroundColor: color },
-                        ]}
+                        style={[styles.ratingButton, { borderColor: color }, selected && { backgroundColor: color }]}
                         onPress={() => setRating(selected ? null : n)}
                       >
-                        <Text
-                          style={[
-                            styles.ratingButtonText,
-                            { color: selected ? "#fff" : color },
-                          ]}
-                        >
-                          {n}
-                        </Text>
+                        <Text style={[styles.ratingButtonText, { color: selected ? "#fff" : color }]}>{n}</Text>
                       </TouchableOpacity>
                     );
                   })}
@@ -573,9 +477,7 @@ export default function DateHistoryScreen({
               </View>
 
               <View style={styles.formSection}>
-                <Text style={styles.formLabel}>
-                  What did you like about it?
-                </Text>
+                <Text style={styles.formLabel}>What did you like about it?</Text>
                 <TextInput
                   style={styles.textInput}
                   placeholder="Share what you enjoyed"
@@ -604,30 +506,18 @@ export default function DateHistoryScreen({
             </ScrollView>
 
             <View style={styles.modalFooter}>
-              <TouchableOpacity
-                style={styles.cancelButton}
-                onPress={closeModal}
-              >
+              <TouchableOpacity style={styles.cancelButton} onPress={closeModal}>
                 <Text style={styles.cancelButtonText}>Cancel</Text>
               </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.saveButton}
-                onPress={handleSaveDate}
-              >
-                <Text style={styles.saveButtonText}>
-                  {editingDateId ? "Update Date" : "Save Date"}
-                </Text>
+              <TouchableOpacity style={styles.saveButton} onPress={handleSaveDate}>
+                <Text style={styles.saveButtonText}>{editingDateId ? "Update Date" : "Save Date"}</Text>
               </TouchableOpacity>
             </View>
           </View>
         </KeyboardAvoidingView>
       </Modal>
 
-      <PaywallModal
-        visible={paywallVisible}
-        onClose={() => setPaywallVisible(false)}
-        reason="date_history_limit"
-      />
+      <PaywallModal visible={paywallVisible} onClose={() => setPaywallVisible(false)} reason="date_history_limit" />
     </View>
   );
 }
@@ -641,7 +531,6 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   header: {
-    paddingHorizontal: 24,
     paddingBottom: 16,
   },
   subtitle: {
@@ -673,12 +562,12 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 24,
     paddingTop: 24,
     paddingBottom: 60,
   },
   emptyIcon: {
-    marginBottom: 16,
+    marginBottom: 28,
+    marginTop: 12,
   },
   emptyTitle: {
     fontSize: 20,
@@ -698,10 +587,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "#007AFF",
-    paddingVertical: 14,
-    paddingHorizontal: 20,
+    padding: 14,
     borderRadius: 12,
-    margin: 24,
+    marginVertical: 24,
     gap: 8,
   },
   addButtonText: {
@@ -710,7 +598,6 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   datesContainer: {
-    paddingHorizontal: 24,
     gap: 16,
   },
   dateCard: {

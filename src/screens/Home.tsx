@@ -1,17 +1,10 @@
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons"
-import { useState } from "react"
-import {
-  ScrollView,
-  Text,
-  View,
-  TouchableOpacity,
-  Alert,
-  Image,
-} from "react-native"
-import appInfo from "src/data/info"
-import { useSafeAreaInsets } from "react-native-safe-area-context"
-import { usePremium } from "../hooks/usePremium"
-import PaywallModal from "../Components/PaywallModal"
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { useState } from "react";
+import { ScrollView, Text, View, TouchableOpacity, Alert, Image } from "react-native";
+import appInfo from "src/data/info";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { usePremium } from "../hooks/usePremium";
+import PaywallModal from "../Components/PaywallModal";
 
 export default function Info({ goToTab }) {
   const [expandedOffers, setExpandedOffers] = useState({
@@ -19,31 +12,28 @@ export default function Info({ goToTab }) {
     datePlanner: false,
     recipeIdeas: false,
     savedIdeas: false,
-  })
-  const [paywallVisible, setPaywallVisible] = useState(false)
-  const { isUnlocked, resetPremium } = usePremium()
+  });
+  const [paywallVisible, setPaywallVisible] = useState(false);
+  const { isUnlocked, resetPremium } = usePremium();
 
-  const insets = useSafeAreaInsets()
+  const insets = useSafeAreaInsets();
 
   const toggleOffer = (offerKey: keyof typeof expandedOffers) => {
     setExpandedOffers((previous) => ({
       ...previous,
       [offerKey]: !previous[offerKey],
-    }))
-  }
+    }));
+  };
 
   const handleRemovePremium = async () => {
     try {
-      await resetPremium()
-      Alert.alert(
-        "Premium Removed",
-        "Premium access has been reset for testing.",
-      )
+      await resetPremium();
+      Alert.alert("Premium Removed", "Premium access has been reset for testing.");
     } catch (error) {
-      console.error("Reset premium error:", error)
-      Alert.alert("Error", "Could not reset premium access.")
+      console.error("Reset premium error:", error);
+      Alert.alert("Error", "Could not reset premium access.");
     }
-  }
+  };
 
   return (
     <ScrollView
@@ -52,7 +42,6 @@ export default function Info({ goToTab }) {
         paddingTop: insets.top,
         backgroundColor: "#fafbfc",
       }}
-      scrollEnabled={Object.values(expandedOffers).some((v) => v)}
     >
       <Text
         style={{
@@ -153,11 +142,7 @@ export default function Info({ goToTab }) {
                   marginBottom: 6,
                 }}
               >
-                <MaterialCommunityIcons
-                  name="clock-outline"
-                  size={20}
-                  color="#f05a7e"
-                />{" "}
+                <MaterialCommunityIcons name="clock-outline" size={20} color="#f05a7e" />{" "}
               </Text>
               <Text
                 style={{
@@ -172,17 +157,8 @@ export default function Info({ goToTab }) {
               </Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={() => toggleOffer("dateHistory")}
-            >
-              <Ionicons
-                name={
-                  expandedOffers.dateHistory ? "chevron-up" : "chevron-down"
-                }
-                size={20}
-                color="#1e90ff"
-              />
+            <TouchableOpacity activeOpacity={0.8} onPress={() => toggleOffer("dateHistory")}>
+              <Ionicons name={expandedOffers.dateHistory ? "chevron-up" : "chevron-down"} size={20} color="#1e90ff" />
             </TouchableOpacity>
           </View>
 
@@ -221,11 +197,7 @@ export default function Info({ goToTab }) {
                   marginBottom: 6,
                 }}
               >
-                <Ionicons
-                  name="calendar-outline"
-                  size={20}
-                  color="#f05a7e"
-                />{" "}
+                <Ionicons name="calendar-outline" size={20} color="#f05a7e" />{" "}
               </Text>
               <Text
                 style={{
@@ -240,17 +212,8 @@ export default function Info({ goToTab }) {
               </Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={() => toggleOffer("datePlanner")}
-            >
-              <Ionicons
-                name={
-                  expandedOffers.datePlanner ? "chevron-up" : "chevron-down"
-                }
-                size={20}
-                color="#1e90ff"
-              />
+            <TouchableOpacity activeOpacity={0.8} onPress={() => toggleOffer("datePlanner")}>
+              <Ionicons name={expandedOffers.datePlanner ? "chevron-up" : "chevron-down"} size={20} color="#1e90ff" />
             </TouchableOpacity>
           </View>
 
@@ -263,8 +226,7 @@ export default function Info({ goToTab }) {
                 marginLeft: 12,
               }}
             >
-              Answer a few questions and get personalized date recommendations
-              based on your preferences.
+              Answer a few questions and get personalized date recommendations based on your preferences.
             </Text>
           )}
         </View>
@@ -290,11 +252,7 @@ export default function Info({ goToTab }) {
                   marginBottom: 6,
                 }}
               >
-                <Ionicons
-                  name="fast-food-outline"
-                  size={20}
-                  color="#f05a7e"
-                />{" "}
+                <Ionicons name="fast-food-outline" size={20} color="#f05a7e" />{" "}
               </Text>
               <Text
                 style={{
@@ -309,17 +267,8 @@ export default function Info({ goToTab }) {
               </Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={() => toggleOffer("recipeIdeas")}
-            >
-              <Ionicons
-                name={
-                  expandedOffers.recipeIdeas ? "chevron-up" : "chevron-down"
-                }
-                size={20}
-                color="#1e90ff"
-              />
+            <TouchableOpacity activeOpacity={0.8} onPress={() => toggleOffer("recipeIdeas")}>
+              <Ionicons name={expandedOffers.recipeIdeas ? "chevron-up" : "chevron-down"} size={20} color="#1e90ff" />
             </TouchableOpacity>
           </View>
 
@@ -332,8 +281,7 @@ export default function Info({ goToTab }) {
                 marginLeft: 12,
               }}
             >
-              Simple, affordable recipes perfect for cooking together on a date
-              night.
+              Simple, affordable recipes perfect for cooking together on a date night.
             </Text>
           )}
         </View>
@@ -359,11 +307,7 @@ export default function Info({ goToTab }) {
                   marginBottom: 6,
                 }}
               >
-                <Ionicons
-                  name="bookmark-outline"
-                  size={20}
-                  color="#f05a7e"
-                />{" "}
+                <Ionicons name="bookmark-outline" size={20} color="#f05a7e" />{" "}
               </Text>
               <Text
                 style={{
@@ -378,15 +322,8 @@ export default function Info({ goToTab }) {
               </Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={() => toggleOffer("savedIdeas")}
-            >
-              <Ionicons
-                name={expandedOffers.savedIdeas ? "chevron-up" : "chevron-down"}
-                size={20}
-                color="#1e90ff"
-              />
+            <TouchableOpacity activeOpacity={0.8} onPress={() => toggleOffer("savedIdeas")}>
+              <Ionicons name={expandedOffers.savedIdeas ? "chevron-up" : "chevron-down"} size={20} color="#1e90ff" />
             </TouchableOpacity>
           </View>
 
@@ -508,11 +445,7 @@ export default function Info({ goToTab }) {
         </TouchableOpacity>
       )}
 
-      <PaywallModal
-        visible={paywallVisible}
-        onClose={() => setPaywallVisible(false)}
-        reason="general"
-      />
+      <PaywallModal visible={paywallVisible} onClose={() => setPaywallVisible(false)} reason="general" />
     </ScrollView>
-  )
+  );
 }

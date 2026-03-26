@@ -1,7 +1,4 @@
-Come up with a better name for the app
-More date templates/Fix current date templates, add more activities
 Add Revenuecat api keys for apple
-Test the date planner generator
 
 
 Maybe:
@@ -10,6 +7,7 @@ Search button in the saved ideas
 
 
 Eventually:
+More date templates/Fix current date templates, add more activities, and recipes
 users can input their own date ideas
 users can upload pictures or reviews and there can be a 'recent dates in provo' section on the app to make it more like social media. 
 Then, when a user is looking at date ideas or a place, it will show them dates that have taken place at that spot
