@@ -1,6 +1,7 @@
 Add Revenuecat api keys for apple
 
 When the user opens the app, the app could automatically query the server for places nearby with their current location...
+Add a $1/month premium or something like that
 
 
 Maybe:

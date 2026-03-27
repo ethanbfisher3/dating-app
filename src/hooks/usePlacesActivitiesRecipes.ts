@@ -18,6 +18,14 @@ export type PlaceSummary = {
   };
 };
 
+export type PlacesServerResponse = {
+  serverBaseUrl: string;
+  serverLabel: string;
+  ok: boolean;
+  statusCode: number | null;
+  details: string;
+};
+
 function toPlannerWindowBounds(params: PlannedDateResultsParams): {
   start: number;
   end: number;
@@ -128,14 +136,55 @@ const BYU_EVENTS_URL = "https://calendar.byu.edu/api/Events.json?categories=all&
 const MAX_PLACES_RETURNED = 50;
 const PRODUCTION_PLACES_SERVER_URL = "https://dating-app-server-9zib.onrender.com";
 const PLACES_REQUEST_TIMEOUT_MS = 8000;
+const ENABLE_PRODUCTION_FALLBACK = process.env.EXPO_PUBLIC_ENABLE_PRODUCTION_FALLBACK === "true";
 
 const PLACES_SERVER_BASE_URL = process.env.EXPO_PUBLIC_PLACES_SERVER_URL || process.env.EXPO_PUBLIC_API_BASE_URL || "http://localhost:3000";
 
 function getPlacesServerBaseUrls(): string[] {
   const unique = new Set<string>();
 
-  unique.add(PLACES_SERVER_BASE_URL.replace(/\/$/, ""));
-  unique.add(PRODUCTION_PLACES_SERVER_URL);
+  const normalizedBase = PLACES_SERVER_BASE_URL.replace(/\/$/, "");
+  const parsedBase = (() => {
+    try {
+      return new URL(normalizedBase);
+    } catch {
+      return null;
+    }
+  })();
+
+  const basePort = parsedBase?.port ? `:${parsedBase.port}` : "";
+  const protocol = parsedBase?.protocol === "https:" ? "https" : "http";
+
+  const localCandidates = new Set<string>();
+
+  localCandidates.add(normalizedBase);
+
+  if (parsedBase) {
+    const hostname = parsedBase.hostname;
+
+    if (hostname === "localhost") {
+      localCandidates.add(`${protocol}://127.0.0.1${basePort}`);
+      localCandidates.add(`${protocol}://10.0.2.2${basePort}`);
+    }
+
+    if (hostname === "127.0.0.1") {
+      localCandidates.add(`${protocol}://localhost${basePort}`);
+      localCandidates.add(`${protocol}://10.0.2.2${basePort}`);
+    }
+
+    if (hostname === "10.0.2.2") {
+      localCandidates.add(`${protocol}://localhost${basePort}`);
+      localCandidates.add(`${protocol}://127.0.0.1${basePort}`);
+    }
+  }
+
+  for (const url of localCandidates) {
+    unique.add(url.replace(/\/$/, ""));
+  }
+
+  if (ENABLE_PRODUCTION_FALLBACK) {
+    unique.add(PRODUCTION_PLACES_SERVER_URL);
+  }
 
   return Array.from(unique);
 }
@@ -154,20 +203,26 @@ function toServerSourceLabel(serverBaseUrl: string): string {
 }
 
 async function fetchPlacesFromServer(params: PlannedDateResultsParams): Promise<{
-  places: PlannerPlace[];
-  fromCache: boolean;
-  serverBaseUrl: string;
+  winner: {
+    places: PlannerPlace[];
+    fromCache: boolean;
+    serverBaseUrl: string;
+  } | null;
+  responses: PlacesServerResponse[];
 }> {
+  const serverBaseUrls = getPlacesServerBaseUrls();
+  const responses: PlacesServerResponse[] = [];
+
   if (!params.userLocation || params.maxDistance <= 0) {
     return {
-      places: [],
-      fromCache: true,
-      serverBaseUrl: getPlacesServerBaseUrls()[0] || PLACES_SERVER_BASE_URL,
+      winner: {
+        places: [],
+        fromCache: true,
+        serverBaseUrl: serverBaseUrls[0] || PLACES_SERVER_BASE_URL,
+      },
+      responses,
     };
   }
-
-  const serverBaseUrls = getPlacesServerBaseUrls();
-  const errors: string[] = [];
 
   for (const serverBaseUrl of serverBaseUrls) {
     const controller = new AbortController();
@@ -191,7 +246,13 @@ async function fetchPlacesFromServer(params: PlannedDateResultsParams): Promise<
 
       if (!response.ok) {
         const details = await response.text();
-        errors.push(`${serverBaseUrl} -> ${response.status}: ${details || "request failed"}`);
+        responses.push({
+          serverBaseUrl,
+          serverLabel: toServerSourceLabel(serverBaseUrl),
+          ok: false,
+          statusCode: response.status,
+          details: details || "request failed",
+        });
         continue;
       }
 
@@ -200,23 +261,49 @@ async function fetchPlacesFromServer(params: PlannedDateResultsParams): Promise<
         meta?: { fromCache?: boolean };
       };
 
-      return {
-        places: Array.isArray(payload.places) ? payload.places : [],
-        fromCache: Boolean(payload.meta?.fromCache),
+      responses.push({
         serverBaseUrl,
+        serverLabel: toServerSourceLabel(serverBaseUrl),
+        ok: true,
+        statusCode: response.status,
+        details: Boolean(payload.meta?.fromCache) ? "OK (cache hit)" : "OK (live fetch)",
+      });
+
+      return {
+        winner: {
+          places: Array.isArray(payload.places) ? payload.places : [],
+          fromCache: Boolean(payload.meta?.fromCache),
+          serverBaseUrl,
+        },
+        responses,
       };
     } catch (error: any) {
       if (error?.name === "AbortError") {
-        errors.push(`${serverBaseUrl} -> timeout after ${PLACES_REQUEST_TIMEOUT_MS}ms`);
+        responses.push({
+          serverBaseUrl,
+          serverLabel: toServerSourceLabel(serverBaseUrl),
+          ok: false,
+          statusCode: null,
+          details: `timeout after ${PLACES_REQUEST_TIMEOUT_MS}ms`,
+        });
       } else {
-        errors.push(`${serverBaseUrl} -> ${error?.message || "network error"}`);
+        responses.push({
+          serverBaseUrl,
+          serverLabel: toServerSourceLabel(serverBaseUrl),
+          ok: false,
+          statusCode: null,
+          details: error?.message || "network error",
+        });
       }
     } finally {
       clearTimeout(timeoutId);
     }
   }
 
-  throw new Error(`All places servers failed: ${errors.join(" | ") || "no reachable server"}`);
+  return {
+    winner: null,
+    responses,
+  };
 }
 
 function toBYUEventPlaceSummary(event: BYUEventSummary): PlaceSummary {
@@ -359,12 +446,14 @@ export default function useDatePlannerIdeas(params: PlannedDateResultsParams): {
   sourceFile: string;
   isLoading: boolean;
   error: string | null;
+  serverResponses: PlacesServerResponse[];
   refetch: () => void;
 } {
   const [matchedPlaces, setMatchedPlaces] = useState<PlaceSummary[]>([]);
   const [sourceFile, setSourceFile] = useState("Places Server");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [serverResponses, setServerResponses] = useState<PlacesServerResponse[]>([]);
 
   const atHomeOptions = useMemo(() => getAvailableAtHomeIdeas(params), [params]);
 
@@ -376,12 +465,22 @@ export default function useDatePlannerIdeas(params: PlannedDateResultsParams): {
       if (params.maxDistance <= 0 || !params.userLocation) {
         setMatchedPlaces([]);
         setSourceFile("");
+        setServerResponses([]);
       } else {
         const serverResult = await fetchPlacesFromServer(params);
-        const serverPlaces = serverResult.places.map(toPlaceSummary);
+        setServerResponses(serverResult.responses);
+
+        if (!serverResult.winner) {
+          setError("Could not load places from localhost or Render server.");
+          setMatchedPlaces([]);
+          setSourceFile("");
+          return;
+        }
+
+        const serverPlaces = serverResult.winner.places.map(toPlaceSummary);
         const combinedPlaces = dedupePlaceSummariesById(serverPlaces).slice(0, MAX_PLACES_RETURNED);
-        const baseLabel = toServerSourceLabel(serverResult.serverBaseUrl);
-        const placesSourceLabel = serverResult.fromCache ? `${baseLabel} Cache` : `${baseLabel} API`;
+        const baseLabel = toServerSourceLabel(serverResult.winner.serverBaseUrl);
+        const placesSourceLabel = serverResult.winner.fromCache ? `${baseLabel} Cache` : `${baseLabel} API`;
 
         setMatchedPlaces(combinedPlaces);
         setSourceFile(placesSourceLabel);
@@ -390,6 +489,7 @@ export default function useDatePlannerIdeas(params: PlannedDateResultsParams): {
       setError(fetchError?.message || "Failed to fetch date planner ideas.");
       setMatchedPlaces([]);
       setSourceFile("");
+      setServerResponses([]);
     } finally {
       setIsLoading(false);
     }
@@ -406,6 +506,7 @@ export default function useDatePlannerIdeas(params: PlannedDateResultsParams): {
     sourceFile,
     isLoading,
     error,
+    serverResponses,
     refetch: fetchIdeas,
   };
 }

@@ -25,6 +25,7 @@ import PaywallModal from "../Components/PaywallModal";
 import DateIdeaCard from "../Components/DateIdeaCard";
 
 const DATE_CATEGORIES = ["Food", "Outdoors", "Sports", "Nature", "Learning", "Shopping", "Recreation"];
+const RENDER_SERVER_BASE_URL = "https://dating-app-server-9zib.onrender.com";
 
 const SAMPLE_VIDEO_AD_URI = "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4";
 
@@ -202,7 +203,18 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
     }
   };
 
-  const { places, recipes, activities, sourceFile, isLoading, error, refetch } = useDatePlannerIdeas(plannerParams);
+  const { places, recipes, activities, sourceFile, isLoading, error, serverResponses, refetch } = useDatePlannerIdeas(plannerParams);
+
+  const localhostResponse = serverResponses.find((response) => {
+    try {
+      const host = new URL(response.serverBaseUrl).hostname;
+      return host === "localhost" || host === "127.0.0.1";
+    } catch {
+      return response.serverBaseUrl.includes("localhost") || response.serverBaseUrl.includes("127.0.0.1");
+    }
+  });
+
+  const renderResponse = serverResponses.find((response) => response.serverBaseUrl === RENDER_SERVER_BASE_URL);
 
   useEffect(() => {
     // Reset ad completion each time a new fetch cycle starts.
@@ -1178,7 +1190,44 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
             marginBottom: 16,
           }}
         >
-          <Text style={{ color: "#9b2226", fontSize: 15, marginBottom: 10 }}>Could not load date ideas.</Text>
+          <Text style={{ color: "#9b2226", fontSize: 15, marginBottom: 12 }}>Could not load date ideas.</Text>
+
+          <View
+            style={{
+              borderWidth: 1,
+              borderColor: "#f2b4b7",
+              borderRadius: 10,
+              backgroundColor: "#fff",
+              padding: 12,
+              marginBottom: 10,
+            }}
+          >
+            <Text style={{ color: "#9b2226", fontSize: 14, fontWeight: "700", marginBottom: 4 }}>Localhost response</Text>
+            <Text style={{ color: "#9b2226", fontSize: 13, lineHeight: 18 }}>
+              {localhostResponse
+                ? `${localhostResponse.ok ? "Success" : "Failed"}${localhostResponse.statusCode ? ` (${localhostResponse.statusCode})` : ""}: ${localhostResponse.details}`
+                : "No localhost response captured."}
+            </Text>
+          </View>
+
+          <View
+            style={{
+              borderWidth: 1,
+              borderColor: "#f2b4b7",
+              borderRadius: 10,
+              backgroundColor: "#fff",
+              padding: 12,
+              marginBottom: 12,
+            }}
+          >
+            <Text style={{ color: "#9b2226", fontSize: 14, fontWeight: "700", marginBottom: 4 }}>Render response</Text>
+            <Text style={{ color: "#9b2226", fontSize: 13, lineHeight: 18 }}>
+              {renderResponse
+                ? `${renderResponse.ok ? "Success" : "Failed"}${renderResponse.statusCode ? ` (${renderResponse.statusCode})` : ""}: ${renderResponse.details}`
+                : "No Render response captured."}
+            </Text>
+          </View>
+
           <Text style={{ color: "#9b2226", fontSize: 13, marginBottom: 12 }}>{error}</Text>
           <TouchableOpacity
             onPress={refetch}
