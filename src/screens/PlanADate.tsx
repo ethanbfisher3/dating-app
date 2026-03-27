@@ -145,9 +145,7 @@ export default function PlanADate({ navigation }: { navigation: AppNavigation })
       endHour: end24,
       maxDistance: finalMaxDistance,
       categories: selectedCategories,
-      userLocation: useMyAddressEnabled
-        ? actualUserLocation
-        : ADDRESS_OFF_DEFAULT_LOCATION,
+      userLocation: useMyAddressEnabled ? actualUserLocation : ADDRESS_OFF_DEFAULT_LOCATION,
     });
 
     setTimeout(() => setIsGeneratingIdeas(false), 500);

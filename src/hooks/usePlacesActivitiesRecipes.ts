@@ -4,12 +4,6 @@ import activities, { Activity } from "../data/activities";
 import recipes, { Recipe } from "../data/Recipes";
 import type { DateCategory } from "src/utils/utils";
 
-// Default location: BYU campus area (Provo, Utah)
-const DEFAULT_USER_LOCATION = {
-  latitude: 40.2444,
-  longitude: -111.6435,
-};
-
 export type PlaceSummary = {
   id: string;
   name: string;
@@ -132,47 +126,97 @@ const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", 
 
 const BYU_EVENTS_URL = "https://calendar.byu.edu/api/Events.json?categories=all&price=1000";
 const MAX_PLACES_RETURNED = 50;
+const PRODUCTION_PLACES_SERVER_URL = "https://dating-app-server-9zib.onrender.com";
+const PLACES_REQUEST_TIMEOUT_MS = 8000;
 
-function normalizeBYUEvents(payload: BYUCalendarEventsResponse | BYUCalendarEvent[] | null): BYUCalendarEvent[] {
-  if (!payload) {
-    return [];
-  }
+const PLACES_SERVER_BASE_URL = process.env.EXPO_PUBLIC_PLACES_SERVER_URL || process.env.EXPO_PUBLIC_API_BASE_URL || "http://localhost:3000";
 
-  if (Array.isArray(payload)) {
-    return payload;
-  }
+function getPlacesServerBaseUrls(): string[] {
+  const unique = new Set<string>();
 
-  if (Array.isArray(payload.events)) {
-    return payload.events;
-  }
+  unique.add(PLACES_SERVER_BASE_URL.replace(/\/$/, ""));
+  unique.add(PRODUCTION_PLACES_SERVER_URL);
 
-  return [];
+  return Array.from(unique);
 }
 
-function toBYUEventSummary(event: BYUCalendarEvent, index: number): BYUEventSummary {
-  const title = (event as any).Title || event.title || `BYU Event ${index + 1}`;
-  const startDateTime = (event as any).StartDateTime || event.start || null;
-  const endDateTime = (event as any).EndDateTime || event.end || null;
-  const description = (event as any).Description || event.description || event.summary || "";
-  const location = (event as any).Location || event.location || "";
-  const url = (event as any).Url || (event as any).Link || event.url || "";
-  const categoryId = (event as any).CategoryId;
-  const eventId = String((event as any).EventId ?? event.id ?? `${title}_${index}`);
-  const priceRaw = (event as any).Price ?? event.price;
-  const parsedPrice = typeof priceRaw === "number" ? priceRaw : typeof priceRaw === "string" ? Number.parseFloat(priceRaw) : Number.NaN;
+function toServerSourceLabel(serverBaseUrl: string): string {
+  if (serverBaseUrl === PRODUCTION_PLACES_SERVER_URL) {
+    return "Places Server (Render)";
+  }
 
-  return {
-    id: eventId,
-    title,
-    description,
-    startDateTime,
-    endDateTime,
-    location,
-    categories:
-      categoryId !== undefined && categoryId !== null ? [String(categoryId)] : Array.isArray(event.categories) ? event.categories : [],
-    url,
-    price: Number.isNaN(parsedPrice) ? null : parsedPrice,
-  };
+  try {
+    const host = new URL(serverBaseUrl).host;
+    return `Places Server (${host})`;
+  } catch {
+    return `Places Server (${serverBaseUrl})`;
+  }
+}
+
+async function fetchPlacesFromServer(params: PlannedDateResultsParams): Promise<{
+  places: PlannerPlace[];
+  fromCache: boolean;
+  serverBaseUrl: string;
+}> {
+  if (!params.userLocation || params.maxDistance <= 0) {
+    return {
+      places: [],
+      fromCache: true,
+      serverBaseUrl: getPlacesServerBaseUrls()[0] || PLACES_SERVER_BASE_URL,
+    };
+  }
+
+  const serverBaseUrls = getPlacesServerBaseUrls();
+  const errors: string[] = [];
+
+  for (const serverBaseUrl of serverBaseUrls) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), PLACES_REQUEST_TIMEOUT_MS);
+
+    try {
+      const response = await fetch(`${serverBaseUrl}/places/search`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        signal: controller.signal,
+        body: JSON.stringify({
+          userLocation: params.userLocation,
+          maxDistance: params.maxDistance,
+          maxPrice: params.maxPrice,
+          categories: params.categories,
+          maxResults: MAX_PLACES_RETURNED,
+        }),
+      });
+
+      if (!response.ok) {
+        const details = await response.text();
+        errors.push(`${serverBaseUrl} -> ${response.status}: ${details || "request failed"}`);
+        continue;
+      }
+
+      const payload = (await response.json()) as {
+        places?: PlannerPlace[];
+        meta?: { fromCache?: boolean };
+      };
+
+      return {
+        places: Array.isArray(payload.places) ? payload.places : [],
+        fromCache: Boolean(payload.meta?.fromCache),
+        serverBaseUrl,
+      };
+    } catch (error: any) {
+      if (error?.name === "AbortError") {
+        errors.push(`${serverBaseUrl} -> timeout after ${PLACES_REQUEST_TIMEOUT_MS}ms`);
+      } else {
+        errors.push(`${serverBaseUrl} -> ${error?.message || "network error"}`);
+      }
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  }
+
+  throw new Error(`All places servers failed: ${errors.join(" | ") || "no reachable server"}`);
 }
 
 function toBYUEventPlaceSummary(event: BYUEventSummary): PlaceSummary {
@@ -224,28 +268,6 @@ function isActivityTimeCompatible(activity: Activity, startHour: number, endHour
   });
 }
 
-function haversineMiles(lat1: number, lng1: number, lat2: number, lng2: number): number {
-  const toRadians = (degrees: number) => (degrees * Math.PI) / 180;
-  const earthRadiusMiles = 3958.8;
-  const dLat = toRadians(lat2 - lat1);
-  const dLng = toRadians(lng2 - lng1);
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return earthRadiusMiles * c;
-}
-
-function loadLocalPlacesData(): PlannerPlace[] {
-  try {
-    const localJson = require("../data/places/places.json");
-    const data = localJson?.default ?? localJson;
-    return Array.isArray(data) ? data : [];
-  } catch {
-    return [];
-  }
-}
-
 function getPlaceName(place: PlannerPlace): string {
   return place.displayName?.text || "Unknown place";
 }
@@ -264,14 +286,6 @@ function toPlaceSummary(place: PlannerPlace): PlaceSummary {
       longitude: typeof place.location?.longitude === "number" ? place.location.longitude : null,
     },
   };
-}
-
-function placeMatchesCategories(place: PlannerPlace, categories: string[]): boolean {
-  const typeSet = new Set(Array.isArray(place.types) ? place.types : []);
-  return categories.some((category) => {
-    const allowedTypes = CATEGORY_TYPE_MAP[category] || [];
-    return allowedTypes.some((type) => typeSet.has(type));
-  });
 }
 
 const getAvailableAtHomeIdeas = (
@@ -351,16 +365,8 @@ export default function useDatePlannerIdeas(params: PlannedDateResultsParams): {
   const [sourceFile, setSourceFile] = useState("Places Server");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const byuEventsRaw = useBYUAPI<BYUCalendarEventsResponse | BYUCalendarEvent[]>(BYU_EVENTS_URL, params);
 
   const atHomeOptions = useMemo(() => getAvailableAtHomeIdeas(params), [params]);
-
-  const byuEvents = useMemo(
-    () => filterBYUEventsByPlannerWindow(normalizeBYUEvents(byuEventsRaw).map(toBYUEventSummary), params),
-    [byuEventsRaw, params],
-  );
-
-  const byuEventPlaces = useMemo(() => byuEvents.map(toBYUEventPlaceSummary), [byuEvents]);
 
   const fetchIdeas = useCallback(async () => {
     setIsLoading(true);
@@ -369,33 +375,16 @@ export default function useDatePlannerIdeas(params: PlannedDateResultsParams): {
     try {
       if (params.maxDistance <= 0 || !params.userLocation) {
         setMatchedPlaces([]);
+        setSourceFile("");
       } else {
-        const localPlaces = loadLocalPlacesData();
-
-        // Use user's location for filtering
-        const userLocationForFiltering = params.userLocation;
-
-        const filteredLocalPlaces = localPlaces
-          .filter((place) => placeMatchesCategories(place, params.categories))
-          .filter((place) => {
-            const latitude = place.location?.latitude;
-            const longitude = place.location?.longitude;
-
-            // Only include places that have valid coordinates
-            if (typeof latitude !== "number" || typeof longitude !== "number") {
-              return false;
-            }
-
-            const milesAway = haversineMiles(userLocationForFiltering.latitude, userLocationForFiltering.longitude, latitude, longitude);
-
-            return milesAway <= params.maxDistance;
-          })
-          .map(toPlaceSummary);
-
-        const combinedPlaces = dedupePlaceSummariesById([...filteredLocalPlaces, ...byuEventPlaces]).slice(0, MAX_PLACES_RETURNED);
+        const serverResult = await fetchPlacesFromServer(params);
+        const serverPlaces = serverResult.places.map(toPlaceSummary);
+        const combinedPlaces = dedupePlaceSummariesById(serverPlaces).slice(0, MAX_PLACES_RETURNED);
+        const baseLabel = toServerSourceLabel(serverResult.serverBaseUrl);
+        const placesSourceLabel = serverResult.fromCache ? `${baseLabel} Cache` : `${baseLabel} API`;
 
         setMatchedPlaces(combinedPlaces);
-        setSourceFile(byuEventPlaces.length ? "src/data/places/places.json + BYU Calendar API" : "src/data/places/places.json");
+        setSourceFile(placesSourceLabel);
       }
     } catch (fetchError: any) {
       setError(fetchError?.message || "Failed to fetch date planner ideas.");
@@ -431,21 +420,6 @@ function dedupePlaceSummariesById(places: PlaceSummary[]): PlaceSummary[] {
     seen.add(place.id);
     return true;
   });
-}
-
-function randomlySelectPlaces(places: PlaceSummary[], count: number): PlaceSummary[] {
-  if (places.length <= count) {
-    return places;
-  }
-
-  // Fisher-Yates shuffle
-  const shuffled = [...places];
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
-
-  return shuffled.slice(0, count);
 }
 
 export { useDatePlannerIdeas };
