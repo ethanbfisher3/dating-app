@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { PlannedDateResultsParams } from "../types/navigation";
+import type { PlannedDateResultsParams, PlannerServerTarget } from "../types/navigation";
 import activities, { Activity } from "../data/activities";
 import recipes, { Recipe } from "../data/Recipes";
 import type { DateCategory } from "src/utils/utils";
@@ -106,7 +106,12 @@ type PlannerPlace = {
   priceLevel?: string;
   location?: { latitude?: number; longitude?: number };
   displayName?: { text?: string };
+  name?: string;
+  address?: string;
+  primaryType?: string;
 };
+
+type JsonObject = Record<string, unknown>;
 
 const CATEGORY_TYPE_MAP: Record<string, string[]> = {
   Food: [
@@ -140,8 +145,13 @@ const ENABLE_PRODUCTION_FALLBACK = process.env.EXPO_PUBLIC_ENABLE_PRODUCTION_FAL
 
 const PLACES_SERVER_BASE_URL = process.env.EXPO_PUBLIC_PLACES_SERVER_URL || process.env.EXPO_PUBLIC_API_BASE_URL || "http://localhost:3000";
 
-function getPlacesServerBaseUrls(): string[] {
+function getPlacesServerBaseUrls(serverTarget: PlannerServerTarget): string[] {
   const unique = new Set<string>();
+
+  if (serverTarget === "render") {
+    unique.add(PRODUCTION_PLACES_SERVER_URL);
+    return Array.from(unique);
+  }
 
   const normalizedBase = PLACES_SERVER_BASE_URL.replace(/\/$/, "");
   const parsedBase = (() => {
@@ -202,6 +212,173 @@ function toServerSourceLabel(serverBaseUrl: string): string {
   }
 }
 
+function isObject(value: unknown): value is JsonObject {
+  return typeof value === "object" && value !== null;
+}
+
+function pickFirstString(...values: unknown[]): string | undefined {
+  for (const value of values) {
+    if (typeof value === "string") {
+      const trimmed = value.trim();
+      if (trimmed) {
+        return trimmed;
+      }
+    }
+  }
+
+  return undefined;
+}
+
+function toNumber(value: unknown): number | undefined {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+
+  return undefined;
+}
+
+function toStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .filter((entry): entry is string => typeof entry === "string")
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+}
+
+function extractPlacesArray(payload: unknown): unknown[] {
+  if (Array.isArray(payload)) {
+    return payload;
+  }
+
+  if (!isObject(payload)) {
+    return [];
+  }
+
+  const keys = ["places", "results", "items", "data"];
+  for (const key of keys) {
+    const value = payload[key];
+    if (Array.isArray(value)) {
+      return value;
+    }
+  }
+
+  for (const key of keys) {
+    const value = payload[key];
+    if (!isObject(value)) {
+      continue;
+    }
+
+    for (const nestedKey of keys) {
+      const nested = value[nestedKey];
+      if (Array.isArray(nested)) {
+        return nested;
+      }
+    }
+  }
+
+  return [];
+}
+
+function extractFromCache(payload: unknown): boolean {
+  if (!isObject(payload)) {
+    return false;
+  }
+
+  if (typeof payload.fromCache === "boolean") {
+    return payload.fromCache;
+  }
+
+  if (isObject(payload.meta) && typeof payload.meta.fromCache === "boolean") {
+    return payload.meta.fromCache;
+  }
+
+  if (isObject(payload.cache) && typeof payload.cache.hit === "boolean") {
+    return payload.cache.hit;
+  }
+
+  if (isObject(payload.data) && typeof payload.data.fromCache === "boolean") {
+    return payload.data.fromCache;
+  }
+
+  return false;
+}
+
+function normalizePlannerPlace(rawPlace: unknown): PlannerPlace | null {
+  if (!isObject(rawPlace)) {
+    return null;
+  }
+
+  const id = pickFirstString(rawPlace.id, rawPlace.place_id, rawPlace.placeId);
+  if (!id) {
+    return null;
+  }
+
+  const displayNameRaw = isObject(rawPlace.displayName)
+    ? rawPlace.displayName
+    : isObject(rawPlace.display_name)
+      ? rawPlace.display_name
+      : null;
+  const displayNameText = displayNameRaw ? pickFirstString(displayNameRaw.text, displayNameRaw.name) : undefined;
+
+  const locationRaw = isObject(rawPlace.location)
+    ? rawPlace.location
+    : isObject(rawPlace.geometry) && isObject(rawPlace.geometry.location)
+      ? rawPlace.geometry.location
+      : null;
+
+  const latitude = locationRaw ? toNumber(locationRaw.latitude ?? locationRaw.lat ?? rawPlace.latitude) : toNumber(rawPlace.latitude);
+  const longitude = locationRaw ? toNumber(locationRaw.longitude ?? locationRaw.lng ?? rawPlace.longitude) : toNumber(rawPlace.longitude);
+
+  const primaryType = pickFirstString(rawPlace.primaryType, rawPlace.primary_type, rawPlace.type);
+
+  const rawTypes = toStringArray(rawPlace.types);
+  const types = rawTypes.length ? rawTypes : primaryType ? [primaryType] : [];
+
+  const name = pickFirstString(rawPlace.name, displayNameText);
+  const formattedAddress = pickFirstString(rawPlace.formattedAddress, rawPlace.formatted_address, rawPlace.address);
+  const googleMapsUri = pickFirstString(rawPlace.googleMapsUri, rawPlace.google_maps_uri, rawPlace.mapsUri, rawPlace.url);
+
+  return {
+    id,
+    name,
+    address: formattedAddress,
+    formattedAddress,
+    googleMapsUri,
+    rating: toNumber(rawPlace.rating),
+    types,
+    primaryType,
+    location: {
+      latitude,
+      longitude,
+    },
+    displayName: displayNameText ? { text: displayNameText } : undefined,
+  };
+}
+
+function normalizePlacesResponsePayload(payload: unknown): {
+  places: PlannerPlace[];
+  fromCache: boolean;
+} {
+  const places = extractPlacesArray(payload)
+    .map(normalizePlannerPlace)
+    .filter((place): place is PlannerPlace => place !== null);
+
+  return {
+    places,
+    fromCache: extractFromCache(payload),
+  };
+}
+
 async function fetchPlacesFromServer(params: PlannedDateResultsParams): Promise<{
   winner: {
     places: PlannerPlace[];
@@ -210,7 +387,7 @@ async function fetchPlacesFromServer(params: PlannedDateResultsParams): Promise<
   } | null;
   responses: PlacesServerResponse[];
 }> {
-  const serverBaseUrls = getPlacesServerBaseUrls();
+  const serverBaseUrls = getPlacesServerBaseUrls(params.serverTarget ?? "localhost");
   const responses: PlacesServerResponse[] = [];
 
   if (!params.userLocation || params.maxDistance <= 0) {
@@ -256,23 +433,21 @@ async function fetchPlacesFromServer(params: PlannedDateResultsParams): Promise<
         continue;
       }
 
-      const payload = (await response.json()) as {
-        places?: PlannerPlace[];
-        meta?: { fromCache?: boolean };
-      };
+      const payload = (await response.json()) as unknown;
+      const normalizedPayload = normalizePlacesResponsePayload(payload);
 
       responses.push({
         serverBaseUrl,
         serverLabel: toServerSourceLabel(serverBaseUrl),
         ok: true,
         statusCode: response.status,
-        details: Boolean(payload.meta?.fromCache) ? "OK (cache hit)" : "OK (live fetch)",
+        details: normalizedPayload.fromCache ? "OK (cache hit)" : "OK (live fetch)",
       });
 
       return {
         winner: {
-          places: Array.isArray(payload.places) ? payload.places : [],
-          fromCache: Boolean(payload.meta?.fromCache),
+          places: normalizedPayload.places,
+          fromCache: normalizedPayload.fromCache,
           serverBaseUrl,
         },
         responses,
@@ -356,15 +531,15 @@ function isActivityTimeCompatible(activity: Activity, startHour: number, endHour
 }
 
 function getPlaceName(place: PlannerPlace): string {
-  return place.displayName?.text || "Unknown place";
+  return place.displayName?.text || place.name || "Unknown place";
 }
 
 function toPlaceSummary(place: PlannerPlace): PlaceSummary {
   return {
     id: place.id,
     name: getPlaceName(place),
-    address: place.formattedAddress || "",
-    types: Array.isArray(place.types) ? place.types : [],
+    address: place.formattedAddress || place.address || "",
+    types: Array.isArray(place.types) && place.types.length ? place.types : place.primaryType ? [place.primaryType] : [],
     googleMapsUri: place.googleMapsUri || "",
     rating: typeof place.rating === "number" ? place.rating : null,
     sourceKind: "place",

@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Alert, Image, KeyboardAvoidingView, Platform, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import * as Location from "expo-location";
 import { Ionicons } from "@expo/vector-icons";
-import type { AppNavigation } from "../types/navigation";
+import type { AppNavigation, PlannerServerTarget } from "../types/navigation";
 import { DATE_CATEGORIES, timesAreInvalid } from "../utils/utils";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { usePremium } from "../hooks/usePremium";
@@ -36,6 +36,7 @@ export default function PlanADate({ navigation }: { navigation: AppNavigation })
   const [categoriesChecked, setCategoriesChecked] = useState(Array(DATE_CATEGORIES.length).fill(true));
   const [isGeneratingIdeas, setIsGeneratingIdeas] = useState(false);
   const [paywallVisible, setPaywallVisible] = useState(false);
+  const [serverTarget, setServerTarget] = useState<PlannerServerTarget>("localhost");
 
   useEffect(() => {
     const loadLocation = async () => {
@@ -145,6 +146,7 @@ export default function PlanADate({ navigation }: { navigation: AppNavigation })
       endHour: end24,
       maxDistance: finalMaxDistance,
       categories: selectedCategories,
+      serverTarget,
       userLocation: useMyAddressEnabled ? actualUserLocation : ADDRESS_OFF_DEFAULT_LOCATION,
     });
 
@@ -317,7 +319,7 @@ export default function PlanADate({ navigation }: { navigation: AppNavigation })
                 fontWeight: "700",
               }}
             >
-              Use my address: {useMyAddressEnabled ? "ON" : "OFF"}
+              (DEV) Use my address: {useMyAddressEnabled ? "ON" : "OFF"}
             </Text>
           </TouchableOpacity>
         )}
@@ -335,6 +337,7 @@ export default function PlanADate({ navigation }: { navigation: AppNavigation })
           categoriesChecked={categoriesChecked}
           selectedCategoriesCount={selectedCategoriesCount}
           isGeneratingIdeas={isGeneratingIdeas}
+          serverTarget={serverTarget}
           onClose={() => {
             setShowDatePicker(false);
             setIsModalVisible(false);
@@ -371,6 +374,7 @@ export default function PlanADate({ navigation }: { navigation: AppNavigation })
           onSetEndPeriod={setEndPeriod}
           onChangeMaxDistance={setMaxDistance}
           onToggleCategory={toggleCategory}
+          onSetServerTarget={setServerTarget}
           onSubmit={handleGenerateIdeas}
         />
 

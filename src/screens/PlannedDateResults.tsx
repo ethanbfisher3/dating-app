@@ -7,6 +7,7 @@ import {
   Modal,
   Platform,
   ScrollView,
+  Switch,
   Text,
   TextInput,
   TouchableOpacity,
@@ -15,7 +16,7 @@ import {
 import { VideoView } from "expo-video";
 import Constants from "expo-constants";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import type { AppScreenProps, PlannedDateResultsParams } from "../types/navigation";
+import type { AppScreenProps, PlannedDateResultsParams, PlannerServerTarget } from "../types/navigation";
 import useDatePlannerIdeas, { PlaceSummary } from "../hooks/useDatePlannerIdeas";
 import useFilledIdeas, { estimateTravelMinutesBetween, getCandidatesForSlot } from "../hooks/useFilledIdeas";
 import { saveDateIdea, canSaveIdea } from "../data/savedIdeasStore";
@@ -62,6 +63,7 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
   const [draftEndPeriod, setDraftEndPeriod] = useState<"AM" | "PM">(initialEndHour24 < 12 ? "AM" : "PM");
   const [draftMaxPrice, setDraftMaxPrice] = useState(String(route.params.maxPrice));
   const [draftMaxDistance, setDraftMaxDistance] = useState(String(route.params.maxDistance));
+  const [draftServerTarget, setDraftServerTarget] = useState<PlannerServerTarget>(route.params.serverTarget ?? "localhost");
   const [draftCategoriesChecked, setDraftCategoriesChecked] = useState(
     DATE_CATEGORIES.map((category) => route.params.categories.includes(category)),
   );
@@ -215,6 +217,8 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
   });
 
   const renderResponse = serverResponses.find((response) => response.serverBaseUrl === RENDER_SERVER_BASE_URL);
+  const activeServerLabel = plannerParams.serverTarget === "render" ? "Render response" : "Localhost response";
+  const activeServerResponse = plannerParams.serverTarget === "render" ? renderResponse : localhostResponse;
 
   useEffect(() => {
     // Reset ad completion each time a new fetch cycle starts.
@@ -300,24 +304,10 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
     activities,
   });
 
-  const { selectedDate, startHour, endHour, maxPrice, maxDistance, categories } = plannerParams;
-
-  const canQueryPlacesByLocation = maxDistance > 0 && plannerParams.userLocation != null;
-  const devPlacesQueryLocationLabel = canQueryPlacesByLocation
-    ? `${plannerParams.userLocation?.latitude.toFixed(6)}, ${plannerParams.userLocation?.longitude.toFixed(6)}`
-    : "Not used (missing location or distance <= 0)";
-
   const devPlaceSlotCounts = Object.entries(DEV_PLACE_SLOT_TYPES).map(([slot, allowedTypes]) => ({
     slot,
     count: places.filter((place) => place.types.some((type) => allowedTypes.includes(type))).length,
   }));
-
-  const formatHour = (hour24: number) => {
-    const normalized = ((hour24 % 24) + 24) % 24;
-    const period = normalized < 12 ? "AM" : "PM";
-    const hour12 = normalized % 12 === 0 ? 12 : normalized % 12;
-    return `${hour12}:00 ${period}`;
-  };
 
   const clampHour12 = (value: number) => {
     if (Number.isNaN(value)) return 1;
@@ -352,6 +342,7 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
     setDraftEndPeriod(endHour24 < 12 ? "AM" : "PM");
     setDraftMaxPrice(String(plannerParams.maxPrice));
     setDraftMaxDistance(String(plannerParams.maxDistance));
+    setDraftServerTarget(plannerParams.serverTarget ?? "localhost");
     setDraftCategoriesChecked(DATE_CATEGORIES.map((category) => plannerParams.categories.includes(category)));
     setShowEditDatePicker(false);
     setEditError(null);
@@ -409,6 +400,7 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
       maxPrice: nextMaxPrice,
       maxDistance: nextMaxDistance,
       categories: nextCategories,
+      serverTarget: draftServerTarget,
       userLocation: plannerParams.userLocation ?? null,
     });
     setIsEditModalVisible(false);
@@ -880,6 +872,35 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
                 </View>
               </View>
 
+              {__DEV__ ? (
+                <View
+                  style={{
+                    borderWidth: 1,
+                    borderColor: "#dce6ef",
+                    borderRadius: 10,
+                    paddingHorizontal: 12,
+                    paddingVertical: 10,
+                    marginBottom: 12,
+                    backgroundColor: "#fff",
+                  }}
+                >
+                  <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                    <View style={{ flex: 1, paddingRight: 8 }}>
+                      <Text style={{ color: "#2c3e50", fontSize: 15, fontWeight: "700" }}>(DEV) Server Source</Text>
+                      <Text style={{ marginTop: 2, color: "#667788", fontSize: 13 }}>
+                        {draftServerTarget === "render" ? "Render server" : "Localhost server"}
+                      </Text>
+                    </View>
+                    <Switch
+                      value={draftServerTarget === "render"}
+                      onValueChange={(isRender) => setDraftServerTarget(isRender ? "render" : "localhost")}
+                      trackColor={{ false: "#9dc7ff", true: "#7fd8a4" }}
+                      thumbColor="#ffffff"
+                    />
+                  </View>
+                </View>
+              ) : null}
+
               <Text
                 style={{
                   color: "#4b5b6b",
@@ -996,7 +1017,7 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
                 color: "#2c3e50",
               }}
             >
-              Debug Data
+              (DEV) Debug Data
             </Text>
             <Text style={{ color: "#1e90ff", fontWeight: "700" }}>{showDevMatches ? "Hide" : "Show"}</Text>
           </TouchableOpacity>
@@ -1179,7 +1200,7 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
         </View>
       ) : null}
 
-      {!isLoading && error ? (
+      {!isLoading && __DEV__ && error ? (
         <View
           style={{
             borderWidth: 1,
@@ -1190,25 +1211,7 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
             marginBottom: 16,
           }}
         >
-          <Text style={{ color: "#9b2226", fontSize: 15, marginBottom: 12 }}>Could not load date ideas.</Text>
-
-          <View
-            style={{
-              borderWidth: 1,
-              borderColor: "#f2b4b7",
-              borderRadius: 10,
-              backgroundColor: "#fff",
-              padding: 12,
-              marginBottom: 10,
-            }}
-          >
-            <Text style={{ color: "#9b2226", fontSize: 14, fontWeight: "700", marginBottom: 4 }}>Localhost response</Text>
-            <Text style={{ color: "#9b2226", fontSize: 13, lineHeight: 18 }}>
-              {localhostResponse
-                ? `${localhostResponse.ok ? "Success" : "Failed"}${localhostResponse.statusCode ? ` (${localhostResponse.statusCode})` : ""}: ${localhostResponse.details}`
-                : "No localhost response captured."}
-            </Text>
-          </View>
+          <Text style={{ color: "#9b2226", fontSize: 15, marginBottom: 12 }}>(DEV) Could not load date ideas.</Text>
 
           <View
             style={{
@@ -1220,11 +1223,11 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
               marginBottom: 12,
             }}
           >
-            <Text style={{ color: "#9b2226", fontSize: 14, fontWeight: "700", marginBottom: 4 }}>Render response</Text>
+            <Text style={{ color: "#9b2226", fontSize: 14, fontWeight: "700", marginBottom: 4 }}>{activeServerLabel}</Text>
             <Text style={{ color: "#9b2226", fontSize: 13, lineHeight: 18 }}>
-              {renderResponse
-                ? `${renderResponse.ok ? "Success" : "Failed"}${renderResponse.statusCode ? ` (${renderResponse.statusCode})` : ""}: ${renderResponse.details}`
-                : "No Render response captured."}
+              {activeServerResponse
+                ? `${activeServerResponse.ok ? "Success" : "Failed"}${activeServerResponse.statusCode ? ` (${activeServerResponse.statusCode})` : ""}: ${activeServerResponse.details}`
+                : `No ${plannerParams.serverTarget === "render" ? "Render" : "localhost"} response captured.`}
             </Text>
           </View>
 

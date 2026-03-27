@@ -1,7 +1,4 @@
-import type {
-  NativeStackNavigationProp,
-  NativeStackScreenProps,
-} from "@react-navigation/native-stack";
+import type { NativeStackNavigationProp, NativeStackScreenProps } from "@react-navigation/native-stack";
 
 export type PlannedDateResultsParams = {
   maxPrice: number;
@@ -10,8 +7,11 @@ export type PlannedDateResultsParams = {
   endHour: number;
   maxDistance: number;
   categories: string[];
+  serverTarget?: PlannerServerTarget;
   userLocation?: UserLocationParams | null;
 };
+
+export type PlannerServerTarget = "localhost" | "render";
 
 export type UserLocationParams = {
   latitude: number;
@@ -45,5 +45,4 @@ export type RootStackParamList = {
 
 export type AppNavigation = NativeStackNavigationProp<RootStackParamList>;
 
-export type AppScreenProps<RouteName extends keyof RootStackParamList> =
-  NativeStackScreenProps<RootStackParamList, RouteName>;
+export type AppScreenProps<RouteName extends keyof RootStackParamList> = NativeStackScreenProps<RootStackParamList, RouteName>;
