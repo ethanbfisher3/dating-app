@@ -1,4 +1,4 @@
-import type { PlaceTypeSearchInfo } from "./searchPoints.ts"
+import type { PlaceTypeSearchInfo } from "./searchPoints.ts";
 
 const uncommonPlaces: PlaceTypeSearchInfo[] = [
   { placeType: "asian_grocery_store", searchRadius: 50000 },
@@ -11,7 +11,6 @@ const uncommonPlaces: PlaceTypeSearchInfo[] = [
   { placeType: "hindu_temple", searchRadius: 50000 },
   { placeType: "mosque", searchRadius: 50000 },
   { placeType: "synagogue", searchRadius: 50000 },
-  { placeType: "stadium", searchRadius: 50000 },
   { placeType: "beach", searchRadius: 50000 },
   { placeType: "zoo", searchRadius: 50000 },
   { placeType: "aquarium", searchRadius: 50000 },
@@ -103,7 +102,7 @@ const uncommonPlaces: PlaceTypeSearchInfo[] = [
   { placeType: "arena", searchRadius: 50000 },
   { placeType: "fishing_pier", searchRadius: 50000 },
   { placeType: "ice_skating_rink", searchRadius: 50000 },
-]
+];
 
 export const commonPlaces: PlaceTypeSearchInfo[] = [
   { placeType: "fitness_center", searchRadius: 5000 },
@@ -115,20 +114,15 @@ export const commonPlaces: PlaceTypeSearchInfo[] = [
   { placeType: "book_store", searchRadius: 4000 },
   { placeType: "swimming_pool", searchRadius: 4000 },
   { placeType: "shopping_mall", searchRadius: 4000 },
-  { placeType: "sports_club", searchRadius: 4000 },
   { placeType: "cell_phone_store", searchRadius: 3000 },
   { placeType: "athletic_field", searchRadius: 3000 },
-  { placeType: "sports_school", searchRadius: 3000 },
   { placeType: "discount_store", searchRadius: 3000 },
   { placeType: "gift_shop", searchRadius: 3000 },
   { placeType: "grocery_store", searchRadius: 3000 },
   { placeType: "shoe_store", searchRadius: 3000 },
-  { placeType: "gym", searchRadius: 3000 },
   { placeType: "lake", searchRadius: 2500 },
-  { placeType: "sports_complex", searchRadius: 2000 },
   { placeType: "tourist_attraction", searchRadius: 2000 },
   { placeType: "cafe", searchRadius: 1600 },
-  { placeType: "sports_activity_location", searchRadius: 1000 },
   { placeType: "jewelry_store", searchRadius: 1000 },
   { placeType: "sporting_goods_store", searchRadius: 1000 },
   { placeType: "wholesaler", searchRadius: 1000 },
@@ -136,15 +130,13 @@ export const commonPlaces: PlaceTypeSearchInfo[] = [
   { placeType: "bakery", searchRadius: 1000 },
   { placeType: "meal_takeaway", searchRadius: 1000 },
   { placeType: "grocery_store", searchRadius: 1000 },
-  { placeType: "church", searchRadius: 500 },
   { placeType: "clothing_store", searchRadius: 500 },
   { placeType: "restaurant", searchRadius: 300 },
   { placeType: "store", searchRadius: 150 },
-]
+];
 
 export const veryCommonPlaces: PlaceTypeSearchInfo[] = [
   { placeType: "cafe", searchRadius: 1000 },
-  { placeType: "sports_activity_location", searchRadius: 1000 },
   { placeType: "jewelry_store", searchRadius: 1000 },
   { placeType: "sporting_goods_store", searchRadius: 1000 },
   { placeType: "wholesaler", searchRadius: 1000 },
@@ -152,11 +144,10 @@ export const veryCommonPlaces: PlaceTypeSearchInfo[] = [
   { placeType: "bakery", searchRadius: 1000 },
   { placeType: "meal_takeaway", searchRadius: 1000 },
   { placeType: "grocery_store", searchRadius: 1000 },
-  { placeType: "church", searchRadius: 1000 },
   { placeType: "clothing_store", searchRadius: 1000 },
   { placeType: "restaurant", searchRadius: 1000 },
   { placeType: "store", searchRadius: 1000 },
-]
+];
 
 export const slcSearches: PlaceTypeSearchInfo[] = [
   ...uncommonPlaces,
@@ -177,7 +168,6 @@ export const slcSearches: PlaceTypeSearchInfo[] = [
   { placeType: "campground", searchRadius: 8000 },
   { placeType: "indoor_golf_course", searchRadius: 7000 },
   { placeType: "supermarket", searchRadius: 5000 },
-  { placeType: "sports_coaching", searchRadius: 5000 },
   { placeType: "hiking_area", searchRadius: 4000 },
   { placeType: "swimming_pool", searchRadius: 4000 },
   { placeType: "shopping_mall", searchRadius: 4000 },
@@ -186,24 +176,18 @@ export const slcSearches: PlaceTypeSearchInfo[] = [
   { placeType: "library", searchRadius: 2000 },
   { placeType: "museum", searchRadius: 2000 },
   { placeType: "book_store", searchRadius: 1200 },
-  { placeType: "sports_club", searchRadius: 1200 },
   { placeType: "tourist_attraction", searchRadius: 1000 },
   { placeType: "grocery_store", searchRadius: 1000 },
   { placeType: "park", searchRadius: 1000 },
   { placeType: "athletic_field", searchRadius: 1000 },
   { placeType: "fitness_center", searchRadius: 1000 },
-  { placeType: "sports_complex", searchRadius: 1000 },
-  { placeType: "sports_school", searchRadius: 1000 },
-  { placeType: "gym", searchRadius: 900 },
   { placeType: "cafe", searchRadius: 500 },
   { placeType: "bakery", searchRadius: 500 },
   { placeType: "meal_takeaway", searchRadius: 500 },
-  { placeType: "church", searchRadius: 500 },
   { placeType: "clothing_store", searchRadius: 500 },
   { placeType: "restaurant", searchRadius: 200 },
   { placeType: "store", searchRadius: 150 },
-  { placeType: "sports_activity_location", searchRadius: 500 },
-]
+];
 
 export const provoSearches: PlaceTypeSearchInfo[] = [
   ...uncommonPlaces,
@@ -226,7 +210,6 @@ export const provoSearches: PlaceTypeSearchInfo[] = [
   { placeType: "golf_course", searchRadius: 8000 },
   { placeType: "department_store", searchRadius: 8000 },
   { placeType: "campground", searchRadius: 8000 },
-  { placeType: "sports_coaching", searchRadius: 7000 },
   { placeType: "fitness_center", searchRadius: 5000 },
   { placeType: "playground", searchRadius: 5000 },
   { placeType: "tennis_court", searchRadius: 5000 },
@@ -236,20 +219,15 @@ export const provoSearches: PlaceTypeSearchInfo[] = [
   { placeType: "book_store", searchRadius: 4000 },
   { placeType: "swimming_pool", searchRadius: 4000 },
   { placeType: "shopping_mall", searchRadius: 4000 },
-  { placeType: "sports_club", searchRadius: 4000 },
   { placeType: "cell_phone_store", searchRadius: 3000 },
   { placeType: "athletic_field", searchRadius: 3000 },
-  { placeType: "sports_school", searchRadius: 3000 },
   { placeType: "discount_store", searchRadius: 3000 },
   { placeType: "gift_shop", searchRadius: 3000 },
   { placeType: "grocery_store", searchRadius: 3000 },
   { placeType: "shoe_store", searchRadius: 3000 },
-  { placeType: "gym", searchRadius: 3000 },
   { placeType: "lake", searchRadius: 2500 },
-  { placeType: "sports_complex", searchRadius: 2000 },
   { placeType: "tourist_attraction", searchRadius: 2000 },
   { placeType: "cafe", searchRadius: 1600 },
-  { placeType: "sports_activity_location", searchRadius: 1000 },
   { placeType: "jewelry_store", searchRadius: 1000 },
   { placeType: "sporting_goods_store", searchRadius: 1000 },
   { placeType: "wholesaler", searchRadius: 1000 },
@@ -257,11 +235,10 @@ export const provoSearches: PlaceTypeSearchInfo[] = [
   { placeType: "bakery", searchRadius: 1000 },
   { placeType: "meal_takeaway", searchRadius: 1000 },
   { placeType: "grocery_store", searchRadius: 1000 },
-  { placeType: "church", searchRadius: 500 },
   { placeType: "clothing_store", searchRadius: 500 },
   { placeType: "restaurant", searchRadius: 300 },
   { placeType: "store", searchRadius: 150 },
-]
+];
 
 export const lehiSearches: PlaceTypeSearchInfo[] = [
   { placeType: "video_arcade", searchRadius: 20000 },
@@ -281,15 +258,12 @@ export const lehiSearches: PlaceTypeSearchInfo[] = [
   { placeType: "cafe", searchRadius: 4000 },
   { placeType: "grocery_store", searchRadius: 4000 },
   { placeType: "meal_takeaway", searchRadius: 3000 },
-  { placeType: "sports_club", searchRadius: 2000 },
-  { placeType: "gym", searchRadius: 2000 },
   { placeType: "park", searchRadius: 2000 },
   { placeType: "bakery", searchRadius: 2000 },
   { placeType: "clothing_store", searchRadius: 2000 },
-  { placeType: "church", searchRadius: 1000 },
   { placeType: "restaurant", searchRadius: 1000 },
   { placeType: "store", searchRadius: 300 },
-]
+];
 
 export const lindonSearches: PlaceTypeSearchInfo[] = [
   { placeType: "library", searchRadius: 8000 },
@@ -304,18 +278,15 @@ export const lindonSearches: PlaceTypeSearchInfo[] = [
   { placeType: "shopping_mall", searchRadius: 8000 },
   { placeType: "hiking_area", searchRadius: 5000 },
   { placeType: "grocery_store", searchRadius: 4000 },
-  { placeType: "sports_club", searchRadius: 4000 },
   { placeType: "tourist_attraction", searchRadius: 4000 },
   { placeType: "cafe", searchRadius: 4000 },
   { placeType: "meal_takeaway", searchRadius: 3000 },
   { placeType: "bakery", searchRadius: 3000 },
-  { placeType: "gym", searchRadius: 2400 },
   { placeType: "park", searchRadius: 2000 },
-  { placeType: "church", searchRadius: 2000 },
   { placeType: "clothing_store", searchRadius: 2000 },
   { placeType: "restaurant", searchRadius: 1000 },
   { placeType: "store", searchRadius: 500 },
-]
+];
 
 export const hayesParkSearches: PlaceTypeSearchInfo[] = [
   { placeType: "library", searchRadius: 8000 },
@@ -330,15 +301,12 @@ export const hayesParkSearches: PlaceTypeSearchInfo[] = [
   { placeType: "shopping_mall", searchRadius: 8000 },
   { placeType: "hiking_area", searchRadius: 5000 },
   { placeType: "grocery_store", searchRadius: 6000 },
-  { placeType: "sports_club", searchRadius: 6000 },
   { placeType: "cafe", searchRadius: 6000 },
-  { placeType: "gym", searchRadius: 5000 },
   { placeType: "tourist_attraction", searchRadius: 5000 },
   { placeType: "bakery", searchRadius: 5000 },
   { placeType: "meal_takeaway", searchRadius: 5000 },
   { placeType: "clothing_store", searchRadius: 4000 },
-  { placeType: "church", searchRadius: 2000 },
   { placeType: "park", searchRadius: 2000 },
   { placeType: "restaurant", searchRadius: 2000 },
   { placeType: "store", searchRadius: 1000 },
-]
+];

@@ -1,12 +1,5 @@
 import React, { useEffect, useState } from "react";
-import {
-  Alert,
-  Image,
-  ScrollView,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Alert, Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import type { AppNavigation } from "../types/navigation";
 import DateIdeaCard from "../Components/DateIdeaCard";
@@ -23,13 +16,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { usePremium } from "../hooks/usePremium";
 import PaywallModal from "../Components/PaywallModal";
 
-export default function SavedIdeas({
-  navigation,
-}: {
-  navigation: AppNavigation;
-}) {
-  const [savedIdeas, setSavedIdeas] =
-    useState<SavedDateIdea[]>(getSavedIdeas());
+export default function SavedIdeas({ navigation }: { navigation: AppNavigation }) {
+  const [savedIdeas, setSavedIdeas] = useState<SavedDateIdea[]>(getSavedIdeas());
   const [paywallVisible, setPaywallVisible] = useState(false);
   const { isUnlocked } = usePremium();
 
@@ -119,9 +107,7 @@ export default function SavedIdeas({
             >
               Unlock Premium
             </Text>
-            <Text style={{ fontSize: 13, color: "#0051D5", fontWeight: "500" }}>
-              Save unlimited ideas for only $3.99
-            </Text>
+            <Text style={{ fontSize: 13, color: "#0051D5", fontWeight: "500" }}>Save unlimited ideas for only $3.99</Text>
           </View>
           <Ionicons name="chevron-forward" size={20} color="#007AFF" />
         </TouchableOpacity>
@@ -151,9 +137,7 @@ export default function SavedIdeas({
             >
               You are a premium user
             </Text>
-            <Text style={{ fontSize: 13, color: "#1f7a45", fontWeight: "500" }}>
-              You can save unlimited date ideas.
-            </Text>
+            <Text style={{ fontSize: 13, color: "#1f7a45", fontWeight: "500" }}>You can save unlimited date ideas.</Text>
           </View>
         </View>
       )}
@@ -168,16 +152,12 @@ export default function SavedIdeas({
             padding: 16,
           }}
         >
-          <Text style={{ color: "#4b5b6b", fontSize: 16 }}>
-            No saved date ideas yet. Save one from Planned Date Results.
-          </Text>
+          <Text style={{ color: "#4b5b6b", fontSize: 16 }}>No saved date ideas yet. Save one from Planned Date Results.</Text>
         </View>
       ) : null}
 
       {savedIdeas.map((idea, index) => {
-        const places = Object.values(idea.places || {}).filter(
-          (place): place is PlaceSummary => Boolean(place),
-        );
+        const places = Object.values(idea.places || {}).filter((place): place is PlaceSummary => Boolean(place));
         const schedule = idea.schedule || [];
 
         return (
@@ -195,31 +175,23 @@ export default function SavedIdeas({
             primaryActionLabel="Remove"
             primaryActionColor="#dc3545"
             onPrimaryAction={() => {
-              Alert.alert(
-                "Remove date idea?",
-                "Are you sure you want to remove this saved idea?",
-                [
-                  {
-                    text: "Cancel",
-                    style: "cancel",
-                  },
-                  {
-                    text: "Remove",
-                    style: "destructive",
-                    onPress: () => removeSavedIdea(idea.id),
-                  },
-                ],
-              );
+              Alert.alert("Remove date idea?", "Are you sure you want to remove this saved idea?", [
+                {
+                  text: "Cancel",
+                  style: "cancel",
+                },
+                {
+                  text: "Remove",
+                  style: "destructive",
+                  onPress: () => removeSavedIdea(idea.id),
+                },
+              ]);
             }}
           />
         );
       })}
 
-      <PaywallModal
-        visible={paywallVisible}
-        onClose={() => setPaywallVisible(false)}
-        reason="general"
-      />
+      <PaywallModal visible={paywallVisible} onClose={() => setPaywallVisible(false)} reason="general" />
     </ScrollView>
   );
 }

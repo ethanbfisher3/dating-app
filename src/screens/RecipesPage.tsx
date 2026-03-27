@@ -76,6 +76,7 @@ export default function RecipesPage({ navigation }: { navigation: AppNavigation 
         ref={scrollRef}
         style={styles.container}
         contentContainerStyle={{
+          padding: 24,
           paddingTop: insets.top,
           paddingBottom: 24,
         }}
@@ -96,7 +97,6 @@ export default function RecipesPage({ navigation }: { navigation: AppNavigation 
             height: 200,
             borderRadius: 12,
             marginBottom: 24,
-            paddingHorizontal: 24,
           }}
         />
 
@@ -266,7 +266,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#fafbfc",
   },
   header: {
-    paddingHorizontal: 24,
     paddingBottom: 16,
   },
   title: {
@@ -283,7 +282,6 @@ const styles = StyleSheet.create({
     color: "#555",
   },
   filterSection: {
-    marginHorizontal: 24,
     marginBottom: 24,
     padding: 16,
     backgroundColor: "#fff",
@@ -361,10 +359,9 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#666",
   },
-  recipeListContainer: {
-    paddingHorizontal: 24,
-  },
+  recipeListContainer: {},
   resultCount: {
+    paddingLeft: 4,
     fontSize: 13,
     fontWeight: "600",
     color: "#999",
@@ -448,7 +445,6 @@ const styles = StyleSheet.create({
   },
   paginationContainer: {
     marginBottom: 12,
-    paddingHorizontal: 24,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
