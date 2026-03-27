@@ -2,7 +2,11 @@
   "expo": {
     "name": "Dating App",
     "slug": "byu-dating-native",
-    "platforms": ["ios", "android", "web"],
+    "platforms": [
+      "ios",
+      "android",
+      "web"
+    ],
     "version": "1.0.0",
     "icon": "./src/assets/images/date_planner_icon.png",
     "backgroundColor": "#FFFFFF",
@@ -21,7 +25,16 @@
     "plugins": [
       "expo-font",
       "expo-asset",
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      [
+        "react-native-google-mobile-ads",
+        {
+          "androidAppId": "ca-app-pub-9592701510571371~4266549309",
+          "iosAppId": "ca-app-pub-9592701510571371~1448814278",
+          "userTrackingUsageDescription": "This identifier will be used to deliver personalized ads to you."
+        }
+      ],
+      "expo-video"
     ]
   }
 }

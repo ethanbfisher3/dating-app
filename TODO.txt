@@ -3,6 +3,8 @@ More date templates/Fix current date templates, add more activities
 Add Revenuecat api keys for apple
 Test the date planner generator
 
+When the user opens the app, the app could automatically query the server for places nearby with their current location...
+
 
 Maybe:
 Incorporate pictures on the date results page

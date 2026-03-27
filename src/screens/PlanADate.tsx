@@ -10,6 +10,11 @@ import { addPlannedDate } from "../data/plannedDatesStore";
 import PaywallModal from "../Components/PaywallModal";
 import PlanDateInputsModal from "../Components/PlanDateInputsModal";
 
+const ADDRESS_OFF_DEFAULT_LOCATION = {
+  latitude: 36.071281486295156,
+  longitude: -78.52239044679854,
+};
+
 export default function PlanADate({ navigation }: { navigation: AppNavigation }) {
   const { isUnlocked } = usePremium();
   const insets = useSafeAreaInsets();
@@ -140,7 +145,9 @@ export default function PlanADate({ navigation }: { navigation: AppNavigation })
       endHour: end24,
       maxDistance: finalMaxDistance,
       categories: selectedCategories,
-      userLocation: useMyAddressEnabled ? actualUserLocation : null,
+      userLocation: useMyAddressEnabled
+        ? actualUserLocation
+        : ADDRESS_OFF_DEFAULT_LOCATION,
     });
 
     setTimeout(() => setIsGeneratingIdeas(false), 500);

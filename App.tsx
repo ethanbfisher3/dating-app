@@ -1,39 +1,30 @@
-import { useCallback, useEffect, useRef, useState } from "react"
-import "react-native-gesture-handler"
-import { NavigationContainer } from "@react-navigation/native"
-import { createNativeStackNavigator } from "@react-navigation/native-stack"
-import type { AppNavigation, RootStackParamList } from "./src/types/navigation"
-import {
-  View,
-  StatusBar,
-  TouchableOpacity,
-  StyleSheet,
-  Platform,
-} from "react-native"
-import * as NavigationBar from "expo-navigation-bar"
-import { Asset } from "expo-asset"
-import { GestureHandlerRootView } from "react-native-gesture-handler"
-import Ionicons from "@expo/vector-icons/Ionicons"
-import PagerView from "react-native-pager-view"
-import Home from "./src/screens/Home"
-import PlanADate from "./src/screens/PlanADate"
-import DateIdeas from "./src/screens/DateIdeas"
-import RecipesPage from "./src/screens/RecipesPage"
-import RecipeDetail from "./src/screens/RecipeDetail"
-import ActivityDetail from "./src/screens/ActivityDetail"
-import InspectDateIdea from "./src/screens/InspectDateIdea"
-import PlannedDateResults from "./src/screens/PlannedDateResults"
-import SavedIdeas from "./src/screens/SavedIdeas"
-import DateHistory from "./src/screens/DateHistory"
-import DateCalendar from "./src/screens/DateCalendar"
-import recipes from "./src/data/Recipes"
-import { initializeRevenueCat } from "./src/data/iapConfig"
-import {
-  SafeAreaProvider,
-  useSafeAreaInsets,
-} from "react-native-safe-area-context"
+import { useCallback, useEffect, useRef, useState } from "react";
+import "react-native-gesture-handler";
+import { NavigationContainer } from "@react-navigation/native";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import type { AppNavigation, RootStackParamList } from "./src/types/navigation";
+import { View, StatusBar, TouchableOpacity, StyleSheet, Platform } from "react-native";
+import * as NavigationBar from "expo-navigation-bar";
+import { Asset } from "expo-asset";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import PagerView from "react-native-pager-view";
+import Home from "./src/screens/Home";
+import PlanADate from "./src/screens/PlanADate";
+import DateIdeas from "./src/screens/DateIdeas";
+import RecipesPage from "./src/screens/RecipesPage";
+import RecipeDetail from "./src/screens/RecipeDetail";
+import ActivityDetail from "./src/screens/ActivityDetail";
+import InspectDateIdea from "./src/screens/InspectDateIdea";
+import PlannedDateResults from "./src/screens/PlannedDateResults";
+import SavedIdeas from "./src/screens/SavedIdeas";
+import DateHistory from "./src/screens/DateHistory";
+import DateCalendar from "./src/screens/DateCalendar";
+import recipes from "./src/data/Recipes";
+import { initializeRevenueCat } from "./src/data/iapConfig";
+import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
 
-const Stack = createNativeStackNavigator<RootStackParamList>()
+const Stack = createNativeStackNavigator<RootStackParamList>();
 
 const TABS = [
   {
@@ -71,39 +62,33 @@ const TABS = [
     iconOutline: "bookmark-outline",
     component: SavedIdeas,
   },
-]
+];
 
 export default function App() {
   useEffect(() => {
     if (Platform.OS === "android") {
-      NavigationBar.setVisibilityAsync("hidden")
+      NavigationBar.setVisibilityAsync("hidden");
     }
-  }, [])
+  }, []);
 
   useEffect(() => {
     // Initialize RevenueCat for in-app purchases
-    initializeRevenueCat()
-  }, [])
+    initializeRevenueCat();
+  }, []);
 
   useEffect(() => {
-    const recipeImages = recipes
-      .map((recipe) => recipe.image)
-      .filter((image): image is number => typeof image === "number")
-    const uniqueRecipeImages = [...new Set(recipeImages)]
+    const recipeImages = recipes.map((recipe) => recipe.image).filter((image): image is number => typeof image === "number");
+    const uniqueRecipeImages = [...new Set(recipeImages)];
 
-    void Asset.loadAsync(uniqueRecipeImages)
-  }, [])
+    void Asset.loadAsync(uniqueRecipeImages);
+  }, []);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <NavigationContainer>
           <Stack.Navigator>
-            <Stack.Screen
-              name="MainTabs"
-              component={MainTabs}
-              options={{ headerShown: false }}
-            />
+            <Stack.Screen name="MainTabs" component={MainTabs} options={{ headerShown: false }} />
             <Stack.Screen name="Date Ideas" component={DateIdeas} />
             <Stack.Screen name="Date Planner" component={PlanADate} />
             <Stack.Screen name="Recipe Ideas" component={RecipesPage} />
@@ -114,60 +99,51 @@ export default function App() {
             <Stack.Screen name="RecipeDetail" component={RecipeDetail} />
             <Stack.Screen name="ActivityDetail" component={ActivityDetail} />
             <Stack.Screen name="InspectDateIdea" component={InspectDateIdea} />
-            <Stack.Screen
-              name="PlannedDateResults"
-              component={PlannedDateResults}
-            />
+            <Stack.Screen name="PlannedDateResults" component={PlannedDateResults} />
             <Stack.Screen name="DateCalendar" component={DateCalendar} />
           </Stack.Navigator>
         </NavigationContainer>
       </SafeAreaProvider>
     </GestureHandlerRootView>
-  )
+  );
 }
 
 function MainTabs({ navigation }: { navigation: AppNavigation }) {
-  const insets = useSafeAreaInsets()
-  const androidBottomInset = Platform.OS === "android" ? insets.bottom : 0
-  const pagerRef = useRef<PagerView | null>(null)
-  const [currentPage, setCurrentPage] = useState(0)
+  const insets = useSafeAreaInsets();
+  const androidBottomInset = Platform.OS === "android" ? insets.bottom : 0;
+  const pagerRef = useRef<PagerView | null>(null);
+  const [currentPage, setCurrentPage] = useState(0);
 
   const handlePageSelected = useCallback((e: any) => {
-    setCurrentPage(e.nativeEvent.position)
-  }, [])
+    setCurrentPage(e.nativeEvent.position);
+  }, []);
 
   const handleTabPress = useCallback((index: number) => {
-    setCurrentPage(index)
-    pagerRef.current?.setPage(index)
-  }, [])
+    setCurrentPage(index);
+    pagerRef.current?.setPage(index);
+  }, []);
 
   const goToTab = useCallback((tabKey: string) => {
-    const tabIndex = TABS.findIndex((tab) => tab.key === tabKey)
+    const tabIndex = TABS.findIndex((tab) => tab.key === tabKey);
     if (tabIndex >= 0) {
-      pagerRef.current?.setPage(tabIndex)
-      setCurrentPage(tabIndex)
+      pagerRef.current?.setPage(tabIndex);
+      setCurrentPage(tabIndex);
     }
-  }, [])
+  }, []);
 
   return (
     <>
       <StatusBar barStyle="dark-content" backgroundColor="#f3f6fb" />
       <View style={{ flex: 1, backgroundColor: "#fafbfc" }}>
         {/* Swipeable Pager for Tab Content */}
-        <PagerView
-          ref={pagerRef}
-          style={styles.pager}
-          initialPage={0}
-          onPageSelected={handlePageSelected}
-          overdrag={true}
-        >
+        <PagerView ref={pagerRef} style={styles.pager} initialPage={0} onPageSelected={handlePageSelected} overdrag={true}>
           {TABS.map((tab, index) => {
-            const Component = tab.component
+            const Component = tab.component;
             return (
               <View key={index} style={styles.page}>
                 <Component navigation={navigation} goToTab={goToTab} />
               </View>
-            )
+            );
           })}
         </PagerView>
 
@@ -182,11 +158,11 @@ function MainTabs({ navigation }: { navigation: AppNavigation }) {
           ]}
         >
           {TABS.map((tab, index) => {
-            const isActive = currentPage === index
-            const iconName = isActive ? tab.icon : tab.iconOutline
-            const isCenterTab = tab.key === "Date Planner"
-            const color = isActive ? "#1e90ff" : "#8e8e93"
-            const centerButtonColor = isActive ? "#e63f67" : "#f05a7e"
+            const isActive = currentPage === index;
+            const iconName = isActive ? tab.icon : tab.iconOutline;
+            const isCenterTab = tab.key === "Date Planner";
+            const color = isActive ? "#1e90ff" : "#8e8e93";
+            const centerButtonColor = isActive ? "#e63f67" : "#f05a7e";
 
             return (
               <TouchableOpacity
@@ -198,10 +174,7 @@ function MainTabs({ navigation }: { navigation: AppNavigation }) {
                 <View
                   style={
                     isCenterTab
-                      ? [
-                          styles.centerTabCircle,
-                          { backgroundColor: centerButtonColor },
-                        ]
+                      ? [styles.centerTabCircle, { backgroundColor: centerButtonColor }]
                       : {
                           display: "flex",
                           alignItems: "center",
@@ -209,19 +182,15 @@ function MainTabs({ navigation }: { navigation: AppNavigation }) {
                         }
                   }
                 >
-                  <Ionicons
-                    name={iconName as any}
-                    size={isCenterTab ? 30 : 28}
-                    color={isCenterTab ? "#ffffff" : color}
-                  />
+                  <Ionicons name={iconName as any} size={isCenterTab ? 30 : 28} color={isCenterTab ? "#ffffff" : color} />
                 </View>
               </TouchableOpacity>
-            )
+            );
           })}
         </View>
       </View>
     </>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
@@ -276,4 +245,4 @@ const styles = StyleSheet.create({
     color: "#ffffff",
     textAlign: "center",
   },
-})
+});
