@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -7,28 +7,38 @@ import {
   Modal,
   Platform,
   ScrollView,
-  Switch,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
-import { VideoView } from "expo-video";
-import Constants from "expo-constants";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import type { AppScreenProps, PlannedDateResultsParams, PlannerServerTarget } from "../types/navigation";
-import useDatePlannerIdeas, { PlaceSummary } from "../hooks/useDatePlannerIdeas";
-import useFilledIdeas, { estimateTravelMinutesBetween, getCandidatesForSlot } from "../hooks/useFilledIdeas";
+import type {
+  AppScreenProps,
+  PlannedDateResultsParams,
+} from "../types/navigation";
+import useDatePlannerIdeas, {
+  PlaceSummary,
+} from "../hooks/useDatePlannerIdeas";
+import useFilledIdeas, {
+  estimateTravelMinutesBetween,
+  getCandidatesForSlot,
+} from "../hooks/useFilledIdeas";
 import { saveDateIdea, canSaveIdea } from "../data/savedIdeasStore";
 import { premiumStore } from "../data/premiumStore";
 import { usePremium } from "../hooks/usePremium";
 import PaywallModal from "../Components/PaywallModal";
 import DateIdeaCard from "../Components/DateIdeaCard";
 
-const DATE_CATEGORIES = ["Food", "Outdoors", "Sports", "Nature", "Learning", "Shopping", "Recreation"];
-const RENDER_SERVER_BASE_URL = "https://dating-app-server-9zib.onrender.com";
-
-const SAMPLE_VIDEO_AD_URI = "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4";
+const DATE_CATEGORIES = [
+  "Food",
+  "Outdoors",
+  "Sports",
+  "Nature",
+  "Learning",
+  "Shopping",
+  "Recreation",
+];
 
 const DEV_PLACE_SLOT_TYPES: Record<string, string[]> = {
   meal: ["restaurant", "meal_takeaway", "cafe", "pizza_restaurant"],
@@ -38,10 +48,15 @@ const DEV_PLACE_SLOT_TYPES: Record<string, string[]> = {
   shop: ["shopping_mall", "department_store", "clothing_store", "store"],
 };
 
-export default function PlannedDateResults({ route, navigation }: AppScreenProps<"PlannedDateResults">) {
+export default function PlannedDateResults({
+  route,
+  navigation,
+}: AppScreenProps<"PlannedDateResults">) {
   const { isUnlocked } = usePremium();
   const [paywallVisible, setPaywallVisible] = useState(false);
-  const [paywallReason, setPaywallReason] = useState<"date_history_limit" | "mile_radius_limit" | "ideas_limit" | "general">("general");
+  const [paywallReason, setPaywallReason] = useState<
+    "date_history_limit" | "mile_radius_limit" | "ideas_limit" | "general"
+  >("general");
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -50,66 +65,57 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
     });
   }, [navigation]);
 
-  const [plannerParams, setPlannerParams] = useState<PlannedDateResultsParams>(route.params);
+  const [plannerParams, setPlannerParams] = useState<PlannedDateResultsParams>(
+    route.params,
+  );
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [showEditDatePicker, setShowEditDatePicker] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
-  const [draftSelectedDate, setDraftSelectedDate] = useState(route.params.selectedDate);
+  const [draftSelectedDate, setDraftSelectedDate] = useState(
+    route.params.selectedDate,
+  );
   const initialStartHour24 = ((route.params.startHour % 24) + 24) % 24;
   const initialEndHour24 = ((route.params.endHour % 24) + 24) % 24;
-  const [draftStartHour12, setDraftStartHour12] = useState(String(initialStartHour24 % 12 === 0 ? 12 : initialStartHour24 % 12));
-  const [draftStartPeriod, setDraftStartPeriod] = useState<"AM" | "PM">(initialStartHour24 < 12 ? "AM" : "PM");
-  const [draftEndHour12, setDraftEndHour12] = useState(String(initialEndHour24 % 12 === 0 ? 12 : initialEndHour24 % 12));
-  const [draftEndPeriod, setDraftEndPeriod] = useState<"AM" | "PM">(initialEndHour24 < 12 ? "AM" : "PM");
-  const [draftMaxPrice, setDraftMaxPrice] = useState(String(route.params.maxPrice));
-  const [draftMaxDistance, setDraftMaxDistance] = useState(String(route.params.maxDistance));
-  const [draftServerTarget, setDraftServerTarget] = useState<PlannerServerTarget>(route.params.serverTarget ?? "localhost");
+  const [draftStartHour12, setDraftStartHour12] = useState(
+    String(initialStartHour24 % 12 === 0 ? 12 : initialStartHour24 % 12),
+  );
+  const [draftStartPeriod, setDraftStartPeriod] = useState<"AM" | "PM">(
+    initialStartHour24 < 12 ? "AM" : "PM",
+  );
+  const [draftEndHour12, setDraftEndHour12] = useState(
+    String(initialEndHour24 % 12 === 0 ? 12 : initialEndHour24 % 12),
+  );
+  const [draftEndPeriod, setDraftEndPeriod] = useState<"AM" | "PM">(
+    initialEndHour24 < 12 ? "AM" : "PM",
+  );
+  const [draftMaxPrice, setDraftMaxPrice] = useState(
+    String(route.params.maxPrice),
+  );
+  const [draftMaxDistance, setDraftMaxDistance] = useState(
+    String(route.params.maxDistance),
+  );
   const [draftCategoriesChecked, setDraftCategoriesChecked] = useState(
-    DATE_CATEGORIES.map((category) => route.params.categories.includes(category)),
+    DATE_CATEGORIES.map((category) =>
+      route.params.categories.includes(category),
+    ),
   );
   const [showDevMatches, setShowDevMatches] = useState(false);
   const [showDevPlaces, setShowDevPlaces] = useState(false);
   const [showDevActivities, setShowDevActivities] = useState(false);
   const [showDevRecipes, setShowDevRecipes] = useState(false);
-  const [regeneratingSteps, setRegeneratingSteps] = useState<Set<string>>(new Set());
-  const [modifiedIdeas, setModifiedIdeas] = useState<Map<number, any>>(new Map());
-  const [hasLoadingAdFinished, setHasLoadingAdFinished] = useState(false);
-  const [isAdLoaded, setIsAdLoaded] = useState(false);
-  const [isAdShowing, setIsAdShowing] = useState(false);
-  const previousIsLoading = useRef(false);
-  const videoRef = useRef<any>(null);
-  const rewardedAdRef = useRef<any>(null);
+  const [regeneratingSteps, setRegeneratingSteps] = useState<Set<string>>(
+    new Set(),
+  );
+  const [modifiedIdeas, setModifiedIdeas] = useState<Map<number, any>>(
+    new Map(),
+  );
   const editModalScrollRef = useRef<ScrollView>(null);
 
-  // Detect if running in Expo Go
-  const isUsingExpoGo = Constants.appOwnership === "expo";
-
-  const rewardedAdUnitId = Platform.select({
-    android: process.env.EXPO_PUBLIC_ADMOB_REWARDED_ID_ANDROID || "",
-    ios: process.env.EXPO_PUBLIC_ADMOB_REWARDED_ID_IOS || "",
-    default: "",
-  });
-
-  // Initialize AdMob on first mount (only if not in Expo Go)
-  useEffect(() => {
-    if (isUsingExpoGo) {
-      return;
-    }
-
-    const initAdMob = async () => {
-      try {
-        const mobileAds = (await import("react-native-google-mobile-ads")).default;
-        await mobileAds().initialize();
-      } catch (error) {
-        // Gracefully handle initialization errors
-        console.warn("AdMob initialization failed:", error);
-      }
-    };
-
-    initAdMob();
-  }, [isUsingExpoGo]);
-
-  const regenerateStep = async (ideaIndex: number, stepIndex: number, idea: any) => {
+  const regenerateStep = async (
+    ideaIndex: number,
+    stepIndex: number,
+    idea: any,
+  ) => {
     const stepKey = `${ideaIndex}-${stepIndex}`;
     const schedule = idea.schedule || [];
     const step = schedule[stepIndex];
@@ -119,7 +125,12 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
 
     try {
       // Get candidates for the slot type
-      const candidates = getCandidatesForSlot(step.slot, places, recipes, activities);
+      const candidates = getCandidatesForSlot(
+        step.slot,
+        places,
+        recipes,
+        activities,
+      );
 
       if (!candidates.length) {
         Alert.alert("No alternatives available for this item.");
@@ -132,19 +143,28 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
       }
 
       // Pick a random candidate
-      const newCandidate = candidates[Math.floor(Math.random() * candidates.length)];
+      const newCandidate =
+        candidates[Math.floor(Math.random() * candidates.length)];
 
       // Calculate new travel times
       const prevStep = stepIndex > 0 ? schedule[stepIndex - 1] : null;
-      const nextStep = stepIndex < schedule.length - 1 ? schedule[stepIndex + 1] : null;
+      const nextStep =
+        stepIndex < schedule.length - 1 ? schedule[stepIndex + 1] : null;
 
       let newTravelToNextMinutes: number | null = null;
       let newTravelFromPrevMinutes: number | null = null;
 
       if (nextStep) {
-        newTravelToNextMinutes = estimateTravelMinutesBetween(newCandidate.place || null, nextStep.place || null);
+        newTravelToNextMinutes = estimateTravelMinutesBetween(
+          newCandidate.place || null,
+          nextStep.place || null,
+        );
         if (newTravelToNextMinutes === null) {
-          newTravelToNextMinutes = newCandidate.place?.sourceKind === "place" || nextStep.place?.sourceKind === "place" ? 10 : 0;
+          newTravelToNextMinutes =
+            newCandidate.place?.sourceKind === "place" ||
+            nextStep.place?.sourceKind === "place"
+              ? 10
+              : 0;
         }
       }
 
@@ -161,13 +181,17 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
       updatedSchedule[stepIndex] = updatedStep;
 
       if (prevStep && stepIndex > 0) {
-        const prevTravelMinutes = estimateTravelMinutesBetween(prevStep.place || null, newCandidate.place || null);
+        const prevTravelMinutes = estimateTravelMinutesBetween(
+          prevStep.place || null,
+          newCandidate.place || null,
+        );
         updatedSchedule[stepIndex - 1] = {
           ...prevStep,
           travelToNextMinutes:
             prevTravelMinutes !== null
               ? prevTravelMinutes
-              : prevStep.place?.sourceKind === "place" || newCandidate.place?.sourceKind === "place"
+              : prevStep.place?.sourceKind === "place" ||
+                  newCandidate.place?.sourceKind === "place"
                 ? 10
                 : 0,
         };
@@ -175,7 +199,10 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
 
       // Rebuild the filledTemplate with the new step title
       let updatedFilledTemplate = idea.filledTemplate || idea.template;
-      updatedFilledTemplate = updatedFilledTemplate.replace(step.title, newCandidate.value);
+      updatedFilledTemplate = updatedFilledTemplate.replace(
+        step.title,
+        newCandidate.value,
+      );
 
       // Update places record with the new place
       const updatedPlaces = { ...idea.places };
@@ -205,97 +232,8 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
     }
   };
 
-  const { places, recipes, activities, sourceFile, isLoading, error, serverResponses, refetch } = useDatePlannerIdeas(plannerParams);
-
-  const localhostResponse = serverResponses.find((response) => {
-    try {
-      const host = new URL(response.serverBaseUrl).hostname;
-      return host === "localhost" || host === "127.0.0.1";
-    } catch {
-      return response.serverBaseUrl.includes("localhost") || response.serverBaseUrl.includes("127.0.0.1");
-    }
-  });
-
-  const renderResponse = serverResponses.find((response) => response.serverBaseUrl === RENDER_SERVER_BASE_URL);
-  const activeServerLabel = plannerParams.serverTarget === "render" ? "Render response" : "Localhost response";
-  const activeServerResponse = plannerParams.serverTarget === "render" ? renderResponse : localhostResponse;
-
-  useEffect(() => {
-    // Reset ad completion each time a new fetch cycle starts.
-    if (isLoading && !previousIsLoading.current) {
-      setHasLoadingAdFinished(false);
-    }
-
-    previousIsLoading.current = isLoading;
-  }, [isLoading]);
-
-  useEffect(() => {
-    // Avoid trapping users if ad playback fails to report completion.
-    if (hasLoadingAdFinished) {
-      return;
-    }
-
-    const timeout = setTimeout(() => {
-      setHasLoadingAdFinished(true);
-    }, 25000);
-
-    return () => clearTimeout(timeout);
-  }, [hasLoadingAdFinished]);
-
-  // Load rewarded ad when loading starts (only in native builds)
-  useEffect(() => {
-    if (isUsingExpoGo || !rewardedAdUnitId || !isLoading) {
-      return;
-    }
-
-    const loadRewardedAd = async () => {
-      try {
-        const { RewardedAd, RewardedAdEventType } = await import("react-native-google-mobile-ads");
-
-        const rewardedAd = RewardedAd.createForAdRequest(rewardedAdUnitId);
-
-        const unsubscribeLoaded = rewardedAd.addAdEventListener(RewardedAdEventType.LOADED, () => {
-          setIsAdLoaded(true);
-          rewardedAdRef.current = rewardedAd;
-        });
-
-        const unsubscribeClosed = rewardedAd.addAdEventListener(RewardedAdEventType.CLOSED, () => {
-          setHasLoadingAdFinished(true);
-        });
-
-        const unsubscribeError = rewardedAd.addAdEventListener(RewardedAdEventType.ERROR, () => {
-          setHasLoadingAdFinished(true);
-        });
-
-        rewardedAd.load();
-
-        return () => {
-          unsubscribeLoaded();
-          unsubscribeClosed();
-          unsubscribeError();
-        };
-      } catch (error) {
-        console.warn("Failed to load rewarded ad:", error);
-        setHasLoadingAdFinished(true);
-      }
-    };
-
-    loadRewardedAd();
-  }, [isLoading, rewardedAdUnitId, isUsingExpoGo]);
-
-  // Show ad when loaded and still loading (only in native builds)
-  useEffect(() => {
-    if (isUsingExpoGo) {
-      return;
-    }
-
-    if (isAdLoaded && !isAdShowing && rewardedAdRef.current) {
-      setIsAdShowing(true);
-      rewardedAdRef.current.show().catch(() => {
-        setHasLoadingAdFinished(true);
-      });
-    }
-  }, [isAdLoaded, isAdShowing, isUsingExpoGo]);
+  const { places, recipes, activities, sourceFile, isLoading, error, refetch } =
+    useDatePlannerIdeas(plannerParams);
 
   const filledIdeas = useFilledIdeas({
     params: plannerParams,
@@ -304,10 +242,36 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
     activities,
   });
 
-  const devPlaceSlotCounts = Object.entries(DEV_PLACE_SLOT_TYPES).map(([slot, allowedTypes]) => ({
-    slot,
-    count: places.filter((place) => place.types.some((type) => allowedTypes.includes(type))).length,
-  }));
+  const {
+    selectedDate,
+    startHour,
+    endHour,
+    maxPrice,
+    maxDistance,
+    categories,
+  } = plannerParams;
+
+  const canQueryPlacesByLocation =
+    maxDistance > 0 && plannerParams.userLocation != null;
+  const devPlacesQueryLocationLabel = canQueryPlacesByLocation
+    ? `${plannerParams.userLocation?.latitude.toFixed(6)}, ${plannerParams.userLocation?.longitude.toFixed(6)}`
+    : "Not used (missing location or distance <= 0)";
+
+  const devPlaceSlotCounts = Object.entries(DEV_PLACE_SLOT_TYPES).map(
+    ([slot, allowedTypes]) => ({
+      slot,
+      count: places.filter((place) =>
+        place.types.some((type) => allowedTypes.includes(type)),
+      ).length,
+    }),
+  );
+
+  const formatHour = (hour24: number) => {
+    const normalized = ((hour24 % 24) + 24) % 24;
+    const period = normalized < 12 ? "AM" : "PM";
+    const hour12 = normalized % 12 === 0 ? 12 : normalized % 12;
+    return `${hour12}:00 ${period}`;
+  };
 
   const clampHour12 = (value: number) => {
     if (Number.isNaN(value)) return 1;
@@ -342,8 +306,11 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
     setDraftEndPeriod(endHour24 < 12 ? "AM" : "PM");
     setDraftMaxPrice(String(plannerParams.maxPrice));
     setDraftMaxDistance(String(plannerParams.maxDistance));
-    setDraftServerTarget(plannerParams.serverTarget ?? "localhost");
-    setDraftCategoriesChecked(DATE_CATEGORIES.map((category) => plannerParams.categories.includes(category)));
+    setDraftCategoriesChecked(
+      DATE_CATEGORIES.map((category) =>
+        plannerParams.categories.includes(category),
+      ),
+    );
     setShowEditDatePicker(false);
     setEditError(null);
     setIsEditModalVisible(true);
@@ -354,7 +321,9 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
     const nextEndHour12 = Number.parseInt(draftEndHour12, 10);
     const nextMaxPrice = Number.parseInt(draftMaxPrice, 10);
     let nextMaxDistance = Number.parseInt(draftMaxDistance, 10);
-    const nextCategories = DATE_CATEGORIES.filter((_, index) => draftCategoriesChecked[index]);
+    const nextCategories = DATE_CATEGORIES.filter(
+      (_, index) => draftCategoriesChecked[index],
+    );
 
     if (!/^\d{4}-\d{2}-\d{2}$/.test(draftSelectedDate)) {
       setEditError("Date must be in YYYY-MM-DD format.");
@@ -366,7 +335,10 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
       return;
     }
 
-    if (clampHour12(nextStartHour12) !== nextStartHour12 || clampHour12(nextEndHour12) !== nextEndHour12) {
+    if (
+      clampHour12(nextStartHour12) !== nextStartHour12 ||
+      clampHour12(nextEndHour12) !== nextEndHour12
+    ) {
       setEditError("Start and end hours must be between 1 and 12.");
       return;
     }
@@ -400,7 +372,6 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
       maxPrice: nextMaxPrice,
       maxDistance: nextMaxDistance,
       categories: nextCategories,
-      serverTarget: draftServerTarget,
       userLocation: plannerParams.userLocation ?? null,
     });
     setIsEditModalVisible(false);
@@ -419,13 +390,13 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
     }
 
     setTimeout(() => {
-      (editModalScrollRef.current as any)?.scrollResponderScrollNativeHandleToKeyboard?.(target, 120, true);
+      (
+        editModalScrollRef.current as any
+      )?.scrollResponderScrollNativeHandleToKeyboard?.(target, 120, true);
     }, 120);
   };
 
-  const shouldBlockResultsUntilAdAndResponse = isLoading || !hasLoadingAdFinished;
-
-  if (shouldBlockResultsUntilAdAndResponse) {
+  if (isLoading && !error) {
     return (
       <View
         style={{
@@ -459,55 +430,6 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
         >
           Finding places and building the best matches for your preferences.
         </Text>
-
-        {isUsingExpoGo && (
-          <View
-            style={{
-              marginTop: 20,
-              width: "100%",
-              maxWidth: 420,
-              borderRadius: 14,
-              overflow: "hidden",
-              borderWidth: 1,
-              borderColor: "#d9e4f2",
-              backgroundColor: "#ffffff",
-            }}
-          >
-            <VideoView
-              ref={videoRef}
-              source={{ uri: SAMPLE_VIDEO_AD_URI }}
-              style={{ width: "100%", height: 210, backgroundColor: "#000" }}
-              useNativeControls={false}
-              isLooping={false}
-              isMuted
-              onPlaybackStatusUpdate={(status) => {
-                if (status.didJustFinish) {
-                  setHasLoadingAdFinished(true);
-                }
-              }}
-            />
-            <View style={{ paddingHorizontal: 14, paddingVertical: 12 }}>
-              <Text style={{ color: "#1f2d3d", fontSize: 14, fontWeight: "700" }}>Sample video ad</Text>
-              <Text style={{ marginTop: 4, color: "#556677", fontSize: 13, lineHeight: 19 }}>
-                In the native app, real ads help keep it free for users.
-              </Text>
-            </View>
-          </View>
-        )}
-
-        {!isUsingExpoGo && (
-          <Text
-            style={{
-              marginTop: 20,
-              color: "#7a8a9a",
-              fontSize: 14,
-              textAlign: "center",
-              lineHeight: 20,
-            }}
-          >
-            A short ad is playing. This helps keep the app free for users.
-          </Text>
-        )}
       </View>
     );
   }
@@ -576,7 +498,9 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
           marginBottom: 10,
         }}
       >
-        <Text style={{ color: "#fff", fontWeight: "700", fontSize: 16 }}>Edit Inputs</Text>
+        <Text style={{ color: "#fff", fontWeight: "700", fontSize: 16 }}>
+          Edit Inputs
+        </Text>
       </TouchableOpacity>
 
       <TouchableOpacity
@@ -591,7 +515,9 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
           opacity: isLoading ? 0.6 : 1,
         }}
       >
-        <Text style={{ color: "#fff", fontWeight: "700", fontSize: 16 }}>Regenerate</Text>
+        <Text style={{ color: "#fff", fontWeight: "700", fontSize: 16 }}>
+          Regenerate
+        </Text>
       </TouchableOpacity>
 
       <Modal
@@ -653,7 +579,9 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
                   backgroundColor: "#fff",
                 }}
               >
-                <Text style={{ fontSize: 16, color: "#1a1a1a" }}>{draftSelectedDate}</Text>
+                <Text style={{ fontSize: 16, color: "#1a1a1a" }}>
+                  {draftSelectedDate}
+                </Text>
               </TouchableOpacity>
 
               {showEditDatePicker ? (
@@ -745,13 +673,15 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
                           flex: 1,
                           paddingVertical: 10,
                           alignItems: "center",
-                          backgroundColor: draftStartPeriod === period ? "#1e90ff" : "#fff",
+                          backgroundColor:
+                            draftStartPeriod === period ? "#1e90ff" : "#fff",
                         }}
                       >
                         <Text
                           style={{
                             fontWeight: "700",
-                            color: draftStartPeriod === period ? "#fff" : "#1f2d3d",
+                            color:
+                              draftStartPeriod === period ? "#fff" : "#1f2d3d",
                           }}
                         >
                           {period}
@@ -818,13 +748,15 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
                           flex: 1,
                           paddingVertical: 10,
                           alignItems: "center",
-                          backgroundColor: draftEndPeriod === period ? "#1e90ff" : "#fff",
+                          backgroundColor:
+                            draftEndPeriod === period ? "#1e90ff" : "#fff",
                         }}
                       >
                         <Text
                           style={{
                             fontWeight: "700",
-                            color: draftEndPeriod === period ? "#fff" : "#1f2d3d",
+                            color:
+                              draftEndPeriod === period ? "#fff" : "#1f2d3d",
                           }}
                         >
                           {period}
@@ -837,7 +769,9 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
 
               <View style={{ flexDirection: "row", gap: 12, marginBottom: 12 }}>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ color: "#4b5b6b", marginBottom: 6 }}>Max Budget ($)</Text>
+                  <Text style={{ color: "#4b5b6b", marginBottom: 6 }}>
+                    Max Budget ($)
+                  </Text>
                   <TextInput
                     value={draftMaxPrice}
                     onChangeText={setDraftMaxPrice}
@@ -854,7 +788,9 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
                   />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ color: "#4b5b6b", marginBottom: 6 }}>Max Distance (miles)</Text>
+                  <Text style={{ color: "#4b5b6b", marginBottom: 6 }}>
+                    Max Distance (miles)
+                  </Text>
                   <TextInput
                     value={draftMaxDistance}
                     onChangeText={setDraftMaxDistance}
@@ -871,35 +807,6 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
                   />
                 </View>
               </View>
-
-              {__DEV__ ? (
-                <View
-                  style={{
-                    borderWidth: 1,
-                    borderColor: "#dce6ef",
-                    borderRadius: 10,
-                    paddingHorizontal: 12,
-                    paddingVertical: 10,
-                    marginBottom: 12,
-                    backgroundColor: "#fff",
-                  }}
-                >
-                  <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-                    <View style={{ flex: 1, paddingRight: 8 }}>
-                      <Text style={{ color: "#2c3e50", fontSize: 15, fontWeight: "700" }}>(DEV) Server Source</Text>
-                      <Text style={{ marginTop: 2, color: "#667788", fontSize: 13 }}>
-                        {draftServerTarget === "render" ? "Render server" : "Localhost server"}
-                      </Text>
-                    </View>
-                    <Switch
-                      value={draftServerTarget === "render"}
-                      onValueChange={(isRender) => setDraftServerTarget(isRender ? "render" : "localhost")}
-                      trackColor={{ false: "#9dc7ff", true: "#7fd8a4" }}
-                      thumbColor="#ffffff"
-                    />
-                  </View>
-                </View>
-              ) : null}
 
               <Text
                 style={{
@@ -946,7 +853,11 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
                 })}
               </View>
 
-              {editError ? <Text style={{ color: "#b42318", marginBottom: 10 }}>{editError}</Text> : null}
+              {editError ? (
+                <Text style={{ color: "#b42318", marginBottom: 10 }}>
+                  {editError}
+                </Text>
+              ) : null}
 
               <View
                 style={{
@@ -969,7 +880,9 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
                     backgroundColor: "#fff",
                   }}
                 >
-                  <Text style={{ color: "#3b4a5a", fontWeight: "700" }}>Cancel</Text>
+                  <Text style={{ color: "#3b4a5a", fontWeight: "700" }}>
+                    Cancel
+                  </Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -981,7 +894,9 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
                     backgroundColor: "#1e90ff",
                   }}
                 >
-                  <Text style={{ color: "#fff", fontWeight: "700" }}>Apply & Regenerate</Text>
+                  <Text style={{ color: "#fff", fontWeight: "700" }}>
+                    Apply & Regenerate
+                  </Text>
                 </TouchableOpacity>
               </View>
             </ScrollView>
@@ -1017,9 +932,11 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
                 color: "#2c3e50",
               }}
             >
-              (DEV) Debug Data
+              Debug Data
             </Text>
-            <Text style={{ color: "#1e90ff", fontWeight: "700" }}>{showDevMatches ? "Hide" : "Show"}</Text>
+            <Text style={{ color: "#1e90ff", fontWeight: "700" }}>
+              {showDevMatches ? "Hide" : "Show"}
+            </Text>
           </TouchableOpacity>
 
           {showDevMatches ? (
@@ -1049,11 +966,15 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
                 >
                   Places ({places.length})
                 </Text>
-                <Text style={{ color: "#1e90ff", fontWeight: "700" }}>{showDevPlaces ? "Hide" : "Show"}</Text>
+                <Text style={{ color: "#1e90ff", fontWeight: "700" }}>
+                  {showDevPlaces ? "Hide" : "Show"}
+                </Text>
               </TouchableOpacity>
 
               {showDevPlaces ? (
-                <View style={{ paddingHorizontal: 14, paddingBottom: 10, gap: 6 }}>
+                <View
+                  style={{ paddingHorizontal: 14, paddingBottom: 10, gap: 6 }}
+                >
                   <Text
                     style={{
                       fontSize: 12,
@@ -1090,12 +1011,17 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
                   </Text>
                   {places.length ? (
                     places.map((place) => (
-                      <Text key={place.id} style={{ fontSize: 14, color: "#2c3e50" }}>
+                      <Text
+                        key={place.id}
+                        style={{ fontSize: 14, color: "#2c3e50" }}
+                      >
                         • {place.name}
                       </Text>
                     ))
                   ) : (
-                    <Text style={{ fontSize: 14, color: "#667788" }}>No places.</Text>
+                    <Text style={{ fontSize: 14, color: "#667788" }}>
+                      No places.
+                    </Text>
                   )}
                 </View>
               ) : null}
@@ -1121,19 +1047,28 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
                 >
                   Activities ({activities.length})
                 </Text>
-                <Text style={{ color: "#1e90ff", fontWeight: "700" }}>{showDevActivities ? "Hide" : "Show"}</Text>
+                <Text style={{ color: "#1e90ff", fontWeight: "700" }}>
+                  {showDevActivities ? "Hide" : "Show"}
+                </Text>
               </TouchableOpacity>
 
               {showDevActivities ? (
-                <View style={{ paddingHorizontal: 14, paddingBottom: 10, gap: 6 }}>
+                <View
+                  style={{ paddingHorizontal: 14, paddingBottom: 10, gap: 6 }}
+                >
                   {activities.length ? (
                     activities.map((activity) => (
-                      <Text key={activity.id} style={{ fontSize: 14, color: "#2c3e50" }}>
+                      <Text
+                        key={activity.id}
+                        style={{ fontSize: 14, color: "#2c3e50" }}
+                      >
                         • {activity.name}
                       </Text>
                     ))
                   ) : (
-                    <Text style={{ fontSize: 14, color: "#667788" }}>No activities.</Text>
+                    <Text style={{ fontSize: 14, color: "#667788" }}>
+                      No activities.
+                    </Text>
                   )}
                 </View>
               ) : null}
@@ -1159,19 +1094,28 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
                 >
                   Recipes ({recipes.length})
                 </Text>
-                <Text style={{ color: "#1e90ff", fontWeight: "700" }}>{showDevRecipes ? "Hide" : "Show"}</Text>
+                <Text style={{ color: "#1e90ff", fontWeight: "700" }}>
+                  {showDevRecipes ? "Hide" : "Show"}
+                </Text>
               </TouchableOpacity>
 
               {showDevRecipes ? (
-                <View style={{ paddingHorizontal: 14, paddingBottom: 10, gap: 6 }}>
+                <View
+                  style={{ paddingHorizontal: 14, paddingBottom: 10, gap: 6 }}
+                >
                   {recipes.length ? (
                     recipes.map((recipe, index) => (
-                      <Text key={index} style={{ fontSize: 14, color: "#2c3e50" }}>
+                      <Text
+                        key={index}
+                        style={{ fontSize: 14, color: "#2c3e50" }}
+                      >
                         • {recipe.name}
                       </Text>
                     ))
                   ) : (
-                    <Text style={{ fontSize: 14, color: "#667788" }}>No recipes.</Text>
+                    <Text style={{ fontSize: 14, color: "#667788" }}>
+                      No recipes.
+                    </Text>
                   )}
                 </View>
               ) : null}
@@ -1196,11 +1140,13 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
       {isLoading ? (
         <View style={{ marginTop: 24, alignItems: "center" }}>
           <ActivityIndicator size="large" color="#1e90ff" />
-          <Text style={{ marginTop: 12, color: "#555", fontSize: 16 }}>Building your date ideas...</Text>
+          <Text style={{ marginTop: 12, color: "#555", fontSize: 16 }}>
+            Building your date ideas...
+          </Text>
         </View>
       ) : null}
 
-      {!isLoading && __DEV__ && error ? (
+      {!isLoading && error ? (
         <View
           style={{
             borderWidth: 1,
@@ -1211,27 +1157,12 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
             marginBottom: 16,
           }}
         >
-          <Text style={{ color: "#9b2226", fontSize: 15, marginBottom: 12 }}>(DEV) Could not load date ideas.</Text>
-
-          <View
-            style={{
-              borderWidth: 1,
-              borderColor: "#f2b4b7",
-              borderRadius: 10,
-              backgroundColor: "#fff",
-              padding: 12,
-              marginBottom: 12,
-            }}
-          >
-            <Text style={{ color: "#9b2226", fontSize: 14, fontWeight: "700", marginBottom: 4 }}>{activeServerLabel}</Text>
-            <Text style={{ color: "#9b2226", fontSize: 13, lineHeight: 18 }}>
-              {activeServerResponse
-                ? `${activeServerResponse.ok ? "Success" : "Failed"}${activeServerResponse.statusCode ? ` (${activeServerResponse.statusCode})` : ""}: ${activeServerResponse.details}`
-                : `No ${plannerParams.serverTarget === "render" ? "Render" : "localhost"} response captured.`}
-            </Text>
-          </View>
-
-          <Text style={{ color: "#9b2226", fontSize: 13, marginBottom: 12 }}>{error}</Text>
+          <Text style={{ color: "#9b2226", fontSize: 15, marginBottom: 10 }}>
+            Could not load date ideas.
+          </Text>
+          <Text style={{ color: "#9b2226", fontSize: 13, marginBottom: 12 }}>
+            {error}
+          </Text>
           <TouchableOpacity
             onPress={refetch}
             style={{
@@ -1241,7 +1172,9 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
               alignItems: "center",
             }}
           >
-            <Text style={{ color: "#fff", fontWeight: "700", fontSize: 15 }}>Retry</Text>
+            <Text style={{ color: "#fff", fontWeight: "700", fontSize: 15 }}>
+              Retry
+            </Text>
           </TouchableOpacity>
         </View>
       ) : null}
@@ -1253,8 +1186,10 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
             const ideaPlaces = Object.values(ideaPlacesRecord).filter(Boolean);
             const modifiedSchedule = modifiedIdeas.get(index)?.schedule;
             const schedule = modifiedSchedule || idea.schedule || [];
-            const modifiedFilledTemplate = modifiedIdeas.get(index)?.filledTemplate;
-            const filledTemplate = modifiedFilledTemplate || idea.filledTemplate;
+            const modifiedFilledTemplate =
+              modifiedIdeas.get(index)?.filledTemplate;
+            const filledTemplate =
+              modifiedFilledTemplate || idea.filledTemplate;
 
             return (
               <DateIdeaCard
@@ -1277,14 +1212,22 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
                   Alert.alert("Date Idea Saved!");
                 }}
                 primaryActionLabel="Save"
-                onRegenerateStep={(stepIndex) => regenerateStep(index, stepIndex, idea)}
-                isRegeneratingStep={(stepIndex) => regeneratingSteps.has(`${index}-${stepIndex}`)}
+                onRegenerateStep={(stepIndex) =>
+                  regenerateStep(index, stepIndex, idea)
+                }
+                isRegeneratingStep={(stepIndex) =>
+                  regeneratingSteps.has(`${index}-${stepIndex}`)
+                }
               />
             );
           })
         : null}
 
-      <PaywallModal visible={paywallVisible} onClose={() => setPaywallVisible(false)} reason={paywallReason} />
+      <PaywallModal
+        visible={paywallVisible}
+        onClose={() => setPaywallVisible(false)}
+        reason={paywallReason}
+      />
     </ScrollView>
   );
 }
