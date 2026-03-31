@@ -11,7 +11,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import PagerView from "react-native-pager-view";
 import Home from "./src/screens/Home";
 import PlanADate from "./src/screens/PlanADate";
-import DateIdeas from "./src/screens/DateIdeas";
+import DateIdeas from "./src/screens/unused/DateIdeas";
 import RecipesPage from "./src/screens/RecipesPage";
 import RecipeDetail from "./src/screens/RecipeDetail";
 import ActivityDetail from "./src/screens/ActivityDetail";
@@ -89,12 +89,9 @@ export default function App() {
         <NavigationContainer>
           <Stack.Navigator>
             <Stack.Screen name="MainTabs" component={MainTabs} options={{ headerShown: false }} />
-            <Stack.Screen name="Date Ideas" component={DateIdeas} />
             <Stack.Screen name="Date Planner" component={PlanADate} />
             <Stack.Screen name="Recipe Ideas" component={RecipesPage} />
-            <Stack.Screen name="DateIdeas" component={DateIdeas} />
             <Stack.Screen name="PlanADate" component={PlanADate} />
-            <Stack.Screen name="RecipesPage" component={RecipesPage} />
             <Stack.Screen name="SavedIdeas" component={SavedIdeas} />
             <Stack.Screen name="RecipeDetail" component={RecipeDetail} />
             <Stack.Screen name="ActivityDetail" component={ActivityDetail} />

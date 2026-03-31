@@ -1,78 +1,59 @@
-import React, { useEffect, useMemo, useRef, useState } from "react"
-import {
-  View,
-  Text,
-  ScrollView,
-  StyleSheet,
-  TouchableOpacity,
-  TextInput,
-  KeyboardAvoidingView,
-  Platform,
-} from "react-native"
-import * as ExpoLocation from "expo-location"
-import { Ionicons } from "@expo/vector-icons"
-import dateideas, { milesBetween } from "../data/DateIdeas"
-import type { GeoLocation } from "../data/DateIdeas"
-import DateIdeaBox from "../Components/DateIdeaBox"
-import type { AppNavigation } from "../types/navigation"
-import { usePremium } from "../hooks/usePremium"
-import PaywallModal from "../Components/PaywallModal"
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform } from "react-native";
+import * as ExpoLocation from "expo-location";
+import { Ionicons } from "@expo/vector-icons";
+import dateideas, { milesBetween } from "../../data/DateIdeas";
+import type { GeoLocation } from "../../data/DateIdeas";
+import DateIdeaBox from "../../Components/DateIdeaBox";
+import type { AppNavigation } from "../../types/navigation";
+import { usePremium } from "../../hooks/usePremium";
+import PaywallModal from "../../Components/PaywallModal";
 
-export default function DateIdeasScreen({
-  navigation,
-}: {
-  navigation: AppNavigation
-}) {
-  const [userLocation, setUserLocation] = useState<GeoLocation | null>(null)
-  const [maxMoney, setMaxMoney] = useState("")
-  const [maxDistance, setMaxDistance] = useState("")
-  const [category, setCategory] = useState("")
-  const [filtersExpanded, setFiltersExpanded] = useState(false)
-  const [paywallVisible, setPaywallVisible] = useState(false)
-  const { isUnlocked } = usePremium()
-  const scrollRef = useRef<ScrollView>(null)
+export default function DateIdeasScreen({ navigation }: { navigation: AppNavigation }) {
+  const [userLocation, setUserLocation] = useState<GeoLocation | null>(null);
+  const [maxMoney, setMaxMoney] = useState("");
+  const [maxDistance, setMaxDistance] = useState("");
+  const [category, setCategory] = useState("");
+  const [filtersExpanded, setFiltersExpanded] = useState(false);
+  const [paywallVisible, setPaywallVisible] = useState(false);
+  const { isUnlocked } = usePremium();
+  const scrollRef = useRef<ScrollView>(null);
 
   const handleFilterInputFocus = (event: any) => {
-    const target = event?.target
+    const target = event?.target;
     if (!target) {
-      return
+      return;
     }
 
     setTimeout(() => {
-      ;(
-        scrollRef.current as any
-      )?.scrollResponderScrollNativeHandleToKeyboard?.(target, 120, true)
-    }, 120)
-  }
+      (scrollRef.current as any)?.scrollResponderScrollNativeHandleToKeyboard?.(target, 120, true);
+    }, 120);
+  };
 
   useEffect(() => {
     const loadUserLocation = async () => {
-      const { status } = await ExpoLocation.requestForegroundPermissionsAsync()
-      if (status !== "granted") return
+      const { status } = await ExpoLocation.requestForegroundPermissionsAsync();
+      if (status !== "granted") return;
 
       const position = await ExpoLocation.getCurrentPositionAsync({
         accuracy: ExpoLocation.Accuracy.Balanced,
-      })
+      });
 
       setUserLocation({
         latitude: position.coords.latitude,
         longitude: position.coords.longitude,
-      })
-    }
+      });
+    };
 
-    loadUserLocation().catch(() => {})
-  }, [])
+    loadUserLocation().catch(() => {});
+  }, []);
 
   const categories = useMemo(() => {
-    return Array.from(
-      new Set(
-        dateideas.flatMap((idea) => idea.categories || []).filter(Boolean),
-      ),
-    )
-  }, [])
+    return Array.from(new Set(dateideas.flatMap((idea) => idea.categories || []).filter(Boolean)));
+  }, []);
 
   const getClosestDistance = (idea: (typeof dateideas)[number]) => {
-    if (!userLocation) return null
+    if (!userLocation) return null;
 
     const validLocations = (idea.locations || [])
       .map((location) => location.location)
@@ -81,43 +62,40 @@ export default function DateIdeasScreen({
           !(location.latitude === 0 && location.longitude === 0) &&
           Number.isFinite(location.latitude) &&
           Number.isFinite(location.longitude),
-      )
+      );
 
-    if (!validLocations.length) return null
+    if (!validLocations.length) return null;
 
-    return Math.min(
-      ...validLocations.map((location) => milesBetween(userLocation, location)),
-    )
-  }
+    return Math.min(...validLocations.map((location) => milesBetween(userLocation, location)));
+  };
 
   const filteredDateIdeas = useMemo(() => {
     return dateideas.filter((idea) => {
-      const maxMoneyNum = maxMoney ? parseFloat(maxMoney) : null
-      const maxDistanceNum = maxDistance ? parseFloat(maxDistance) : null
+      const maxMoneyNum = maxMoney ? parseFloat(maxMoney) : null;
+      const maxDistanceNum = maxDistance ? parseFloat(maxDistance) : null;
 
       const priceMatches =
         !maxMoneyNum ||
         idea.free ||
         (() => {
-          const priceNumbers =
-            (idea.pricing || "").match(/\d+(?:\.\d+)?/g)?.map(Number) || []
-          if (!priceNumbers.length) return false
-          return Math.min(...priceNumbers) <= maxMoneyNum
-        })()
+          const priceNumbers = (idea.pricing || "").match(/\d+(?:\.\d+)?/g)?.map(Number) || [];
+          if (!priceNumbers.length) return false;
+          return Math.min(...priceNumbers) <= maxMoneyNum;
+        })();
 
       const distanceMatches =
         !maxDistanceNum ||
         (() => {
-          const closestDistance = getClosestDistance(idea)
-          if (closestDistance === null) return !userLocation
-          return closestDistance <= maxDistanceNum
-        })()
+          const closestDistance = getClosestDistance(idea);
+          if (closestDistance === null) return !userLocation;
+          return closestDistance <= maxDistanceNum;
+        })();
 
-      const categoryMatches = !category || idea.categories?.includes(category)
+      const categoryMatches = !category || idea.categories?.includes(category);
 
-      return priceMatches && distanceMatches && categoryMatches
-    })
-  }, [category, maxDistance, maxMoney, userLocation])
+      return priceMatches && distanceMatches && categoryMatches;
+    });
+  }, [category, maxDistance, maxMoney, userLocation]);
 
   return (
     <KeyboardAvoidingView
@@ -136,16 +114,9 @@ export default function DateIdeasScreen({
         </View>
 
         <View style={styles.filterSection}>
-          <TouchableOpacity
-            style={styles.filterHeader}
-            onPress={() => setFiltersExpanded(!filtersExpanded)}
-          >
+          <TouchableOpacity style={styles.filterHeader} onPress={() => setFiltersExpanded(!filtersExpanded)}>
             <Text style={styles.filterTitle}>Filter Date Ideas</Text>
-            <Ionicons
-              name={filtersExpanded ? "chevron-up" : "chevron-down"}
-              size={24}
-              color="#1a1a1a"
-            />
+            <Ionicons name={filtersExpanded ? "chevron-up" : "chevron-down"} size={24} color="#1a1a1a" />
           </TouchableOpacity>
 
           {filtersExpanded && (
@@ -182,26 +153,10 @@ export default function DateIdeasScreen({
                   {categories.map((itemCategory) => (
                     <TouchableOpacity
                       key={itemCategory}
-                      style={[
-                        styles.categoryButton,
-                        category === itemCategory &&
-                          styles.categoryButtonActive,
-                      ]}
-                      onPress={() =>
-                        setCategory(
-                          category === itemCategory ? "" : itemCategory,
-                        )
-                      }
+                      style={[styles.categoryButton, category === itemCategory && styles.categoryButtonActive]}
+                      onPress={() => setCategory(category === itemCategory ? "" : itemCategory)}
                     >
-                      <Text
-                        style={[
-                          styles.categoryText,
-                          category === itemCategory &&
-                            styles.categoryTextActive,
-                        ]}
-                      >
-                        {itemCategory}
-                      </Text>
+                      <Text style={[styles.categoryText, category === itemCategory && styles.categoryTextActive]}>{itemCategory}</Text>
                     </TouchableOpacity>
                   ))}
                 </View>
@@ -210,9 +165,9 @@ export default function DateIdeasScreen({
               <TouchableOpacity
                 style={styles.clearButton}
                 onPress={() => {
-                  setMaxMoney("")
-                  setMaxDistance("")
-                  setCategory("")
+                  setMaxMoney("");
+                  setMaxDistance("");
+                  setCategory("");
                 }}
               >
                 <Text style={styles.clearButtonText}>Clear Filters</Text>
@@ -286,14 +241,10 @@ export default function DateIdeasScreen({
           />
         ))}
 
-        <PaywallModal
-          visible={paywallVisible}
-          onClose={() => setPaywallVisible(false)}
-          reason="ideas_limit"
-        />
+        <PaywallModal visible={paywallVisible} onClose={() => setPaywallVisible(false)} reason="ideas_limit" />
       </ScrollView>
     </KeyboardAvoidingView>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
@@ -399,4 +350,4 @@ const styles = StyleSheet.create({
     color: "#999",
     marginBottom: 12,
   },
-})
+});

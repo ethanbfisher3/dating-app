@@ -9,6 +9,7 @@ import { usePremium } from "../hooks/usePremium";
 import { addPlannedDate } from "../data/plannedDatesStore";
 import PaywallModal from "../Components/PaywallModal";
 import PlanDateInputsModal from "../Components/PlanDateInputsModal";
+import usePurchases from "src/hooks/usePurchases";
 
 const ADDRESS_OFF_DEFAULT_LOCATION = {
   latitude: 36.071281486295156,
@@ -17,6 +18,7 @@ const ADDRESS_OFF_DEFAULT_LOCATION = {
 
 export default function PlanADate({ navigation }: { navigation: AppNavigation }) {
   const { isUnlocked } = usePremium();
+  const { lifetimePremium } = usePurchases();
   const insets = useSafeAreaInsets();
 
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -235,7 +237,7 @@ export default function PlanADate({ navigation }: { navigation: AppNavigation })
           <Text style={{ color: "#1e90ff", fontSize: 17, fontWeight: "800" }}>View Date Calendar</Text>
         </TouchableOpacity>
 
-        {!isUnlocked ? (
+        {!isUnlocked && lifetimePremium ? (
           <TouchableOpacity
             activeOpacity={0.9}
             onPress={() => setPaywallVisible(true)}
@@ -263,7 +265,9 @@ export default function PlanADate({ navigation }: { navigation: AppNavigation })
               >
                 Unlock Premium
               </Text>
-              <Text style={{ fontSize: 13, color: "#0051D5", fontWeight: "500" }}>Save unlimited ideas for only $3.99</Text>
+              <Text style={{ fontSize: 13, color: "#0051D5", fontWeight: "500" }}>
+                Save unlimited ideas for only {lifetimePremium.priceString}
+              </Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color="#007AFF" />
           </TouchableOpacity>

@@ -137,7 +137,6 @@ const MONTHS = ["January", "February", "March", "April", "May", "June", "July", 
 
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
-const BYU_EVENTS_URL = "https://calendar.byu.edu/api/Events.json?categories=all&price=1000";
 const MAX_PLACES_RETURNED = 50;
 const PRODUCTION_PLACES_SERVER_URL = "https://dating-app-server-9zib.onrender.com";
 const PLACES_REQUEST_TIMEOUT_MS = 8000;

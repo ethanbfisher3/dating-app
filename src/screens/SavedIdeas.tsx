@@ -15,8 +15,10 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { usePremium } from "../hooks/usePremium";
 import PaywallModal from "../Components/PaywallModal";
+import usePurchases from "src/hooks/usePurchases";
 
 export default function SavedIdeas({ navigation }: { navigation: AppNavigation }) {
+  const { lifetimePremium } = usePurchases();
   const [savedIdeas, setSavedIdeas] = useState<SavedDateIdea[]>(getSavedIdeas());
   const [paywallVisible, setPaywallVisible] = useState(false);
   const { isUnlocked } = usePremium();
@@ -79,7 +81,7 @@ export default function SavedIdeas({ navigation }: { navigation: AppNavigation }
         }}
       />
 
-      {!isUnlocked ? (
+      {!isUnlocked && lifetimePremium ? (
         <TouchableOpacity
           activeOpacity={0.9}
           onPress={() => setPaywallVisible(true)}
@@ -107,7 +109,9 @@ export default function SavedIdeas({ navigation }: { navigation: AppNavigation }
             >
               Unlock Premium
             </Text>
-            <Text style={{ fontSize: 13, color: "#0051D5", fontWeight: "500" }}>Save unlimited ideas for only $3.99</Text>
+            <Text style={{ fontSize: 13, color: "#0051D5", fontWeight: "500" }}>
+              Save unlimited ideas for only {lifetimePremium.priceString}
+            </Text>
           </View>
           <Ionicons name="chevron-forward" size={20} color="#007AFF" />
         </TouchableOpacity>

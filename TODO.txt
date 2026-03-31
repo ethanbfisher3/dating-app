@@ -2,9 +2,8 @@ Add Revenuecat api keys for apple
 
 Add currencies for other places, like UK
 When the user opens the app, the app could automatically query the server for places nearby with their current location...
-Add a $1/month premium or something like that
 Test for if the user doesn't have internet or their location is turned off
-
+Test for if products don't load
 
 Maybe:
 Incorporate pictures on the date results page

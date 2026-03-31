@@ -1,65 +1,43 @@
-import { useState } from "react";
-import {
-  Modal,
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  StyleSheet,
-  ActivityIndicator,
-  Alert,
-} from "react-native";
+import { useEffect, useState } from "react";
+import { Modal, View, Text, TouchableOpacity, ScrollView, StyleSheet, ActivityIndicator, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { usePremium } from "../hooks/usePremium";
 import { purchasePremium } from "../data/iapConfig";
 import { FREE_TIER_RECORDED_DATES_LIMIT } from "../data/dateHistoryStore";
 import { FREE_TIER_SAVED_IDEAS_LIMIT } from "../data/savedIdeasStore";
-
-const FREE_TIER_RADIUS_MILES = 5;
+import Purchases, { LOG_LEVEL, PURCHASES_ERROR_CODE, type PurchasesPackage } from "react-native-purchases";
+import usePurchases from "src/hooks/usePurchases";
 
 interface PaywallProps {
   visible: boolean;
   onClose: () => void;
   onPurchase?: () => Promise<void>;
-  reason?:
-    | "date_history_limit"
-    | "mile_radius_limit"
-    | "ideas_limit"
-    | "general";
+  reason?: "date_history_limit" | "mile_radius_limit" | "ideas_limit" | "general";
 }
 
-export default function PaywallModal({
-  visible,
-  onClose,
-  onPurchase,
-  reason = "general",
-}: PaywallProps) {
+export default function PaywallModal({ visible, onClose, onPurchase, reason = "general" }: PaywallProps) {
   const [isProcessing, setIsProcessing] = useState(false);
   const { resetPremium } = usePremium();
+  const { lifetimePremium } = usePurchases();
 
-  const reasonMessages: Record<string, { title: string; description: string }> =
-    {
-      date_history_limit: {
-        title: "Date History Limit Reached",
-        description:
-          "You've recorded 5 dates. Upgrade to save unlimited dates.",
-      },
-      mile_radius_limit: {
-        title: "Search Radius Limited",
-        description:
-          "Free tier searches 5 miles away. Go Premium for 25+ miles.",
-      },
-      ideas_limit: {
-        title: "Date Ideas Limit Reached",
-        description:
-          "You've generated your monthly date ideas. Upgrade for unlimited.",
-      },
-      general: {
-        title: "Unlock Premium Features",
-        description:
-          "Get unlimited date history, search radius, and idea generation.",
-      },
-    };
+  const reasonMessages: Record<string, { title: string; description: string }> = {
+    date_history_limit: {
+      title: "Date History Limit Reached",
+      description: "You've recorded 5 dates. Upgrade to save unlimited dates.",
+    },
+    mile_radius_limit: {
+      title: "Search Radius Limited",
+      description: "Free tier searches 5 miles away. Go Premium for 25+ miles.",
+    },
+    ideas_limit: {
+      title: "Date Ideas Limit Reached",
+      description: "You've generated your monthly date ideas. Upgrade for unlimited.",
+    },
+    general: {
+      title: "Unlock Premium Features",
+      description: "Get unlimited date history, search radius, and idea generation.",
+    },
+  };
 
   const { title, description } = reasonMessages[reason];
 
@@ -71,9 +49,7 @@ export default function PaywallModal({
       const isTestPurchaseFailure =
         result.status === "failed" &&
         typeof result.message === "string" &&
-        result.message.includes(
-          "Test purchase failure: no real transaction occurred",
-        );
+        result.message.includes("Test purchase failure: no real transaction occurred");
 
       if (isTestPurchaseFailure) {
         onClose();
@@ -81,26 +57,17 @@ export default function PaywallModal({
       }
 
       if (result.status === "success") {
-        Alert.alert(
-          "Success!",
-          "You've unlocked Premium. Enjoy unlimited features!",
-        );
+        Alert.alert("Success!", "You've unlocked Premium. Enjoy unlimited features!");
         onClose();
       } else if (result.status === "cancelled") {
-        Alert.alert(
-          "Purchase Cancelled",
-          "No worries, you can upgrade anytime.",
-        );
+        Alert.alert("Purchase Cancelled", "No worries, you can upgrade anytime.");
       } else if (result.status === "not_found") {
         Alert.alert(
           "Product Not Available",
           "We couldn't find your premium product in the current offering. Please check RevenueCat product/offering setup.",
         );
       } else {
-        Alert.alert(
-          "Purchase Failed",
-          result.message || "Please try again later.",
-        );
+        Alert.alert("Purchase Failed", result.message || "Please try again later.");
       }
     } catch (error) {
       console.error("Purchase error:", error);
@@ -113,10 +80,7 @@ export default function PaywallModal({
   const handleResetPremium = async () => {
     try {
       await resetPremium();
-      Alert.alert(
-        "Premium Removed",
-        "Premium access has been reset for testing.",
-      );
+      Alert.alert("Premium Removed", "Premium access has been reset for testing.");
     } catch (error) {
       console.error("Reset premium error:", error);
       Alert.alert("Error", "Could not reset premium access.");
@@ -124,12 +88,7 @@ export default function PaywallModal({
   };
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}
-    >
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.overlay}>
         <View style={styles.container}>
           <TouchableOpacity style={styles.closeButton} onPress={onClose}>
@@ -146,108 +105,53 @@ export default function PaywallModal({
             <Text style={styles.title}>{title}</Text>
             <Text style={styles.description}>{description}</Text>
 
-            <View style={styles.comparisonCard}>
-              <Text style={styles.comparisonTitle}>
-                What You Get Today (Free)
-              </Text>
-              <Text style={styles.comparisonLine}>
-                • Date history: up to {FREE_TIER_RECORDED_DATES_LIMIT} records
-              </Text>
-              <Text style={styles.comparisonLine}>
-                • Saved ideas: up to {FREE_TIER_SAVED_IDEAS_LIMIT}
-              </Text>
-              <Text style={styles.comparisonLine}>
-                • Radius: up to {FREE_TIER_RADIUS_MILES} miles
-              </Text>
+            {/* <View style={styles.comparisonCard}>
+              <Text style={styles.comparisonTitle}>What You Get Today (Free)</Text>
+              <Text style={styles.comparisonLine}>• Date history: up to {FREE_TIER_RECORDED_DATES_LIMIT} records</Text>
+              <Text style={styles.comparisonLine}>• Saved ideas: up to {FREE_TIER_SAVED_IDEAS_LIMIT}</Text>
+              <Text style={styles.comparisonLine}>• Radius: up to {FREE_TIER_RADIUS_MILES} miles</Text>
 
-              <Text style={styles.comparisonTitlePremium}>
-                What You Get With Premium
-              </Text>
-              <Text style={styles.comparisonLinePremium}>
-                • Unlimited date history
-              </Text>
-              <Text style={styles.comparisonLinePremium}>
-                • Unlimited saved ideas
-              </Text>
-              <Text style={styles.comparisonLinePremium}>
-                • Unlimited radius and date idea generation
-              </Text>
-            </View>
+              <Text style={styles.comparisonTitlePremium}>What You Get With Premium</Text>
+              <Text style={styles.comparisonLinePremium}>• Unlimited date history</Text>
+              <Text style={styles.comparisonLinePremium}>• Unlimited saved ideas</Text>
+              <Text style={styles.comparisonLinePremium}>• Unlimited radius and date idea generation</Text>
+            </View> */}
 
             {/* Feature List */}
             <View style={styles.featuresContainer}>
               <View style={styles.feature}>
-                <Ionicons
-                  name="checkmark-circle"
-                  size={24}
-                  color="#FF6B6B"
-                  style={styles.featureIcon}
-                />
+                <Ionicons name="checkmark-circle" size={24} color="#FF6B6B" style={styles.featureIcon} />
                 <View style={styles.featureContent}>
                   <Text style={styles.featureText}>Unlimited Date History</Text>
                   <Text style={styles.featureSubtext}>
-                    Save as many dates as you want
+                    Save as many dates as you want (max for free is {FREE_TIER_RECORDED_DATES_LIMIT})
                   </Text>
                 </View>
               </View>
 
               <View style={styles.feature}>
-                <Ionicons
-                  name="checkmark-circle"
-                  size={24}
-                  color="#4ECDC4"
-                  style={styles.featureIcon}
-                />
-                <View style={styles.featureContent}>
-                  <Text style={styles.featureText}>Extended Search Radius</Text>
-                  <Text style={styles.featureSubtext}>
-                    Search up to 25+ miles away
-                  </Text>
-                </View>
-              </View>
-
-              <View style={styles.feature}>
-                <Ionicons
-                  name="checkmark-circle"
-                  size={24}
-                  color="#95E1D3"
-                  style={styles.featureIcon}
-                />
-                <View style={styles.featureContent}>
-                  <Text style={styles.featureText}>Unlimited Date Ideas</Text>
-                  <Text style={styles.featureSubtext}>
-                    Generate as many ideas as you want
-                  </Text>
-                </View>
-              </View>
-
-              <View style={styles.feature}>
-                <Ionicons
-                  name="checkmark-circle"
-                  size={24}
-                  color="#F7B731"
-                  style={styles.featureIcon}
-                />
+                <Ionicons name="checkmark-circle" size={24} color="#F7B731" style={styles.featureIcon} />
                 <View style={styles.featureContent}>
                   <Text style={styles.featureText}>Save Unlimited Ideas</Text>
                   <Text style={styles.featureSubtext}>
-                    Build your personal idea collection
+                    Build your personal idea collection (max for free is {FREE_TIER_SAVED_IDEAS_LIMIT})
                   </Text>
                 </View>
               </View>
 
               <View style={styles.feature}>
-                <Ionicons
-                  name="checkmark-circle"
-                  size={24}
-                  color="#A29BFE"
-                  style={styles.featureIcon}
-                />
+                <Ionicons name="checkmark-circle" size={24} color="#A29BFE" style={styles.featureIcon} />
                 <View style={styles.featureContent}>
                   <Text style={styles.featureText}>One-Time Purchase</Text>
-                  <Text style={styles.featureSubtext}>
-                    No subscriptions or hidden fees
-                  </Text>
+                  <Text style={styles.featureSubtext}>No subscription required!</Text>
+                </View>
+              </View>
+
+              <View style={styles.feature}>
+                <Ionicons name="checkmark-circle" size={24} color="#4ECDC4" style={styles.featureIcon} />
+                <View style={styles.featureContent}>
+                  <Text style={styles.featureText}>Ad Free</Text>
+                  <Text style={styles.featureSubtext}>No ads when generating date ideas</Text>
                 </View>
               </View>
             </View>
@@ -256,18 +160,14 @@ export default function PaywallModal({
             <View style={styles.priceContainer}>
               <Text style={styles.priceLabel}>One-Time Payment</Text>
               <View style={styles.priceRow}>
-                <Text style={styles.price}>$3.99</Text>
+                <Text style={styles.price}>{lifetimePremium?.priceString || "Product price not found"}</Text>
               </View>
             </View>
           </ScrollView>
 
           {/* Buttons */}
           <View style={styles.footer}>
-            <TouchableOpacity
-              style={styles.cancelButton}
-              onPress={onClose}
-              disabled={isProcessing}
-            >
+            <TouchableOpacity style={styles.cancelButton} onPress={onClose} disabled={isProcessing}>
               <Text style={styles.cancelButtonText}>Not Now</Text>
             </TouchableOpacity>
 
@@ -286,14 +186,8 @@ export default function PaywallModal({
 
           {__DEV__ && (
             <View style={styles.devFooter}>
-              <TouchableOpacity
-                style={styles.devResetButton}
-                onPress={handleResetPremium}
-                disabled={isProcessing}
-              >
-                <Text style={styles.devResetButtonText}>
-                  Remove Premium (DEV)
-                </Text>
+              <TouchableOpacity style={styles.devResetButton} onPress={handleResetPremium} disabled={isProcessing}>
+                <Text style={styles.devResetButtonText}>Remove Premium (DEV)</Text>
               </TouchableOpacity>
             </View>
           )}
