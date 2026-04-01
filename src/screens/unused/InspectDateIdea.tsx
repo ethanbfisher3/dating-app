@@ -1,22 +1,11 @@
 import React, { useLayoutEffect } from "react";
-import {
-  View,
-  Text,
-  Image,
-  ScrollView,
-  StyleSheet,
-  Linking,
-  TouchableOpacity,
-} from "react-native";
-import { getDateIdeaById, milesBetween } from "../data/DateIdeas";
-import { findDealsForName } from "../data/sscIndex";
-import { openWebsite } from "../utils/utils";
-import type { AppScreenProps } from "../types/navigation";
+import { View, Text, Image, ScrollView, StyleSheet, Linking, TouchableOpacity } from "react-native";
+import { getDateIdeaById, milesBetween } from "../../data/DateIdeas";
+import { findDealsForName } from "../../data/sscIndex";
+import { openWebsite } from "../../utils/utils";
+import type { AppScreenProps } from "../../types/navigation";
 
-export default function InspectDateIdea({
-  route,
-  navigation,
-}: AppScreenProps<"InspectDateIdea">) {
+export default function InspectDateIdea({ route, navigation }: AppScreenProps<"InspectDateIdea">) {
   useLayoutEffect(() => {
     navigation.setOptions({
       headerBackTitle: "Back",
@@ -26,9 +15,7 @@ export default function InspectDateIdea({
   const { id, userLocation } = route.params || {};
   const idea = getDateIdeaById(id);
 
-  const getLocationDistanceText = (location: {
-    location: { latitude: number; longitude: number };
-  }) => {
+  const getLocationDistanceText = (location: { location: { latitude: number; longitude: number } }) => {
     if (!userLocation) return "";
     if (location.location.latitude === 0 && location.location.longitude === 0) {
       return "";
@@ -67,9 +54,7 @@ export default function InspectDateIdea({
           }}
           onPress={() => openWebsite(idea.website)}
         >
-          <Text style={{ color: "#fff", fontSize: 18, fontWeight: "700" }}>
-            Open website
-          </Text>
+          <Text style={{ color: "#fff", fontSize: 18, fontWeight: "700" }}>Open website</Text>
         </TouchableOpacity>
       ) : null}
       {idea.locations ? (
@@ -106,14 +91,8 @@ export default function InspectDateIdea({
                 alignItems: "center",
               }}
             >
-              <Text
-                style={[styles.location, { textDecorationLine: "underline" }]}
-              >
-                {location.name}{" "}
-              </Text>
-              <Text style={styles.location}>
-                {getLocationDistanceText(location)}
-              </Text>
+              <Text style={[styles.location, { textDecorationLine: "underline" }]}>{location.name} </Text>
+              <Text style={styles.location}>{getLocationDistanceText(location)}</Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -202,18 +181,12 @@ export default function InspectDateIdea({
                       elevation: 3,
                     }}
                     onPress={() => {
-                      const q = encodeURIComponent(
-                        `${d.name} starving student card deal`,
-                      );
+                      const q = encodeURIComponent(`${d.name} starving student card deal`);
                       const url = `https://www.google.com/search?q=${q}`;
                       Linking.openURL(url).catch(() => {});
                     }}
                   >
-                    <Text
-                      style={{ color: "#fff", fontWeight: "700", fontSize: 15 }}
-                    >
-                      Open deal
-                    </Text>
+                    <Text style={{ color: "#fff", fontWeight: "700", fontSize: 15 }}>Open deal</Text>
                   </TouchableOpacity>
                 </View>
               );

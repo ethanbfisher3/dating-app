@@ -11,11 +11,9 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import PagerView from "react-native-pager-view";
 import Home from "./src/screens/Home";
 import PlanADate from "./src/screens/PlanADate";
-import DateIdeas from "./src/screens/unused/DateIdeas";
 import RecipesPage from "./src/screens/RecipesPage";
 import RecipeDetail from "./src/screens/RecipeDetail";
 import ActivityDetail from "./src/screens/ActivityDetail";
-import InspectDateIdea from "./src/screens/InspectDateIdea";
 import PlannedDateResults from "./src/screens/PlannedDateResults";
 import SavedIdeas from "./src/screens/SavedIdeas";
 import DateHistory from "./src/screens/DateHistory";
@@ -95,7 +93,6 @@ export default function App() {
             <Stack.Screen name="SavedIdeas" component={SavedIdeas} />
             <Stack.Screen name="RecipeDetail" component={RecipeDetail} />
             <Stack.Screen name="ActivityDetail" component={ActivityDetail} />
-            <Stack.Screen name="InspectDateIdea" component={InspectDateIdea} />
             <Stack.Screen name="PlannedDateResults" component={PlannedDateResults} />
             <Stack.Screen name="DateCalendar" component={DateCalendar} />
           </Stack.Navigator>

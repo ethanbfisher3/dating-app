@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import recipes from "../data/Recipes";
 import { resolveRecipeImage } from "../data/recipeImageResolver";
 import type { AppNavigation } from "../types/navigation";
+import PageInfoModal from "../Components/PageInfoModal";
 
 const RECIPES_PER_PAGE = 10;
 
@@ -15,6 +16,7 @@ export default function RecipesPage({ navigation }: { navigation: AppNavigation 
   const [time, setTime] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [filtersExpanded, setFiltersExpanded] = useState(false);
+  const [infoVisible, setInfoVisible] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
 
   const handleFilterInputFocus = (event: any) => {
@@ -84,7 +86,12 @@ export default function RecipesPage({ navigation }: { navigation: AppNavigation 
         keyboardDismissMode="interactive"
       >
         <View style={styles.header}>
-          <Text style={styles.title}>Recipe Ideas</Text>
+          <View style={styles.headerTopRow}>
+            <Text style={styles.title}>Recipe Ideas</Text>
+            <TouchableOpacity style={styles.infoButton} onPress={() => setInfoVisible(true)}>
+              <Ionicons name="information-circle-outline" size={22} color="#007AFF" />
+            </TouchableOpacity>
+          </View>
           {/* <Text style={styles.subtitle}>
             Fast, simple, and affordable recipes to impress your date.
           </Text> */}
@@ -256,6 +263,16 @@ export default function RecipesPage({ navigation }: { navigation: AppNavigation 
           )}
         </View>
       </ScrollView>
+      <PageInfoModal
+        visible={infoVisible}
+        onClose={() => setInfoVisible(false)}
+        description="Browse recipes and filter by cost, prep time, and meal type to find options that match your date plan."
+        bullets={[
+          "Use Filter Recipes to narrow results by budget and prep time.",
+          "Tap a recipe card to open full details and instructions.",
+          "Pagination lets you move through all matching recipes quickly.",
+        ]}
+      />
     </KeyboardAvoidingView>
   );
 }
@@ -268,12 +285,27 @@ const styles = StyleSheet.create({
   header: {
     paddingBottom: 16,
   },
+  headerTopRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: 12,
+  },
   title: {
     fontWeight: "900",
     fontSize: 36,
     marginTop: 24,
     marginBottom: 12,
     color: "#1a1a1a",
+  },
+  infoButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#eef5ff",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 30,
   },
   subtitle: {
     marginTop: 12,

@@ -1,3 +1,4 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { FilledIdea } from "../hooks/useFilledIdeas";
 
 export type SavedDateIdea = FilledIdea & {
@@ -7,12 +8,50 @@ export type SavedDateIdea = FilledIdea & {
 };
 
 export const FREE_TIER_SAVED_IDEAS_LIMIT = 3;
+const SAVED_IDEAS_KEY = "@saved_date_ideas";
 
 let savedIdeas: SavedDateIdea[] = [];
 const listeners = new Set<() => void>();
+let hasInitialized = false;
+let initializationPromise: Promise<void> | null = null;
 
 function notifyListeners() {
   listeners.forEach((listener) => listener());
+}
+
+async function persistSavedIdeas(nextSavedIdeas: SavedDateIdea[]): Promise<void> {
+  try {
+    await AsyncStorage.setItem(SAVED_IDEAS_KEY, JSON.stringify(nextSavedIdeas));
+  } catch {
+    // Keep in-memory data when native storage is unavailable.
+  }
+}
+
+export async function initializeSavedIdeas(): Promise<void> {
+  if (hasInitialized) {
+    return;
+  }
+
+  if (!initializationPromise) {
+    initializationPromise = (async () => {
+      try {
+        const stored = await AsyncStorage.getItem(SAVED_IDEAS_KEY);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed)) {
+            savedIdeas = parsed;
+          }
+        }
+      } catch {
+        // Keep empty in-memory defaults when storage is unavailable or corrupted.
+      } finally {
+        hasInitialized = true;
+        notifyListeners();
+      }
+    })();
+  }
+
+  await initializationPromise;
 }
 
 export function getSavedIdeas(): SavedDateIdea[] {
@@ -24,14 +63,9 @@ export function canSaveIdea(isUnlocked: boolean): boolean {
   return savedIdeas.length < FREE_TIER_SAVED_IDEAS_LIMIT;
 }
 
-export function saveDateIdea(
-  idea: FilledIdea,
-  selectedDate?: string,
-): SavedDateIdea {
+export function saveDateIdea(idea: FilledIdea, selectedDate?: string): SavedDateIdea {
   const signature = `${idea.filledTemplate}__${idea.template}`;
-  const existing = savedIdeas.find(
-    (saved) => `${saved.filledTemplate}__${saved.template}` === signature,
-  );
+  const existing = savedIdeas.find((saved) => `${saved.filledTemplate}__${saved.template}` === signature);
 
   if (existing) {
     return existing;
@@ -45,6 +79,7 @@ export function saveDateIdea(
   };
 
   savedIdeas = [savedIdea, ...savedIdeas];
+  void persistSavedIdeas(savedIdeas);
   notifyListeners();
   return savedIdea;
 }
@@ -56,6 +91,7 @@ export function removeSavedIdea(id: string): void {
   }
 
   savedIdeas = nextSavedIdeas;
+  void persistSavedIdeas(savedIdeas);
   notifyListeners();
 }
 

@@ -8,6 +8,7 @@ import type { PlaceSummary } from "../hooks/useDatePlannerIdeas";
 import {
   FREE_TIER_SAVED_IDEAS_LIMIT,
   getSavedIdeas,
+  initializeSavedIdeas,
   removeSavedIdea,
   subscribeSavedIdeas,
   type SavedDateIdea,
@@ -16,19 +17,35 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { usePremium } from "../hooks/usePremium";
 import PaywallModal from "../Components/PaywallModal";
 import usePurchases from "src/hooks/usePurchases";
+import PageInfoModal from "../Components/PageInfoModal";
 
 export default function SavedIdeas({ navigation }: { navigation: AppNavigation }) {
   const { lifetimePremium } = usePurchases();
-  const [savedIdeas, setSavedIdeas] = useState<SavedDateIdea[]>(getSavedIdeas());
+  const [savedIdeas, setSavedIdeas] = useState<SavedDateIdea[]>([]);
   const [paywallVisible, setPaywallVisible] = useState(false);
+  const [infoVisible, setInfoVisible] = useState(false);
   const { isUnlocked } = usePremium();
 
   const insets = useSafeAreaInsets();
 
   useEffect(() => {
-    return subscribeSavedIdeas(() => {
+    let isMounted = true;
+
+    const load = () => {
+      if (!isMounted) {
+        return;
+      }
       setSavedIdeas(getSavedIdeas());
-    });
+    };
+
+    void initializeSavedIdeas().then(load);
+
+    const unsubscribe = subscribeSavedIdeas(load);
+
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
   }, []);
 
   return (
@@ -42,33 +59,57 @@ export default function SavedIdeas({ navigation }: { navigation: AppNavigation }
       <View
         style={{
           flexDirection: "row",
-          alignItems: "flex-end",
-          flexWrap: "wrap",
-          gap: 8,
+          alignItems: "flex-start",
+          justifyContent: "space-between",
+          gap: 12,
           marginVertical: 24,
         }}
       >
-        <Text
+        <View
           style={{
-            fontWeight: "900",
-            fontSize: 36,
-            color: "#1a1a1a",
+            flexDirection: "row",
+            alignItems: "flex-end",
+            flexWrap: "wrap",
+            gap: 8,
+            flex: 1,
           }}
         >
-          Saved Ideas
-        </Text>
-        {!isUnlocked ? (
           <Text
             style={{
-              fontSize: 13,
-              fontWeight: "600",
-              color: "#6b7280",
-              marginBottom: 6,
+              fontWeight: "900",
+              fontSize: 36,
+              color: "#1a1a1a",
             }}
           >
-            ({savedIdeas.length} / {FREE_TIER_SAVED_IDEAS_LIMIT})
+            Saved Ideas
           </Text>
-        ) : null}
+          {!isUnlocked ? (
+            <Text
+              style={{
+                fontSize: 13,
+                fontWeight: "600",
+                color: "#6b7280",
+                marginBottom: 6,
+              }}
+            >
+              ({savedIdeas.length} / {FREE_TIER_SAVED_IDEAS_LIMIT})
+            </Text>
+          ) : null}
+        </View>
+        <TouchableOpacity
+          style={{
+            width: 36,
+            height: 36,
+            borderRadius: 18,
+            backgroundColor: "#eef5ff",
+            alignItems: "center",
+            justifyContent: "center",
+            marginTop: 6,
+          }}
+          onPress={() => setInfoVisible(true)}
+        >
+          <Ionicons name="information-circle-outline" size={22} color="#007AFF" />
+        </TouchableOpacity>
       </View>
 
       <Image
@@ -196,6 +237,16 @@ export default function SavedIdeas({ navigation }: { navigation: AppNavigation }
       })}
 
       <PaywallModal visible={paywallVisible} onClose={() => setPaywallVisible(false)} reason="general" />
+      <PageInfoModal
+        visible={infoVisible}
+        onClose={() => setInfoVisible(false)}
+        description="This page stores date ideas you saved from generated results so you can revisit them anytime."
+        bullets={[
+          "Open any card to view all activities, places, and timing details.",
+          "Tap Remove if you no longer want to keep an idea.",
+          "Your saved ideas are stored on-device and loaded when the app opens.",
+        ]}
+      />
     </ScrollView>
   );
 }

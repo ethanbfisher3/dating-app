@@ -1,41 +1,33 @@
-import React, { useLayoutEffect } from "react"
-import { ScrollView, StyleSheet, Text, View } from "react-native"
-import { getActivityById } from "../data/activities"
-import type { AppScreenProps } from "../types/navigation"
+import React, { useLayoutEffect } from "react";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { getActivityById } from "../data/activities";
+import type { AppScreenProps } from "../types/navigation";
 
 function formatMoney(cost: number) {
-  return cost <= 0 ? "Free" : `$${cost}`
+  return cost <= 0 ? "Free" : `$${cost}`;
 }
 
-function formatTimeWindow(
-  startHour12: string,
-  startPeriod: string,
-  endHour12: string,
-  endPeriod: string,
-) {
-  return `${startHour12} ${startPeriod} - ${endHour12} ${endPeriod}`
+function formatTimeWindow(startHour12: string, startPeriod: string, endHour12: string, endPeriod: string) {
+  return `${startHour12} ${startPeriod} - ${endHour12} ${endPeriod}`;
 }
 
-export default function ActivityDetail({
-  route,
-  navigation,
-}: AppScreenProps<"ActivityDetail">) {
+export default function ActivityDetail({ route, navigation }: AppScreenProps<"ActivityDetail">) {
+  const { id } = route.params || {};
+  const activity = getActivityById(id);
+
   useLayoutEffect(() => {
     navigation.setOptions({
       headerBackTitle: "Back",
-      title: "View Activity",
-    })
-  }, [navigation])
-
-  const { id } = route.params || {}
-  const activity = getActivityById(id)
+      title: activity.name || "Activity",
+    });
+  }, [navigation]);
 
   if (!activity) {
     return (
       <View style={styles.missingContainer}>
         <Text>Activity not found</Text>
       </View>
-    )
+    );
   }
 
   return (
@@ -97,7 +89,7 @@ export default function ActivityDetail({
         ))}
       </View> */}
     </ScrollView>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
@@ -191,4 +183,4 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#f0f0f0",
   },
-})
+});

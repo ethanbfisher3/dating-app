@@ -1,9 +1,11 @@
 import React, { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { Modal, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { getRecordedDates, subscribeRecordedDates, type RecordedDate } from "../data/dateHistoryStore";
+import { getRecordedDates, initializeRecordedDates, subscribeRecordedDates, type RecordedDate } from "../data/dateHistoryStore";
 import { getSavedIdeas, subscribeSavedIdeas, type SavedDateIdea } from "../data/savedIdeasStore";
 import { AppNavigation } from "src/types/navigation";
+import { Ionicons } from "@expo/vector-icons";
+import PageInfoModal from "../Components/PageInfoModal";
 
 function toDateKey(date: Date): string {
   return date.toISOString().slice(0, 10);
@@ -21,7 +23,7 @@ function isValidDateKey(value: string): boolean {
   return /^\d{4}-\d{2}-\d{2}$/.test(value);
 }
 
-export default function DateCalendar({ navigation }: { navigation: AppNavigation }) {
+export default function DateCalendar({ navigation }: { navigation?: AppNavigation }) {
   const insets = useSafeAreaInsets();
   const [currentMonth, setCurrentMonth] = useState(startOfMonth(new Date()));
   const [recordedDateKeys, setRecordedDateKeys] = useState<string[]>([]);
@@ -30,16 +32,25 @@ export default function DateCalendar({ navigation }: { navigation: AppNavigation
   const [savedIdeas, setSavedIdeas] = useState<SavedDateIdea[]>([]);
   const [selectedDateKey, setSelectedDateKey] = useState<string | null>(null);
   const [isDetailsModalVisible, setIsDetailsModalVisible] = useState(false);
+  const [infoVisible, setInfoVisible] = useState(false);
 
-  useLayoutEffect(() => {
-    navigation.setOptions({
-      headerBackTitle: "Back",
-      title: "Date Calendar",
-    });
-  }, [navigation]);
+  if (navigation) {
+    useLayoutEffect(() => {
+      navigation.setOptions({
+        headerBackTitle: "Back",
+        title: "Date Calendar",
+      });
+    }, [navigation]);
+  }
 
   useEffect(() => {
+    let isMounted = true;
+
     const load = () => {
+      if (!isMounted) {
+        return;
+      }
+
       const recorded = getRecordedDates().filter((entry) => isValidDateKey(entry.dateOfDate));
       const saved = getSavedIdeas().filter((entry) => entry.selectedDate && isValidDateKey(entry.selectedDate));
 
@@ -49,11 +60,12 @@ export default function DateCalendar({ navigation }: { navigation: AppNavigation
       setSavedIdeaDateKeys(saved.map((entry) => entry.selectedDate as string));
     };
 
-    load();
+    void initializeRecordedDates().then(load);
     const unsubRecorded = subscribeRecordedDates(load);
     const unsubSavedIdeas = subscribeSavedIdeas(load);
 
     return () => {
+      isMounted = false;
       unsubRecorded();
       unsubSavedIdeas();
     };
@@ -152,27 +164,40 @@ export default function DateCalendar({ navigation }: { navigation: AppNavigation
         backgroundColor: "#fafbfc",
       }}
     >
-      <Text
+      <View
         style={{
-          fontWeight: "900",
-          fontSize: 34,
+          flexDirection: "row",
+          alignItems: "flex-start",
+          justifyContent: "space-between",
+          gap: 12,
           marginBottom: 12,
-          color: "#1a1a1a",
         }}
       >
-        Date Calendar
-      </Text>
-
-      {/* <Text
-        style={{
-          marginBottom: 16,
-          fontSize: 16,
-          lineHeight: 24,
-          color: "#555",
-        }}
-      >
-        Track dates you've been on and your planned future dates.
-      </Text> */}
+        <Text
+          style={{
+            fontWeight: "900",
+            fontSize: 34,
+            color: "#1a1a1a",
+            flex: 1,
+          }}
+        >
+          Date Calendar
+        </Text>
+        <TouchableOpacity
+          style={{
+            width: 36,
+            height: 36,
+            borderRadius: 18,
+            backgroundColor: "#eef5ff",
+            alignItems: "center",
+            justifyContent: "center",
+            marginTop: 4,
+          }}
+          onPress={() => setInfoVisible(true)}
+        >
+          <Ionicons name="information-circle-outline" size={22} color="#007AFF" />
+        </TouchableOpacity>
+      </View>
 
       <View
         style={{
@@ -507,6 +532,17 @@ export default function DateCalendar({ navigation }: { navigation: AppNavigation
           </View>
         </View>
       </Modal>
+
+      <PageInfoModal
+        visible={infoVisible}
+        onClose={() => setInfoVisible(false)}
+        description="This calendar combines your recorded dates and planned or saved ideas in one monthly view."
+        bullets={[
+          "Tap any day with colored dots to see full details.",
+          "Red dots are recorded past dates.",
+          "Green dots are saved or planned future ideas.",
+        ]}
+      />
     </ScrollView>
   );
 }

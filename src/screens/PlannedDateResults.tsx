@@ -17,12 +17,10 @@ import type { AppScreenProps, PlannedDateResultsParams } from "../types/navigati
 import useDatePlannerIdeas, { PlaceSummary } from "../hooks/useDatePlannerIdeas";
 import useFilledIdeas, { estimateTravelMinutesBetween, getCandidatesForSlot } from "../hooks/useFilledIdeas";
 import { saveDateIdea, canSaveIdea } from "../data/savedIdeasStore";
-import { premiumStore } from "../data/premiumStore";
 import { usePremium } from "../hooks/usePremium";
 import PaywallModal from "../Components/PaywallModal";
 import DateIdeaCard from "../Components/DateIdeaCard";
-
-const DATE_CATEGORIES = ["Food", "Outdoors", "Sports", "Nature", "Learning", "Shopping", "Recreation"];
+import { DATE_CATEGORIES } from "src/utils/utils";
 
 const DEV_PLACE_SLOT_TYPES: Record<string, string[]> = {
   meal: ["restaurant", "meal_takeaway", "cafe", "pizza_restaurant"],
@@ -173,24 +171,12 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
     activities,
   });
 
-  const { selectedDate, startHour, endHour, maxPrice, maxDistance, categories } = plannerParams;
-
-  const canQueryPlacesByLocation = maxDistance > 0 && plannerParams.userLocation != null;
-  const devPlacesQueryLocationLabel = canQueryPlacesByLocation
-    ? `${plannerParams.userLocation?.latitude.toFixed(6)}, ${plannerParams.userLocation?.longitude.toFixed(6)}`
-    : "Not used (missing location or distance <= 0)";
+  const { maxDistance } = plannerParams;
 
   const devPlaceSlotCounts = Object.entries(DEV_PLACE_SLOT_TYPES).map(([slot, allowedTypes]) => ({
     slot,
     count: places.filter((place) => place.type === slot || allowedTypes.includes(place.type)).length,
   }));
-
-  const formatHour = (hour24: number) => {
-    const normalized = ((hour24 % 24) + 24) % 24;
-    const period = normalized < 12 ? "AM" : "PM";
-    const hour12 = normalized % 12 === 0 ? 12 : normalized % 12;
-    return `${hour12}:00 ${period}`;
-  };
 
   const clampHour12 = (value: number) => {
     if (Number.isNaN(value)) return 1;
@@ -355,7 +341,8 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
         style={{
           fontWeight: "900",
           fontSize: 36,
-          marginVertical: 24,
+          marginBottom: 24,
+          marginTop: 12,
           color: "#1a1a1a",
         }}
       >
@@ -372,19 +359,7 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
         }}
       />
 
-      {/* <Text
-        style={{
-          marginBottom: 16,
-          fontSize: 17,
-          lineHeight: 26,
-          color: "#555",
-        }}
-      >
-        Here are 10 generated date templates based on your categories, date, and
-        time window.
-      </Text> */}
-
-      {places.length === 0 && (
+      {places.length === 0 && maxDistance > 0 && (
         <Text
           style={{
             marginBottom: 16,

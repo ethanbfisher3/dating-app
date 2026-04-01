@@ -5,6 +5,7 @@ import appInfo from "src/data/info";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { usePremium } from "../hooks/usePremium";
 import PaywallModal from "../Components/PaywallModal";
+import DateCalendar from "./DateCalendar";
 
 export default function Info({ goToTab }) {
   const [expandedOffers, setExpandedOffers] = useState({
@@ -65,41 +66,6 @@ export default function Info({ goToTab }) {
           }}
         />
       </View>
-      {/* <View
-        style={{
-          backgroundColor: "#fff",
-          padding: 20,
-          borderRadius: 12,
-          marginBottom: 20,
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.1,
-          shadowRadius: 4,
-          elevation: 2,
-        }}
-      >
-        <Text
-          style={{
-            fontSize: 24,
-            fontWeight: "800",
-            marginBottom: 12,
-            color: "#1e90ff",
-          }}
-        >
-          Welcome!
-        </Text>
-        <Text
-          style={{
-            fontSize: 17,
-            lineHeight: 26,
-            color: "#555",
-            marginBottom: 16,
-          }}
-        >
-          {appInfo.appName} is your ultimate companion for planning
-          unforgettable dates that you'll never forget!
-        </Text>
-      </View> */}
 
       <View
         style={{

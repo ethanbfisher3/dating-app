@@ -10,6 +10,7 @@ import { addPlannedDate } from "../data/plannedDatesStore";
 import PaywallModal from "../Components/PaywallModal";
 import PlanDateInputsModal from "../Components/PlanDateInputsModal";
 import usePurchases from "src/hooks/usePurchases";
+import PageInfoModal from "../Components/PageInfoModal";
 
 const ADDRESS_OFF_DEFAULT_LOCATION = {
   latitude: 36.071281486295156,
@@ -38,6 +39,7 @@ export default function PlanADate({ navigation }: { navigation: AppNavigation })
   const [categoriesChecked, setCategoriesChecked] = useState(Array(DATE_CATEGORIES.length).fill(true));
   const [isGeneratingIdeas, setIsGeneratingIdeas] = useState(false);
   const [paywallVisible, setPaywallVisible] = useState(false);
+  const [infoVisible, setInfoVisible] = useState(false);
   const [serverTarget, setServerTarget] = useState<string>("localhost");
 
   useEffect(() => {
@@ -178,28 +180,40 @@ export default function PlanADate({ navigation }: { navigation: AppNavigation })
           flexGrow: 1,
         }}
       >
-        <Text
+        <View
           style={{
-            fontWeight: "900",
-            fontSize: 36,
+            flexDirection: "row",
+            alignItems: "flex-start",
+            justifyContent: "space-between",
+            gap: 12,
             marginVertical: 24,
-            color: "#1a1a1a",
           }}
         >
-          Plan a Date
-        </Text>
-
-        {/* <Text
-          style={{
-            marginBottom: 22,
-            fontSize: 17,
-            lineHeight: 26,
-            color: "#555",
-          }}
-        >
-          Use a single form to set your preferences, then generate your date
-          ideas.
-        </Text> */}
+          <Text
+            style={{
+              fontWeight: "900",
+              fontSize: 36,
+              color: "#1a1a1a",
+              flex: 1,
+            }}
+          >
+            Date Ideas
+          </Text>
+          <TouchableOpacity
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 18,
+              backgroundColor: "#eef5ff",
+              alignItems: "center",
+              justifyContent: "center",
+              marginTop: 6,
+            }}
+            onPress={() => setInfoVisible(true)}
+          >
+            <Ionicons name="information-circle-outline" size={22} color="#007AFF" />
+          </TouchableOpacity>
+        </View>
 
         <Image
           source={require("../assets/images/guy_asking_girl.jpg")}
@@ -224,7 +238,7 @@ export default function PlanADate({ navigation }: { navigation: AppNavigation })
             alignItems: "center",
           }}
         >
-          <Text style={{ color: "#fff", fontSize: 18, fontWeight: "800" }}>Plan Date</Text>
+          <Text style={{ color: "#fff", fontSize: 18, fontWeight: "800" }}>Generate Date Ideas</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -391,6 +405,16 @@ export default function PlanADate({ navigation }: { navigation: AppNavigation })
 
         <PaywallModal visible={paywallVisible} onClose={() => setPaywallVisible(false)} reason="general" />
       </ScrollView>
+      <PageInfoModal
+        visible={infoVisible}
+        onClose={() => setInfoVisible(false)}
+        description="Use this page to generate date ideas based on your budget, time window, categories, and distance."
+        bullets={[
+          "Tap Generate Date Ideas to open filters and preferences.",
+          "Choose your date, budget, timing, and categories to tailor suggestions.",
+          "Open Date Calendar to review planned and recorded dates.",
+        ]}
+      />
     </KeyboardAvoidingView>
   );
 }

@@ -19,6 +19,7 @@ import {
   addRecordedDate,
   FREE_TIER_RECORDED_DATES_LIMIT,
   getRecordedDates,
+  initializeRecordedDates,
   removeRecordedDate,
   subscribeRecordedDates,
   updateRecordedDate,
@@ -28,11 +29,18 @@ import type { AppNavigation } from "../types/navigation";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { usePremium } from "../hooks/usePremium";
 import PaywallModal from "../Components/PaywallModal";
+import PageInfoModal from "../Components/PageInfoModal";
 
 function getRatingColor(n: number): string {
   // hue 0 = red (1), hue 120 = green (10)
   const hue = Math.round(((n - 1) / 9) * 120);
   return `hsl(${hue}, 75%, 42%)`;
+}
+
+function getTodayEnd(): Date {
+  const today = new Date();
+  today.setHours(23, 59, 59, 999);
+  return today;
 }
 
 export default function DateHistoryScreen({ navigation }: { navigation: AppNavigation }) {
@@ -41,6 +49,7 @@ export default function DateHistoryScreen({ navigation }: { navigation: AppNavig
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [editingDateId, setEditingDateId] = useState<string | null>(null);
   const [paywallVisible, setPaywallVisible] = useState(false);
+  const [infoVisible, setInfoVisible] = useState(false);
 
   const { isUnlocked } = usePremium();
 
@@ -56,17 +65,27 @@ export default function DateHistoryScreen({ navigation }: { navigation: AppNavig
   const modalScrollRef = useRef<ScrollView>(null);
 
   const insets = useSafeAreaInsets();
+  const maxSelectableDate = getTodayEnd();
 
   useEffect(() => {
-    // Load initial data
-    setRecordedDates(getRecordedDates());
+    let isMounted = true;
+
+    const load = () => {
+      if (!isMounted) {
+        return;
+      }
+      setRecordedDates(getRecordedDates());
+    };
+
+    void initializeRecordedDates().then(load);
 
     // Subscribe to changes
-    const unsubscribe = subscribeRecordedDates(() => {
-      setRecordedDates(getRecordedDates());
-    });
+    const unsubscribe = subscribeRecordedDates(load);
 
-    return unsubscribe;
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
   }, []);
 
   const handleDateChange = (event: any, date?: Date) => {
@@ -76,7 +95,7 @@ export default function DateHistoryScreen({ navigation }: { navigation: AppNavig
 
     const isConfirmed = Platform.OS === "ios" || event.type === "set";
     if (isConfirmed && date) {
-      setSelectedDate(date);
+      setSelectedDate(date > maxSelectableDate ? maxSelectableDate : date);
     }
   };
 
@@ -99,9 +118,29 @@ export default function DateHistoryScreen({ navigation }: { navigation: AppNavig
   };
 
   const openCreateModal = () => {
+    if (!isUnlocked && recordedDates.length >= FREE_TIER_RECORDED_DATES_LIMIT) {
+      setPaywallVisible(true);
+      return;
+    }
     setEditingDateId(null);
     resetForm();
     setModalVisible(true);
+  };
+
+  const addExampleDate = () => {
+    const exampleDate = {
+      dateOfDate: new Date().toISOString(),
+      imageUri: null,
+      whoWentWith: "Alex",
+      whatYouDid: "Went to a cozy cafe and had a great conversation.",
+      moneySpent: 45.0,
+      rating: 9,
+      whatYouLiked: "I really enjoyed the deep conversation and the vibe of the cafe.",
+      whatYouLearned: "I learned that Alex is really passionate about travel and has some amazing stories.",
+    };
+
+    addRecordedDate(exampleDate);
+    closeModal();
   };
 
   const openEditModal = (date: RecordedDate) => {
@@ -119,6 +158,11 @@ export default function DateHistoryScreen({ navigation }: { navigation: AppNavig
   };
 
   const handleSaveDate = () => {
+    if (selectedDate > maxSelectableDate) {
+      Alert.alert("Error", "Date must be today or earlier");
+      return;
+    }
+
     if (!whoWentWith.trim()) {
       Alert.alert("Error", "Please enter who you went out with");
       return;
@@ -217,10 +261,15 @@ export default function DateHistoryScreen({ navigation }: { navigation: AppNavig
       <ScrollView contentContainerStyle={[{ padding: 24 }, styles.scrollContent, { paddingTop: insets.top }]}>
         <View style={styles.header}>
           <View style={styles.titleRow}>
-            <Text style={styles.title}>Date History</Text>
-            <Text style={styles.freeCounterText}>
-              ({recordedDates.length} / {FREE_TIER_RECORDED_DATES_LIMIT})
-            </Text>
+            <View style={styles.titleTextRow}>
+              <Text style={styles.title}>Date History</Text>
+              <Text style={styles.freeCounterText}>
+                ({recordedDates.length} / {FREE_TIER_RECORDED_DATES_LIMIT})
+              </Text>
+            </View>
+            <TouchableOpacity style={styles.infoButton} onPress={() => setInfoVisible(true)}>
+              <Ionicons name="information-circle-outline" size={22} color="#007AFF" />
+            </TouchableOpacity>
           </View>
           {/* <Text style={styles.subtitle}>Record the dates you've been on</Text> */}
         </View>
@@ -320,6 +369,13 @@ export default function DateHistoryScreen({ navigation }: { navigation: AppNavig
             </View>
           </>
         )}
+
+        {__DEV__ && (
+          <TouchableOpacity style={[styles.addButton, { marginTop: 0, backgroundColor: "green" }]} onPress={addExampleDate}>
+            <Ionicons name="add" size={24} color="#fff" />
+            <Text style={styles.addButtonText}>(DEV) Add Example Date</Text>
+          </TouchableOpacity>
+        )}
       </ScrollView>
 
       <Modal animationType="slide" transparent={true} visible={modalVisible} onRequestClose={closeModal}>
@@ -365,6 +421,7 @@ export default function DateHistoryScreen({ navigation }: { navigation: AppNavig
                     mode="date"
                     display={Platform.OS === "ios" ? "inline" : "calendar"}
                     onChange={handleDateChange}
+                    maximumDate={maxSelectableDate}
                     style={styles.datePicker}
                     themeVariant={Platform.OS === "ios" ? "light" : undefined}
                     {...(Platform.OS === "ios"
@@ -518,6 +575,16 @@ export default function DateHistoryScreen({ navigation }: { navigation: AppNavig
       </Modal>
 
       <PaywallModal visible={paywallVisible} onClose={() => setPaywallVisible(false)} reason="date_history_limit" />
+      <PageInfoModal
+        visible={infoVisible}
+        onClose={() => setInfoVisible(false)}
+        description="Record your past dates so you can look back on what happened and what worked."
+        bullets={[
+          "Tap Record Date to add a new entry.",
+          "You can edit or delete any saved date using the icons on each card.",
+          "Date entries are saved on your device and loaded when the app opens.",
+        ]}
+      />
     </View>
   );
 }
@@ -548,9 +615,25 @@ const styles = StyleSheet.create({
   },
   titleRow: {
     flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  titleTextRow: {
+    flexDirection: "row",
     alignItems: "flex-end",
     gap: 8,
     flexWrap: "wrap",
+    flex: 1,
+  },
+  infoButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#eef5ff",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 30,
   },
   freeCounterText: {
     fontSize: 13,

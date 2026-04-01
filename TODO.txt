@@ -1,21 +1,24 @@
 Add Revenuecat api keys for apple
 
-Add currencies for other places, like UK
 When the user opens the app, the app could automatically query the server for places nearby with their current location...
+Restyle max budget and max distance to have buttons for 'Free' and 'At Home'
+'Date Idea Generator' instead of 'Date Planner'. Make the page a place where the user can put down their plans and it can generate maybe one idea at a time for the user
+Randomize the image on the planned dates results page
+
+Test:
 Test for if the user doesn't have internet or their location is turned off
 Test for if products don't load
-Restyle max budget and max distance to have buttons for 'Free' and 'At Home'
-Add more categories here and on the server
-Make sure the server is not queried if the user sets a max distance of 0
-Let the user pick subcategories instead of it being random?
+Premium cost changes to other currencies based on user location
+
 
 Maybe:
 Incorporate pictures on the date results page
 Search button in the saved ideas
+Add a spot for the user to add comments?
 
 
 Eventually:
-More date templates/Fix current date templates, add more activities, and recipes
+More date templates/Fix current date templates, add more activities, and recipes, more categories/more specific categories (like dropdowns from food > dessert, lunch, etc)
 users can input their own date ideas
 users can upload pictures or reviews and there can be a 'recent dates in provo' section on the app to make it more like social media. 
 Then, when a user is looking at date ideas or a place, it will show them dates that have taken place at that spot
