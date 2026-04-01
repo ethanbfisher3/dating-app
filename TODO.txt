@@ -4,6 +4,10 @@ Add currencies for other places, like UK
 When the user opens the app, the app could automatically query the server for places nearby with their current location...
 Test for if the user doesn't have internet or their location is turned off
 Test for if products don't load
+Restyle max budget and max distance to have buttons for 'Free' and 'At Home'
+Add more categories here and on the server
+Make sure the server is not queried if the user sets a max distance of 0
+Let the user pick subcategories instead of it being random?
 
 Maybe:
 Incorporate pictures on the date results page

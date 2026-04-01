@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Alert, Image, KeyboardAvoidingView, Platform, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import * as Location from "expo-location";
 import { Ionicons } from "@expo/vector-icons";
-import type { AppNavigation, PlannerServerTarget } from "../types/navigation";
+import type { AppNavigation } from "../types/navigation";
 import { DATE_CATEGORIES, timesAreInvalid } from "../utils/utils";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { usePremium } from "../hooks/usePremium";
@@ -38,9 +38,10 @@ export default function PlanADate({ navigation }: { navigation: AppNavigation })
   const [categoriesChecked, setCategoriesChecked] = useState(Array(DATE_CATEGORIES.length).fill(true));
   const [isGeneratingIdeas, setIsGeneratingIdeas] = useState(false);
   const [paywallVisible, setPaywallVisible] = useState(false);
-  const [serverTarget, setServerTarget] = useState<PlannerServerTarget>("localhost");
+  const [serverTarget, setServerTarget] = useState<string>("localhost");
 
   useEffect(() => {
+    setServerTarget(process.env.EXPO_PUBLIC_PLACES_SERVER_URL);
     const loadLocation = async () => {
       try {
         const { status } = await Location.requestForegroundPermissionsAsync();
@@ -136,6 +137,12 @@ export default function PlanADate({ navigation }: { navigation: AppNavigation })
       Alert.alert("Distance Limited", "Premium users can search up to 25+ miles. Free tier is limited to 5 miles.");
     }
 
+    const resolvedUserLocation = useMyAddressEnabled ? (actualUserLocation ?? ADDRESS_OFF_DEFAULT_LOCATION) : ADDRESS_OFF_DEFAULT_LOCATION;
+
+    if (useMyAddressEnabled && !actualUserLocation) {
+      Alert.alert("Location Not Ready", "Your current location is not available yet. Using the default location for this search.");
+    }
+
     setIsGeneratingIdeas(true);
     addPlannedDate(selectedDateIso);
     setShowDatePicker(false);
@@ -149,7 +156,7 @@ export default function PlanADate({ navigation }: { navigation: AppNavigation })
       maxDistance: finalMaxDistance,
       categories: selectedCategories,
       serverTarget,
-      userLocation: useMyAddressEnabled ? actualUserLocation : ADDRESS_OFF_DEFAULT_LOCATION,
+      userLocation: resolvedUserLocation,
     });
 
     setTimeout(() => setIsGeneratingIdeas(false), 500);

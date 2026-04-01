@@ -1,164 +1,138 @@
-import React, { useEffect, useLayoutEffect, useMemo, useState } from "react"
-import { Modal, ScrollView, Text, TouchableOpacity, View } from "react-native"
-import { useSafeAreaInsets } from "react-native-safe-area-context"
-import {
-  getRecordedDates,
-  subscribeRecordedDates,
-  type RecordedDate,
-} from "../data/dateHistoryStore"
-import {
-  getSavedIdeas,
-  subscribeSavedIdeas,
-  type SavedDateIdea,
-} from "../data/savedIdeasStore"
-import { AppNavigation } from "src/types/navigation"
+import React, { useEffect, useLayoutEffect, useMemo, useState } from "react";
+import { Modal, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { getRecordedDates, subscribeRecordedDates, type RecordedDate } from "../data/dateHistoryStore";
+import { getSavedIdeas, subscribeSavedIdeas, type SavedDateIdea } from "../data/savedIdeasStore";
+import { AppNavigation } from "src/types/navigation";
 
 function toDateKey(date: Date): string {
-  return date.toISOString().slice(0, 10)
+  return date.toISOString().slice(0, 10);
 }
 
 function startOfMonth(date: Date): Date {
-  return new Date(date.getFullYear(), date.getMonth(), 1)
+  return new Date(date.getFullYear(), date.getMonth(), 1);
 }
 
 function monthLabel(date: Date): string {
-  return date.toLocaleDateString("en-US", { month: "long", year: "numeric" })
+  return date.toLocaleDateString("en-US", { month: "long", year: "numeric" });
 }
 
 function isValidDateKey(value: string): boolean {
-  return /^\d{4}-\d{2}-\d{2}$/.test(value)
+  return /^\d{4}-\d{2}-\d{2}$/.test(value);
 }
 
-export default function DateCalendar({
-  navigation,
-}: {
-  navigation: AppNavigation
-}) {
-  const insets = useSafeAreaInsets()
-  const [currentMonth, setCurrentMonth] = useState(startOfMonth(new Date()))
-  const [recordedDateKeys, setRecordedDateKeys] = useState<string[]>([])
-  const [savedIdeaDateKeys, setSavedIdeaDateKeys] = useState<string[]>([])
-  const [recordedDates, setRecordedDates] = useState<RecordedDate[]>([])
-  const [savedIdeas, setSavedIdeas] = useState<SavedDateIdea[]>([])
-  const [selectedDateKey, setSelectedDateKey] = useState<string | null>(null)
-  const [isDetailsModalVisible, setIsDetailsModalVisible] = useState(false)
+export default function DateCalendar({ navigation }: { navigation: AppNavigation }) {
+  const insets = useSafeAreaInsets();
+  const [currentMonth, setCurrentMonth] = useState(startOfMonth(new Date()));
+  const [recordedDateKeys, setRecordedDateKeys] = useState<string[]>([]);
+  const [savedIdeaDateKeys, setSavedIdeaDateKeys] = useState<string[]>([]);
+  const [recordedDates, setRecordedDates] = useState<RecordedDate[]>([]);
+  const [savedIdeas, setSavedIdeas] = useState<SavedDateIdea[]>([]);
+  const [selectedDateKey, setSelectedDateKey] = useState<string | null>(null);
+  const [isDetailsModalVisible, setIsDetailsModalVisible] = useState(false);
 
   useLayoutEffect(() => {
     navigation.setOptions({
       headerBackTitle: "Back",
       title: "Date Calendar",
-    })
-  }, [navigation])
+    });
+  }, [navigation]);
 
   useEffect(() => {
     const load = () => {
-      const recorded = getRecordedDates().filter((entry) =>
-        isValidDateKey(entry.dateOfDate),
-      )
-      const saved = getSavedIdeas().filter(
-        (entry) => entry.selectedDate && isValidDateKey(entry.selectedDate),
-      )
+      const recorded = getRecordedDates().filter((entry) => isValidDateKey(entry.dateOfDate));
+      const saved = getSavedIdeas().filter((entry) => entry.selectedDate && isValidDateKey(entry.selectedDate));
 
-      setRecordedDates(recorded)
-      setSavedIdeas(saved)
-      setRecordedDateKeys(recorded.map((entry) => entry.dateOfDate))
-      setSavedIdeaDateKeys(saved.map((entry) => entry.selectedDate as string))
-    }
+      setRecordedDates(recorded);
+      setSavedIdeas(saved);
+      setRecordedDateKeys(recorded.map((entry) => entry.dateOfDate));
+      setSavedIdeaDateKeys(saved.map((entry) => entry.selectedDate as string));
+    };
 
-    load()
-    const unsubRecorded = subscribeRecordedDates(load)
-    const unsubSavedIdeas = subscribeSavedIdeas(load)
+    load();
+    const unsubRecorded = subscribeRecordedDates(load);
+    const unsubSavedIdeas = subscribeSavedIdeas(load);
 
     return () => {
-      unsubRecorded()
-      unsubSavedIdeas()
-    }
-  }, [])
+      unsubRecorded();
+      unsubSavedIdeas();
+    };
+  }, []);
 
-  const todayKey = toDateKey(new Date())
+  const todayKey = toDateKey(new Date());
 
   const eventsByDate = useMemo(() => {
-    const map = new Map<string, { past: number; future: number }>()
+    const map = new Map<string, { past: number; future: number }>();
 
     const increment = (dateKey: string, isFuture: boolean) => {
-      const current = map.get(dateKey) ?? { past: 0, future: 0 }
+      const current = map.get(dateKey) ?? { past: 0, future: 0 };
       if (isFuture) {
-        current.future += 1
+        current.future += 1;
       } else {
-        current.past += 1
+        current.past += 1;
       }
-      map.set(dateKey, current)
-    }
+      map.set(dateKey, current);
+    };
 
     recordedDateKeys.forEach((dateKey) => {
-      increment(dateKey, dateKey >= todayKey)
-    })
+      increment(dateKey, dateKey >= todayKey);
+    });
 
     savedIdeaDateKeys.forEach((dateKey) => {
-      increment(dateKey, dateKey >= todayKey)
-    })
+      increment(dateKey, dateKey >= todayKey);
+    });
 
-    return map
-  }, [savedIdeaDateKeys, recordedDateKeys, todayKey])
+    return map;
+  }, [savedIdeaDateKeys, recordedDateKeys, todayKey]);
 
-  const monthStart = startOfMonth(currentMonth)
-  const year = monthStart.getFullYear()
-  const month = monthStart.getMonth()
-  const firstWeekday = new Date(year, month, 1).getDay()
-  const daysInMonth = new Date(year, month + 1, 0).getDate()
+  const monthStart = startOfMonth(currentMonth);
+  const year = monthStart.getFullYear();
+  const month = monthStart.getMonth();
+  const firstWeekday = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-  const cells: Array<number | null> = []
+  const cells: Array<number | null> = [];
   for (let i = 0; i < firstWeekday; i += 1) {
-    cells.push(null)
+    cells.push(null);
   }
   for (let day = 1; day <= daysInMonth; day += 1) {
-    cells.push(day)
+    cells.push(day);
   }
 
   while (cells.length % 7 !== 0) {
-    cells.push(null)
+    cells.push(null);
   }
 
   const goToPreviousMonth = () => {
-    setCurrentMonth(
-      (current) => new Date(current.getFullYear(), current.getMonth() - 1, 1),
-    )
-  }
+    setCurrentMonth((current) => new Date(current.getFullYear(), current.getMonth() - 1, 1));
+  };
 
   const goToNextMonth = () => {
-    setCurrentMonth(
-      (current) => new Date(current.getFullYear(), current.getMonth() + 1, 1),
-    )
-  }
+    setCurrentMonth((current) => new Date(current.getFullYear(), current.getMonth() + 1, 1));
+  };
 
-  const totalPast = Array.from(eventsByDate.values()).reduce(
-    (sum, entry) => sum + entry.past,
-    0,
-  )
-  const totalFuture = Array.from(eventsByDate.values()).reduce(
-    (sum, entry) => sum + entry.future,
-    0,
-  )
+  const totalPast = Array.from(eventsByDate.values()).reduce((sum, entry) => sum + entry.past, 0);
+  const totalFuture = Array.from(eventsByDate.values()).reduce((sum, entry) => sum + entry.future, 0);
 
   const selectedRecordedDates = useMemo(() => {
-    if (!selectedDateKey) return []
-    return recordedDates.filter((entry) => entry.dateOfDate === selectedDateKey)
-  }, [recordedDates, selectedDateKey])
+    if (!selectedDateKey) return [];
+    return recordedDates.filter((entry) => entry.dateOfDate === selectedDateKey);
+  }, [recordedDates, selectedDateKey]);
 
   const selectedSavedIdeas = useMemo(() => {
-    if (!selectedDateKey) return []
-    return savedIdeas.filter((entry) => entry.selectedDate === selectedDateKey)
-  }, [savedIdeas, selectedDateKey])
+    if (!selectedDateKey) return [];
+    return savedIdeas.filter((entry) => entry.selectedDate === selectedDateKey);
+  }, [savedIdeas, selectedDateKey]);
 
   const openDateDetails = (dateKey: string) => {
-    setSelectedDateKey(dateKey)
-    setIsDetailsModalVisible(true)
-  }
+    setSelectedDateKey(dateKey);
+    setIsDetailsModalVisible(true);
+  };
 
   const closeDateDetails = () => {
-    setIsDetailsModalVisible(false)
-    setSelectedDateKey(null)
-  }
+    setIsDetailsModalVisible(false);
+    setSelectedDateKey(null);
+  };
 
   const selectedDateLabel = selectedDateKey
     ? new Date(`${selectedDateKey}T12:00:00`).toLocaleDateString("en-US", {
@@ -167,7 +141,7 @@ export default function DateCalendar({
         day: "numeric",
         year: "numeric",
       })
-    : ""
+    : "";
 
   return (
     <ScrollView
@@ -189,7 +163,7 @@ export default function DateCalendar({
         Date Calendar
       </Text>
 
-      <Text
+      {/* <Text
         style={{
           marginBottom: 16,
           fontSize: 16,
@@ -198,7 +172,7 @@ export default function DateCalendar({
         }}
       >
         Track dates you've been on and your planned future dates.
-      </Text>
+      </Text> */}
 
       <View
         style={{
@@ -232,9 +206,7 @@ export default function DateCalendar({
             <Text style={{ color: "#1d4ed8", fontWeight: "700" }}>Prev</Text>
           </TouchableOpacity>
 
-          <Text style={{ fontSize: 18, fontWeight: "800", color: "#1f2d3d" }}>
-            {monthLabel(currentMonth)}
-          </Text>
+          <Text style={{ fontSize: 18, fontWeight: "800", color: "#1f2d3d" }}>{monthLabel(currentMonth)}</Text>
 
           <TouchableOpacity
             onPress={goToNextMonth}
@@ -254,11 +226,7 @@ export default function DateCalendar({
         <View style={{ flexDirection: "row", marginBottom: 8 }}>
           {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
             <View key={day} style={{ width: "14.285%", alignItems: "center" }}>
-              <Text
-                style={{ color: "#6b7280", fontWeight: "700", fontSize: 12 }}
-              >
-                {day}
-              </Text>
+              <Text style={{ color: "#6b7280", fontWeight: "700", fontSize: 12 }}>{day}</Text>
             </View>
           ))}
         </View>
@@ -266,20 +234,15 @@ export default function DateCalendar({
         <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
           {cells.map((dayNumber, index) => {
             if (dayNumber === null) {
-              return (
-                <View
-                  key={`empty_${index}`}
-                  style={{ width: "14.285%", padding: 4 }}
-                />
-              )
+              return <View key={`empty_${index}`} style={{ width: "14.285%", padding: 4 }} />;
             }
 
-            const dateKey = `${year}-${String(month + 1).padStart(2, "0")}-${String(dayNumber).padStart(2, "0")}`
-            const stats = eventsByDate.get(dateKey)
-            const hasPast = Boolean(stats?.past)
-            const hasFuture = Boolean(stats?.future)
-            const isToday = dateKey === todayKey
-            const hasEntries = hasPast || hasFuture
+            const dateKey = `${year}-${String(month + 1).padStart(2, "0")}-${String(dayNumber).padStart(2, "0")}`;
+            const stats = eventsByDate.get(dateKey);
+            const hasPast = Boolean(stats?.past);
+            const hasFuture = Boolean(stats?.future);
+            const isToday = dateKey === todayKey;
+            const hasEntries = hasPast || hasFuture;
 
             return (
               <View key={dateKey} style={{ width: "14.285%", padding: 4 }}>
@@ -298,9 +261,7 @@ export default function DateCalendar({
                     opacity: hasEntries ? 1 : 0.72,
                   }}
                 >
-                  <Text style={{ color: "#1f2d3d", fontWeight: "700" }}>
-                    {dayNumber}
-                  </Text>
+                  <Text style={{ color: "#1f2d3d", fontWeight: "700" }}>{dayNumber}</Text>
                   <View style={{ flexDirection: "row", gap: 5, marginTop: 4 }}>
                     {hasPast ? (
                       <View
@@ -325,7 +286,7 @@ export default function DateCalendar({
                   </View>
                 </TouchableOpacity>
               </View>
-            )
+            );
           })}
         </View>
       </View>
@@ -401,18 +362,11 @@ export default function DateCalendar({
         >
           Summary
         </Text>
-        <Text style={{ color: "#4b5b6b", marginBottom: 2 }}>
-          Past entries: {totalPast}
-        </Text>
+        <Text style={{ color: "#4b5b6b", marginBottom: 2 }}>Past entries: {totalPast}</Text>
         <Text style={{ color: "#4b5b6b" }}>Future entries: {totalFuture}</Text>
       </View>
 
-      <Modal
-        visible={isDetailsModalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={closeDateDetails}
-      >
+      <Modal visible={isDetailsModalVisible} transparent animationType="fade" onRequestClose={closeDateDetails}>
         <View
           style={{
             flex: 1,
@@ -497,20 +451,10 @@ export default function DateCalendar({
                       >
                         Date #{index + 1}
                       </Text>
-                      <Text style={{ color: "#4b5b6b", marginBottom: 2 }}>
-                        With: {entry.whoWentWith || "Not provided"}
-                      </Text>
-                      <Text style={{ color: "#4b5b6b", marginBottom: 2 }}>
-                        Activity: {entry.whatYouDid || "Not provided"}
-                      </Text>
-                      <Text style={{ color: "#4b5b6b", marginBottom: 2 }}>
-                        Spent: ${entry.moneySpent.toFixed(2)}
-                      </Text>
-                      {entry.rating != null ? (
-                        <Text style={{ color: "#4b5b6b" }}>
-                          Rating: {entry.rating}/10
-                        </Text>
-                      ) : null}
+                      <Text style={{ color: "#4b5b6b", marginBottom: 2 }}>With: {entry.whoWentWith || "Not provided"}</Text>
+                      <Text style={{ color: "#4b5b6b", marginBottom: 2 }}>Activity: {entry.whatYouDid || "Not provided"}</Text>
+                      <Text style={{ color: "#4b5b6b", marginBottom: 2 }}>Spent: ${entry.moneySpent.toFixed(2)}</Text>
+                      {entry.rating != null ? <Text style={{ color: "#4b5b6b" }}>Rating: {entry.rating}/10</Text> : null}
                     </View>
                   ))}
                 </View>
@@ -549,27 +493,20 @@ export default function DateCalendar({
                       >
                         Saved Idea #{index + 1}
                       </Text>
-                      <Text style={{ color: "#4b5b6b", marginBottom: 2 }}>
-                        Idea: {entry.filledTemplate}
-                      </Text>
-                      <Text style={{ color: "#4b5b6b" }}>
-                        Saved on {new Date(entry.savedAt).toLocaleDateString()}
-                      </Text>
+                      <Text style={{ color: "#4b5b6b", marginBottom: 2 }}>Idea: {entry.filledTemplate}</Text>
+                      <Text style={{ color: "#4b5b6b" }}>Saved on {new Date(entry.savedAt).toLocaleDateString()}</Text>
                     </View>
                   ))}
                 </View>
               ) : null}
 
-              {selectedRecordedDates.length === 0 &&
-              selectedSavedIdeas.length === 0 ? (
-                <Text style={{ color: "#4b5b6b" }}>
-                  No date details are available for this day.
-                </Text>
+              {selectedRecordedDates.length === 0 && selectedSavedIdeas.length === 0 ? (
+                <Text style={{ color: "#4b5b6b" }}>No date details are available for this day.</Text>
               ) : null}
             </ScrollView>
           </View>
         </View>
       </Modal>
     </ScrollView>
-  )
+  );
 }

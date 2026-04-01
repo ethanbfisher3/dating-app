@@ -1,20 +1,19 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { PlannedDateResultsParams, PlannerServerTarget } from "../types/navigation";
+import type { PlannedDateResultsParams } from "../types/navigation";
 import activities, { Activity } from "../data/activities";
 import recipes, { Recipe } from "../data/Recipes";
 import type { DateCategory } from "src/utils/utils";
 
-export type PlaceSummary = {
-  id: string;
-  name: string;
-  address: string;
-  types: string[];
-  googleMapsUri: string;
-  rating: number | null;
+export type PlaceSummary = PlannerPlace & {
   sourceKind: "place" | "activity" | "recipe";
-  location?: {
-    latitude: number | null;
-    longitude: number | null;
+};
+
+export type PlacesSearchResponse = {
+  count: number;
+  places: PlannerPlace[];
+  meta: {
+    fromCache: boolean;
+    source: string;
   };
 };
 
@@ -97,41 +96,15 @@ export type BYUEventSummary = {
   price: number | null;
 };
 
-type PlannerPlace = {
+export type PlannerPlace = {
   id: string;
-  types?: string[];
-  formattedAddress?: string;
-  googleMapsUri?: string;
-  rating?: number;
-  priceLevel?: string;
-  location?: { latitude?: number; longitude?: number };
-  displayName?: { text?: string };
-  name?: string;
-  address?: string;
-  primaryType?: string;
+  type: string;
+  address: string;
+  location: { latitude?: number; longitude?: number };
+  name: string;
 };
 
 type JsonObject = Record<string, unknown>;
-
-const CATEGORY_TYPE_MAP: Record<string, string[]> = {
-  Food: [
-    "restaurant",
-    "meal_takeaway",
-    "cafe",
-    "bakery",
-    "ice_cream_shop",
-    "dessert_restaurant",
-    "coffee_shop",
-    "pizza_restaurant",
-    "sandwich_shop",
-  ],
-  Outdoors: ["park", "hiking_area", "campground", "nature_preserve", "river", "lake", "scenic_spot"],
-  Sports: ["gym", "sports_club", "sports_complex", "sports_activity_location", "golf_course", "tennis_court"],
-  Nature: ["park", "hiking_area", "lake", "river", "nature_preserve", "mountain_peak", "tourist_attraction"],
-  Learning: ["museum", "library", "book_store", "art_gallery"],
-  Shopping: ["shopping_mall", "department_store", "clothing_store", "gift_shop", "toy_store", "store"],
-  Recreation: ["movie_theater", "tourist_attraction", "video_arcade", "amusement_park", "playground", "bowling_alley"],
-};
 
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
@@ -144,7 +117,7 @@ const ENABLE_PRODUCTION_FALLBACK = process.env.EXPO_PUBLIC_ENABLE_PRODUCTION_FAL
 
 const PLACES_SERVER_BASE_URL = process.env.EXPO_PUBLIC_PLACES_SERVER_URL || process.env.EXPO_PUBLIC_API_BASE_URL || "http://localhost:3000";
 
-function getPlacesServerBaseUrls(serverTarget: PlannerServerTarget): string[] {
+function getPlacesServerBaseUrls(serverTarget: string): string[] {
   const unique = new Set<string>();
 
   if (serverTarget === "render") {
@@ -254,130 +227,6 @@ function toStringArray(value: unknown): string[] {
     .filter(Boolean);
 }
 
-function extractPlacesArray(payload: unknown): unknown[] {
-  if (Array.isArray(payload)) {
-    return payload;
-  }
-
-  if (!isObject(payload)) {
-    return [];
-  }
-
-  const keys = ["places", "results", "items", "data"];
-  for (const key of keys) {
-    const value = payload[key];
-    if (Array.isArray(value)) {
-      return value;
-    }
-  }
-
-  for (const key of keys) {
-    const value = payload[key];
-    if (!isObject(value)) {
-      continue;
-    }
-
-    for (const nestedKey of keys) {
-      const nested = value[nestedKey];
-      if (Array.isArray(nested)) {
-        return nested;
-      }
-    }
-  }
-
-  return [];
-}
-
-function extractFromCache(payload: unknown): boolean {
-  if (!isObject(payload)) {
-    return false;
-  }
-
-  if (typeof payload.fromCache === "boolean") {
-    return payload.fromCache;
-  }
-
-  if (isObject(payload.meta) && typeof payload.meta.fromCache === "boolean") {
-    return payload.meta.fromCache;
-  }
-
-  if (isObject(payload.cache) && typeof payload.cache.hit === "boolean") {
-    return payload.cache.hit;
-  }
-
-  if (isObject(payload.data) && typeof payload.data.fromCache === "boolean") {
-    return payload.data.fromCache;
-  }
-
-  return false;
-}
-
-function normalizePlannerPlace(rawPlace: unknown): PlannerPlace | null {
-  if (!isObject(rawPlace)) {
-    return null;
-  }
-
-  const id = pickFirstString(rawPlace.id, rawPlace.place_id, rawPlace.placeId);
-  if (!id) {
-    return null;
-  }
-
-  const displayNameRaw = isObject(rawPlace.displayName)
-    ? rawPlace.displayName
-    : isObject(rawPlace.display_name)
-      ? rawPlace.display_name
-      : null;
-  const displayNameText = displayNameRaw ? pickFirstString(displayNameRaw.text, displayNameRaw.name) : undefined;
-
-  const locationRaw = isObject(rawPlace.location)
-    ? rawPlace.location
-    : isObject(rawPlace.geometry) && isObject(rawPlace.geometry.location)
-      ? rawPlace.geometry.location
-      : null;
-
-  const latitude = locationRaw ? toNumber(locationRaw.latitude ?? locationRaw.lat ?? rawPlace.latitude) : toNumber(rawPlace.latitude);
-  const longitude = locationRaw ? toNumber(locationRaw.longitude ?? locationRaw.lng ?? rawPlace.longitude) : toNumber(rawPlace.longitude);
-
-  const primaryType = pickFirstString(rawPlace.primaryType, rawPlace.primary_type, rawPlace.type);
-
-  const rawTypes = toStringArray(rawPlace.types);
-  const types = rawTypes.length ? rawTypes : primaryType ? [primaryType] : [];
-
-  const name = pickFirstString(rawPlace.name, displayNameText);
-  const formattedAddress = pickFirstString(rawPlace.formattedAddress, rawPlace.formatted_address, rawPlace.address);
-  const googleMapsUri = pickFirstString(rawPlace.googleMapsUri, rawPlace.google_maps_uri, rawPlace.mapsUri, rawPlace.url);
-
-  return {
-    id,
-    name,
-    address: formattedAddress,
-    formattedAddress,
-    googleMapsUri,
-    rating: toNumber(rawPlace.rating),
-    types,
-    primaryType,
-    location: {
-      latitude,
-      longitude,
-    },
-    displayName: displayNameText ? { text: displayNameText } : undefined,
-  };
-}
-
-function normalizePlacesResponsePayload(payload: unknown): {
-  places: PlannerPlace[];
-  fromCache: boolean;
-} {
-  const places = extractPlacesArray(payload)
-    .map(normalizePlannerPlace)
-    .filter((place): place is PlannerPlace => place !== null);
-
-  return {
-    places,
-    fromCache: extractFromCache(payload),
-  };
-}
-
 async function fetchPlacesFromServer(params: PlannedDateResultsParams): Promise<{
   winner: {
     places: PlannerPlace[];
@@ -403,7 +252,6 @@ async function fetchPlacesFromServer(params: PlannedDateResultsParams): Promise<
   for (const serverBaseUrl of serverBaseUrls) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), PLACES_REQUEST_TIMEOUT_MS);
-
     try {
       const response = await fetch(`${serverBaseUrl}/places/search`, {
         method: "POST",
@@ -432,21 +280,20 @@ async function fetchPlacesFromServer(params: PlannedDateResultsParams): Promise<
         continue;
       }
 
-      const payload = (await response.json()) as unknown;
-      const normalizedPayload = normalizePlacesResponsePayload(payload);
+      const payload = (await response.json()) as PlacesSearchResponse;
 
       responses.push({
         serverBaseUrl,
         serverLabel: toServerSourceLabel(serverBaseUrl),
         ok: true,
         statusCode: response.status,
-        details: normalizedPayload.fromCache ? "OK (cache hit)" : "OK (live fetch)",
+        details: payload.meta.fromCache ? "OK (cache hit)" : "OK (live fetch)",
       });
 
       return {
         winner: {
-          places: normalizedPayload.places,
-          fromCache: normalizedPayload.fromCache,
+          places: payload.places,
+          fromCache: payload.meta.fromCache,
           serverBaseUrl,
         },
         responses,
@@ -477,22 +324,6 @@ async function fetchPlacesFromServer(params: PlannedDateResultsParams): Promise<
   return {
     winner: null,
     responses,
-  };
-}
-
-function toBYUEventPlaceSummary(event: BYUEventSummary): PlaceSummary {
-  return {
-    id: `byu_event_${event.id}`,
-    name: event.title,
-    address: event.location,
-    types: ["tourist_attraction", "event", "byu_event"],
-    googleMapsUri: event.url,
-    rating: null,
-    sourceKind: "place",
-    location: {
-      latitude: null,
-      longitude: null,
-    },
   };
 }
 
@@ -529,23 +360,10 @@ function isActivityTimeCompatible(activity: Activity, startHour: number, endHour
   });
 }
 
-function getPlaceName(place: PlannerPlace): string {
-  return place.displayName?.text || place.name || "Unknown place";
-}
-
 function toPlaceSummary(place: PlannerPlace): PlaceSummary {
   return {
-    id: place.id,
-    name: getPlaceName(place),
-    address: place.formattedAddress || place.address || "",
-    types: Array.isArray(place.types) && place.types.length ? place.types : place.primaryType ? [place.primaryType] : [],
-    googleMapsUri: place.googleMapsUri || "",
-    rating: typeof place.rating === "number" ? place.rating : null,
+    ...place,
     sourceKind: "place",
-    location: {
-      latitude: typeof place.location?.latitude === "number" ? place.location.latitude : null,
-      longitude: typeof place.location?.longitude === "number" ? place.location.longitude : null,
-    },
   };
 }
 

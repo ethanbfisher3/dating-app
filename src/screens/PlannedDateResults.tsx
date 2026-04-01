@@ -13,32 +13,16 @@ import {
   View,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import type {
-  AppScreenProps,
-  PlannedDateResultsParams,
-} from "../types/navigation";
-import useDatePlannerIdeas, {
-  PlaceSummary,
-} from "../hooks/useDatePlannerIdeas";
-import useFilledIdeas, {
-  estimateTravelMinutesBetween,
-  getCandidatesForSlot,
-} from "../hooks/useFilledIdeas";
+import type { AppScreenProps, PlannedDateResultsParams } from "../types/navigation";
+import useDatePlannerIdeas, { PlaceSummary } from "../hooks/useDatePlannerIdeas";
+import useFilledIdeas, { estimateTravelMinutesBetween, getCandidatesForSlot } from "../hooks/useFilledIdeas";
 import { saveDateIdea, canSaveIdea } from "../data/savedIdeasStore";
 import { premiumStore } from "../data/premiumStore";
 import { usePremium } from "../hooks/usePremium";
 import PaywallModal from "../Components/PaywallModal";
 import DateIdeaCard from "../Components/DateIdeaCard";
 
-const DATE_CATEGORIES = [
-  "Food",
-  "Outdoors",
-  "Sports",
-  "Nature",
-  "Learning",
-  "Shopping",
-  "Recreation",
-];
+const DATE_CATEGORIES = ["Food", "Outdoors", "Sports", "Nature", "Learning", "Shopping", "Recreation"];
 
 const DEV_PLACE_SLOT_TYPES: Record<string, string[]> = {
   meal: ["restaurant", "meal_takeaway", "cafe", "pizza_restaurant"],
@@ -48,15 +32,10 @@ const DEV_PLACE_SLOT_TYPES: Record<string, string[]> = {
   shop: ["shopping_mall", "department_store", "clothing_store", "store"],
 };
 
-export default function PlannedDateResults({
-  route,
-  navigation,
-}: AppScreenProps<"PlannedDateResults">) {
+export default function PlannedDateResults({ route, navigation }: AppScreenProps<"PlannedDateResults">) {
   const { isUnlocked } = usePremium();
   const [paywallVisible, setPaywallVisible] = useState(false);
-  const [paywallReason, setPaywallReason] = useState<
-    "date_history_limit" | "mile_radius_limit" | "ideas_limit" | "general"
-  >("general");
+  const [paywallReason, setPaywallReason] = useState<"date_history_limit" | "mile_radius_limit" | "ideas_limit" | "general">("general");
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -65,57 +44,31 @@ export default function PlannedDateResults({
     });
   }, [navigation]);
 
-  const [plannerParams, setPlannerParams] = useState<PlannedDateResultsParams>(
-    route.params,
-  );
+  const [plannerParams, setPlannerParams] = useState<PlannedDateResultsParams>(route.params);
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [showEditDatePicker, setShowEditDatePicker] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
-  const [draftSelectedDate, setDraftSelectedDate] = useState(
-    route.params.selectedDate,
-  );
+  const [draftSelectedDate, setDraftSelectedDate] = useState(route.params.selectedDate);
   const initialStartHour24 = ((route.params.startHour % 24) + 24) % 24;
   const initialEndHour24 = ((route.params.endHour % 24) + 24) % 24;
-  const [draftStartHour12, setDraftStartHour12] = useState(
-    String(initialStartHour24 % 12 === 0 ? 12 : initialStartHour24 % 12),
-  );
-  const [draftStartPeriod, setDraftStartPeriod] = useState<"AM" | "PM">(
-    initialStartHour24 < 12 ? "AM" : "PM",
-  );
-  const [draftEndHour12, setDraftEndHour12] = useState(
-    String(initialEndHour24 % 12 === 0 ? 12 : initialEndHour24 % 12),
-  );
-  const [draftEndPeriod, setDraftEndPeriod] = useState<"AM" | "PM">(
-    initialEndHour24 < 12 ? "AM" : "PM",
-  );
-  const [draftMaxPrice, setDraftMaxPrice] = useState(
-    String(route.params.maxPrice),
-  );
-  const [draftMaxDistance, setDraftMaxDistance] = useState(
-    String(route.params.maxDistance),
-  );
+  const [draftStartHour12, setDraftStartHour12] = useState(String(initialStartHour24 % 12 === 0 ? 12 : initialStartHour24 % 12));
+  const [draftStartPeriod, setDraftStartPeriod] = useState<"AM" | "PM">(initialStartHour24 < 12 ? "AM" : "PM");
+  const [draftEndHour12, setDraftEndHour12] = useState(String(initialEndHour24 % 12 === 0 ? 12 : initialEndHour24 % 12));
+  const [draftEndPeriod, setDraftEndPeriod] = useState<"AM" | "PM">(initialEndHour24 < 12 ? "AM" : "PM");
+  const [draftMaxPrice, setDraftMaxPrice] = useState(String(route.params.maxPrice));
+  const [draftMaxDistance, setDraftMaxDistance] = useState(String(route.params.maxDistance));
   const [draftCategoriesChecked, setDraftCategoriesChecked] = useState(
-    DATE_CATEGORIES.map((category) =>
-      route.params.categories.includes(category),
-    ),
+    DATE_CATEGORIES.map((category) => route.params.categories.includes(category)),
   );
   const [showDevMatches, setShowDevMatches] = useState(false);
   const [showDevPlaces, setShowDevPlaces] = useState(false);
   const [showDevActivities, setShowDevActivities] = useState(false);
   const [showDevRecipes, setShowDevRecipes] = useState(false);
-  const [regeneratingSteps, setRegeneratingSteps] = useState<Set<string>>(
-    new Set(),
-  );
-  const [modifiedIdeas, setModifiedIdeas] = useState<Map<number, any>>(
-    new Map(),
-  );
+  const [regeneratingSteps, setRegeneratingSteps] = useState<Set<string>>(new Set());
+  const [modifiedIdeas, setModifiedIdeas] = useState<Map<number, any>>(new Map());
   const editModalScrollRef = useRef<ScrollView>(null);
 
-  const regenerateStep = async (
-    ideaIndex: number,
-    stepIndex: number,
-    idea: any,
-  ) => {
+  const regenerateStep = async (ideaIndex: number, stepIndex: number, idea: any) => {
     const stepKey = `${ideaIndex}-${stepIndex}`;
     const schedule = idea.schedule || [];
     const step = schedule[stepIndex];
@@ -125,12 +78,7 @@ export default function PlannedDateResults({
 
     try {
       // Get candidates for the slot type
-      const candidates = getCandidatesForSlot(
-        step.slot,
-        places,
-        recipes,
-        activities,
-      );
+      const candidates = getCandidatesForSlot(step.slot, places, recipes, activities);
 
       if (!candidates.length) {
         Alert.alert("No alternatives available for this item.");
@@ -143,28 +91,19 @@ export default function PlannedDateResults({
       }
 
       // Pick a random candidate
-      const newCandidate =
-        candidates[Math.floor(Math.random() * candidates.length)];
+      const newCandidate = candidates[Math.floor(Math.random() * candidates.length)];
 
       // Calculate new travel times
       const prevStep = stepIndex > 0 ? schedule[stepIndex - 1] : null;
-      const nextStep =
-        stepIndex < schedule.length - 1 ? schedule[stepIndex + 1] : null;
+      const nextStep = stepIndex < schedule.length - 1 ? schedule[stepIndex + 1] : null;
 
       let newTravelToNextMinutes: number | null = null;
       let newTravelFromPrevMinutes: number | null = null;
 
       if (nextStep) {
-        newTravelToNextMinutes = estimateTravelMinutesBetween(
-          newCandidate.place || null,
-          nextStep.place || null,
-        );
+        newTravelToNextMinutes = estimateTravelMinutesBetween(newCandidate.place || null, nextStep.place || null);
         if (newTravelToNextMinutes === null) {
-          newTravelToNextMinutes =
-            newCandidate.place?.sourceKind === "place" ||
-            nextStep.place?.sourceKind === "place"
-              ? 10
-              : 0;
+          newTravelToNextMinutes = newCandidate.place?.sourceKind === "place" || nextStep.place?.sourceKind === "place" ? 10 : 0;
         }
       }
 
@@ -181,17 +120,13 @@ export default function PlannedDateResults({
       updatedSchedule[stepIndex] = updatedStep;
 
       if (prevStep && stepIndex > 0) {
-        const prevTravelMinutes = estimateTravelMinutesBetween(
-          prevStep.place || null,
-          newCandidate.place || null,
-        );
+        const prevTravelMinutes = estimateTravelMinutesBetween(prevStep.place || null, newCandidate.place || null);
         updatedSchedule[stepIndex - 1] = {
           ...prevStep,
           travelToNextMinutes:
             prevTravelMinutes !== null
               ? prevTravelMinutes
-              : prevStep.place?.sourceKind === "place" ||
-                  newCandidate.place?.sourceKind === "place"
+              : prevStep.place?.sourceKind === "place" || newCandidate.place?.sourceKind === "place"
                 ? 10
                 : 0,
         };
@@ -199,10 +134,7 @@ export default function PlannedDateResults({
 
       // Rebuild the filledTemplate with the new step title
       let updatedFilledTemplate = idea.filledTemplate || idea.template;
-      updatedFilledTemplate = updatedFilledTemplate.replace(
-        step.title,
-        newCandidate.value,
-      );
+      updatedFilledTemplate = updatedFilledTemplate.replace(step.title, newCandidate.value);
 
       // Update places record with the new place
       const updatedPlaces = { ...idea.places };
@@ -232,8 +164,7 @@ export default function PlannedDateResults({
     }
   };
 
-  const { places, recipes, activities, sourceFile, isLoading, error, refetch } =
-    useDatePlannerIdeas(plannerParams);
+  const { places, recipes, activities, sourceFile, isLoading, error, refetch } = useDatePlannerIdeas(plannerParams);
 
   const filledIdeas = useFilledIdeas({
     params: plannerParams,
@@ -242,29 +173,17 @@ export default function PlannedDateResults({
     activities,
   });
 
-  const {
-    selectedDate,
-    startHour,
-    endHour,
-    maxPrice,
-    maxDistance,
-    categories,
-  } = plannerParams;
+  const { selectedDate, startHour, endHour, maxPrice, maxDistance, categories } = plannerParams;
 
-  const canQueryPlacesByLocation =
-    maxDistance > 0 && plannerParams.userLocation != null;
+  const canQueryPlacesByLocation = maxDistance > 0 && plannerParams.userLocation != null;
   const devPlacesQueryLocationLabel = canQueryPlacesByLocation
     ? `${plannerParams.userLocation?.latitude.toFixed(6)}, ${plannerParams.userLocation?.longitude.toFixed(6)}`
     : "Not used (missing location or distance <= 0)";
 
-  const devPlaceSlotCounts = Object.entries(DEV_PLACE_SLOT_TYPES).map(
-    ([slot, allowedTypes]) => ({
-      slot,
-      count: places.filter((place) =>
-        place.types.some((type) => allowedTypes.includes(type)),
-      ).length,
-    }),
-  );
+  const devPlaceSlotCounts = Object.entries(DEV_PLACE_SLOT_TYPES).map(([slot, allowedTypes]) => ({
+    slot,
+    count: places.filter((place) => place.type === slot || allowedTypes.includes(place.type)).length,
+  }));
 
   const formatHour = (hour24: number) => {
     const normalized = ((hour24 % 24) + 24) % 24;
@@ -306,11 +225,7 @@ export default function PlannedDateResults({
     setDraftEndPeriod(endHour24 < 12 ? "AM" : "PM");
     setDraftMaxPrice(String(plannerParams.maxPrice));
     setDraftMaxDistance(String(plannerParams.maxDistance));
-    setDraftCategoriesChecked(
-      DATE_CATEGORIES.map((category) =>
-        plannerParams.categories.includes(category),
-      ),
-    );
+    setDraftCategoriesChecked(DATE_CATEGORIES.map((category) => plannerParams.categories.includes(category)));
     setShowEditDatePicker(false);
     setEditError(null);
     setIsEditModalVisible(true);
@@ -321,9 +236,7 @@ export default function PlannedDateResults({
     const nextEndHour12 = Number.parseInt(draftEndHour12, 10);
     const nextMaxPrice = Number.parseInt(draftMaxPrice, 10);
     let nextMaxDistance = Number.parseInt(draftMaxDistance, 10);
-    const nextCategories = DATE_CATEGORIES.filter(
-      (_, index) => draftCategoriesChecked[index],
-    );
+    const nextCategories = DATE_CATEGORIES.filter((_, index) => draftCategoriesChecked[index]);
 
     if (!/^\d{4}-\d{2}-\d{2}$/.test(draftSelectedDate)) {
       setEditError("Date must be in YYYY-MM-DD format.");
@@ -335,10 +248,7 @@ export default function PlannedDateResults({
       return;
     }
 
-    if (
-      clampHour12(nextStartHour12) !== nextStartHour12 ||
-      clampHour12(nextEndHour12) !== nextEndHour12
-    ) {
+    if (clampHour12(nextStartHour12) !== nextStartHour12 || clampHour12(nextEndHour12) !== nextEndHour12) {
       setEditError("Start and end hours must be between 1 and 12.");
       return;
     }
@@ -371,6 +281,7 @@ export default function PlannedDateResults({
       endHour: convertTo24Hour(nextEndHour12, draftEndPeriod),
       maxPrice: nextMaxPrice,
       maxDistance: nextMaxDistance,
+      serverTarget: plannerParams.serverTarget,
       categories: nextCategories,
       userLocation: plannerParams.userLocation ?? null,
     });
@@ -390,9 +301,7 @@ export default function PlannedDateResults({
     }
 
     setTimeout(() => {
-      (
-        editModalScrollRef.current as any
-      )?.scrollResponderScrollNativeHandleToKeyboard?.(target, 120, true);
+      (editModalScrollRef.current as any)?.scrollResponderScrollNativeHandleToKeyboard?.(target, 120, true);
     }, 120);
   };
 
@@ -498,9 +407,7 @@ export default function PlannedDateResults({
           marginBottom: 10,
         }}
       >
-        <Text style={{ color: "#fff", fontWeight: "700", fontSize: 16 }}>
-          Edit Inputs
-        </Text>
+        <Text style={{ color: "#fff", fontWeight: "700", fontSize: 16 }}>Edit Inputs</Text>
       </TouchableOpacity>
 
       <TouchableOpacity
@@ -515,9 +422,7 @@ export default function PlannedDateResults({
           opacity: isLoading ? 0.6 : 1,
         }}
       >
-        <Text style={{ color: "#fff", fontWeight: "700", fontSize: 16 }}>
-          Regenerate
-        </Text>
+        <Text style={{ color: "#fff", fontWeight: "700", fontSize: 16 }}>Regenerate</Text>
       </TouchableOpacity>
 
       <Modal
@@ -579,9 +484,7 @@ export default function PlannedDateResults({
                   backgroundColor: "#fff",
                 }}
               >
-                <Text style={{ fontSize: 16, color: "#1a1a1a" }}>
-                  {draftSelectedDate}
-                </Text>
+                <Text style={{ fontSize: 16, color: "#1a1a1a" }}>{draftSelectedDate}</Text>
               </TouchableOpacity>
 
               {showEditDatePicker ? (
@@ -673,15 +576,13 @@ export default function PlannedDateResults({
                           flex: 1,
                           paddingVertical: 10,
                           alignItems: "center",
-                          backgroundColor:
-                            draftStartPeriod === period ? "#1e90ff" : "#fff",
+                          backgroundColor: draftStartPeriod === period ? "#1e90ff" : "#fff",
                         }}
                       >
                         <Text
                           style={{
                             fontWeight: "700",
-                            color:
-                              draftStartPeriod === period ? "#fff" : "#1f2d3d",
+                            color: draftStartPeriod === period ? "#fff" : "#1f2d3d",
                           }}
                         >
                           {period}
@@ -748,15 +649,13 @@ export default function PlannedDateResults({
                           flex: 1,
                           paddingVertical: 10,
                           alignItems: "center",
-                          backgroundColor:
-                            draftEndPeriod === period ? "#1e90ff" : "#fff",
+                          backgroundColor: draftEndPeriod === period ? "#1e90ff" : "#fff",
                         }}
                       >
                         <Text
                           style={{
                             fontWeight: "700",
-                            color:
-                              draftEndPeriod === period ? "#fff" : "#1f2d3d",
+                            color: draftEndPeriod === period ? "#fff" : "#1f2d3d",
                           }}
                         >
                           {period}
@@ -769,9 +668,7 @@ export default function PlannedDateResults({
 
               <View style={{ flexDirection: "row", gap: 12, marginBottom: 12 }}>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ color: "#4b5b6b", marginBottom: 6 }}>
-                    Max Budget ($)
-                  </Text>
+                  <Text style={{ color: "#4b5b6b", marginBottom: 6 }}>Max Budget ($)</Text>
                   <TextInput
                     value={draftMaxPrice}
                     onChangeText={setDraftMaxPrice}
@@ -788,9 +685,7 @@ export default function PlannedDateResults({
                   />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ color: "#4b5b6b", marginBottom: 6 }}>
-                    Max Distance (miles)
-                  </Text>
+                  <Text style={{ color: "#4b5b6b", marginBottom: 6 }}>Max Distance (miles)</Text>
                   <TextInput
                     value={draftMaxDistance}
                     onChangeText={setDraftMaxDistance}
@@ -853,11 +748,7 @@ export default function PlannedDateResults({
                 })}
               </View>
 
-              {editError ? (
-                <Text style={{ color: "#b42318", marginBottom: 10 }}>
-                  {editError}
-                </Text>
-              ) : null}
+              {editError ? <Text style={{ color: "#b42318", marginBottom: 10 }}>{editError}</Text> : null}
 
               <View
                 style={{
@@ -880,9 +771,7 @@ export default function PlannedDateResults({
                     backgroundColor: "#fff",
                   }}
                 >
-                  <Text style={{ color: "#3b4a5a", fontWeight: "700" }}>
-                    Cancel
-                  </Text>
+                  <Text style={{ color: "#3b4a5a", fontWeight: "700" }}>Cancel</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -894,9 +783,7 @@ export default function PlannedDateResults({
                     backgroundColor: "#1e90ff",
                   }}
                 >
-                  <Text style={{ color: "#fff", fontWeight: "700" }}>
-                    Apply & Regenerate
-                  </Text>
+                  <Text style={{ color: "#fff", fontWeight: "700" }}>Apply & Regenerate</Text>
                 </TouchableOpacity>
               </View>
             </ScrollView>
@@ -934,9 +821,7 @@ export default function PlannedDateResults({
             >
               Debug Data
             </Text>
-            <Text style={{ color: "#1e90ff", fontWeight: "700" }}>
-              {showDevMatches ? "Hide" : "Show"}
-            </Text>
+            <Text style={{ color: "#1e90ff", fontWeight: "700" }}>{showDevMatches ? "Hide" : "Show"}</Text>
           </TouchableOpacity>
 
           {showDevMatches ? (
@@ -966,15 +851,11 @@ export default function PlannedDateResults({
                 >
                   Places ({places.length})
                 </Text>
-                <Text style={{ color: "#1e90ff", fontWeight: "700" }}>
-                  {showDevPlaces ? "Hide" : "Show"}
-                </Text>
+                <Text style={{ color: "#1e90ff", fontWeight: "700" }}>{showDevPlaces ? "Hide" : "Show"}</Text>
               </TouchableOpacity>
 
               {showDevPlaces ? (
-                <View
-                  style={{ paddingHorizontal: 14, paddingBottom: 10, gap: 6 }}
-                >
+                <View style={{ paddingHorizontal: 14, paddingBottom: 10, gap: 6 }}>
                   <Text
                     style={{
                       fontSize: 12,
@@ -1011,17 +892,12 @@ export default function PlannedDateResults({
                   </Text>
                   {places.length ? (
                     places.map((place) => (
-                      <Text
-                        key={place.id}
-                        style={{ fontSize: 14, color: "#2c3e50" }}
-                      >
+                      <Text key={place.id} style={{ fontSize: 14, color: "#2c3e50" }}>
                         • {place.name}
                       </Text>
                     ))
                   ) : (
-                    <Text style={{ fontSize: 14, color: "#667788" }}>
-                      No places.
-                    </Text>
+                    <Text style={{ fontSize: 14, color: "#667788" }}>No places.</Text>
                   )}
                 </View>
               ) : null}
@@ -1047,28 +923,19 @@ export default function PlannedDateResults({
                 >
                   Activities ({activities.length})
                 </Text>
-                <Text style={{ color: "#1e90ff", fontWeight: "700" }}>
-                  {showDevActivities ? "Hide" : "Show"}
-                </Text>
+                <Text style={{ color: "#1e90ff", fontWeight: "700" }}>{showDevActivities ? "Hide" : "Show"}</Text>
               </TouchableOpacity>
 
               {showDevActivities ? (
-                <View
-                  style={{ paddingHorizontal: 14, paddingBottom: 10, gap: 6 }}
-                >
+                <View style={{ paddingHorizontal: 14, paddingBottom: 10, gap: 6 }}>
                   {activities.length ? (
                     activities.map((activity) => (
-                      <Text
-                        key={activity.id}
-                        style={{ fontSize: 14, color: "#2c3e50" }}
-                      >
+                      <Text key={activity.id} style={{ fontSize: 14, color: "#2c3e50" }}>
                         • {activity.name}
                       </Text>
                     ))
                   ) : (
-                    <Text style={{ fontSize: 14, color: "#667788" }}>
-                      No activities.
-                    </Text>
+                    <Text style={{ fontSize: 14, color: "#667788" }}>No activities.</Text>
                   )}
                 </View>
               ) : null}
@@ -1094,28 +961,19 @@ export default function PlannedDateResults({
                 >
                   Recipes ({recipes.length})
                 </Text>
-                <Text style={{ color: "#1e90ff", fontWeight: "700" }}>
-                  {showDevRecipes ? "Hide" : "Show"}
-                </Text>
+                <Text style={{ color: "#1e90ff", fontWeight: "700" }}>{showDevRecipes ? "Hide" : "Show"}</Text>
               </TouchableOpacity>
 
               {showDevRecipes ? (
-                <View
-                  style={{ paddingHorizontal: 14, paddingBottom: 10, gap: 6 }}
-                >
+                <View style={{ paddingHorizontal: 14, paddingBottom: 10, gap: 6 }}>
                   {recipes.length ? (
                     recipes.map((recipe, index) => (
-                      <Text
-                        key={index}
-                        style={{ fontSize: 14, color: "#2c3e50" }}
-                      >
+                      <Text key={index} style={{ fontSize: 14, color: "#2c3e50" }}>
                         • {recipe.name}
                       </Text>
                     ))
                   ) : (
-                    <Text style={{ fontSize: 14, color: "#667788" }}>
-                      No recipes.
-                    </Text>
+                    <Text style={{ fontSize: 14, color: "#667788" }}>No recipes.</Text>
                   )}
                 </View>
               ) : null}
@@ -1140,9 +998,7 @@ export default function PlannedDateResults({
       {isLoading ? (
         <View style={{ marginTop: 24, alignItems: "center" }}>
           <ActivityIndicator size="large" color="#1e90ff" />
-          <Text style={{ marginTop: 12, color: "#555", fontSize: 16 }}>
-            Building your date ideas...
-          </Text>
+          <Text style={{ marginTop: 12, color: "#555", fontSize: 16 }}>Building your date ideas...</Text>
         </View>
       ) : null}
 
@@ -1157,12 +1013,8 @@ export default function PlannedDateResults({
             marginBottom: 16,
           }}
         >
-          <Text style={{ color: "#9b2226", fontSize: 15, marginBottom: 10 }}>
-            Could not load date ideas.
-          </Text>
-          <Text style={{ color: "#9b2226", fontSize: 13, marginBottom: 12 }}>
-            {error}
-          </Text>
+          <Text style={{ color: "#9b2226", fontSize: 15, marginBottom: 10 }}>Could not load date ideas.</Text>
+          <Text style={{ color: "#9b2226", fontSize: 13, marginBottom: 12 }}>{error}</Text>
           <TouchableOpacity
             onPress={refetch}
             style={{
@@ -1172,9 +1024,7 @@ export default function PlannedDateResults({
               alignItems: "center",
             }}
           >
-            <Text style={{ color: "#fff", fontWeight: "700", fontSize: 15 }}>
-              Retry
-            </Text>
+            <Text style={{ color: "#fff", fontWeight: "700", fontSize: 15 }}>Retry</Text>
           </TouchableOpacity>
         </View>
       ) : null}
@@ -1186,10 +1036,8 @@ export default function PlannedDateResults({
             const ideaPlaces = Object.values(ideaPlacesRecord).filter(Boolean);
             const modifiedSchedule = modifiedIdeas.get(index)?.schedule;
             const schedule = modifiedSchedule || idea.schedule || [];
-            const modifiedFilledTemplate =
-              modifiedIdeas.get(index)?.filledTemplate;
-            const filledTemplate =
-              modifiedFilledTemplate || idea.filledTemplate;
+            const modifiedFilledTemplate = modifiedIdeas.get(index)?.filledTemplate;
+            const filledTemplate = modifiedFilledTemplate || idea.filledTemplate;
 
             return (
               <DateIdeaCard
@@ -1212,22 +1060,14 @@ export default function PlannedDateResults({
                   Alert.alert("Date Idea Saved!");
                 }}
                 primaryActionLabel="Save"
-                onRegenerateStep={(stepIndex) =>
-                  regenerateStep(index, stepIndex, idea)
-                }
-                isRegeneratingStep={(stepIndex) =>
-                  regeneratingSteps.has(`${index}-${stepIndex}`)
-                }
+                onRegenerateStep={(stepIndex) => regenerateStep(index, stepIndex, idea)}
+                isRegeneratingStep={(stepIndex) => regeneratingSteps.has(`${index}-${stepIndex}`)}
               />
             );
           })
         : null}
 
-      <PaywallModal
-        visible={paywallVisible}
-        onClose={() => setPaywallVisible(false)}
-        reason={paywallReason}
-      />
+      <PaywallModal visible={paywallVisible} onClose={() => setPaywallVisible(false)} reason={paywallReason} />
     </ScrollView>
   );
 }

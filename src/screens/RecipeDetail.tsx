@@ -1,39 +1,29 @@
-import React, { useLayoutEffect } from "react"
-import {
-  View,
-  Text,
-  Image,
-  ScrollView,
-  StyleSheet,
-  SectionList,
-} from "react-native"
-import { getRecipeByIndex } from "../data/Recipes"
-import { sanitizeUri } from "../utils/utils"
-import type { AppScreenProps } from "../types/navigation"
+import React, { useLayoutEffect } from "react";
+import { View, Text, Image, ScrollView, StyleSheet, SectionList } from "react-native";
+import { getRecipeByIndex } from "../data/Recipes";
+import { sanitizeUri } from "../utils/utils";
+import type { AppScreenProps } from "../types/navigation";
 
-export default function RecipeDetail({
-  route,
-  navigation,
-}: AppScreenProps<"RecipeDetail">) {
-  const { index } = route.params || {}
-  const recipe = getRecipeByIndex(index)
+export default function RecipeDetail({ route, navigation }: AppScreenProps<"RecipeDetail">) {
+  const { index } = route.params || {};
+  const recipe = getRecipeByIndex(index);
 
   useLayoutEffect(() => {
     navigation.setOptions({
       headerBackTitle: "Back",
       title: recipe.name + " Recipe",
-    })
-  }, [navigation])
+    });
+  }, [navigation]);
 
   if (!recipe) {
     return (
       <View style={{ padding: 20 }}>
         <Text>Recipe not found</Text>
       </View>
-    )
+    );
   }
 
-  const imageUri = sanitizeUri(recipe.image)
+  const imageUri = sanitizeUri(recipe.image);
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -89,7 +79,7 @@ export default function RecipeDetail({
         ))}
       </View>
     </ScrollView>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
@@ -224,4 +214,4 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     color: "#333",
   },
-})
+});

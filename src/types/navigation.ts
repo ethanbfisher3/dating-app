@@ -7,11 +7,9 @@ export type PlannedDateResultsParams = {
   endHour: number;
   maxDistance: number;
   categories: string[];
-  serverTarget?: PlannerServerTarget;
+  serverTarget: string;
   userLocation?: UserLocationParams | null;
 };
-
-export type PlannerServerTarget = "localhost" | "render";
 
 export type UserLocationParams = {
   latitude: number;

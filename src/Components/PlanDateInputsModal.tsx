@@ -2,7 +2,6 @@ import React from "react";
 import { KeyboardAvoidingView, Modal, Platform, ScrollView, Switch, Text, TextInput, TouchableOpacity, View } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { DATE_CATEGORIES } from "../utils/utils";
-import type { PlannerServerTarget } from "../types/navigation";
 
 type PlanDateInputsModalProps = {
   visible: boolean;
@@ -17,7 +16,7 @@ type PlanDateInputsModalProps = {
   categoriesChecked: boolean[];
   selectedCategoriesCount: number;
   isGeneratingIdeas: boolean;
-  serverTarget: PlannerServerTarget;
+  serverTarget: string;
   onClose: () => void;
   onShowDatePicker: () => void;
   onHideDatePicker: () => void;
@@ -29,7 +28,7 @@ type PlanDateInputsModalProps = {
   onSetEndPeriod: (value: "AM" | "PM") => void;
   onChangeMaxDistance: (value: string) => void;
   onToggleCategory: (index: number) => void;
-  onSetServerTarget: (value: PlannerServerTarget) => void;
+  onSetServerTarget: (value: string) => void;
   onSubmit: () => void;
 };
 

@@ -2,11 +2,7 @@
   "expo": {
     "name": "Dating App",
     "slug": "byu-dating-native",
-    "platforms": [
-      "ios",
-      "android",
-      "web"
-    ],
+    "platforms": ["ios", "android", "web"],
     "version": "1.0.0",
     "icon": "./src/assets/images/date_planner_icon.png",
     "backgroundColor": "#FFFFFF",
@@ -21,6 +17,14 @@
     },
     "android": {
       "package": "com.ethanbfisher3.dateplanner"
+    },
+    "ios": {
+      "infoPlist": {
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true
+        },
+        "NSLocalNetworkUsageDescription": "Allow local network access to connect to your nearby date planning server during development."
+      }
     },
     "plugins": [
       "expo-font",
