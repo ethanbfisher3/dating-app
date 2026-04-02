@@ -1,8 +1,5 @@
 Add Revenuecat api keys for apple
 
-Fix if the date ideas don't load
-Fix if the user isn't connected to the internet
-Fix the categories of returned places on the server
 How can i test ads on Expo?
 
 Next update:

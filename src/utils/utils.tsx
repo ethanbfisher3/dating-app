@@ -52,12 +52,21 @@ export const timesAreInvalid = (startHour12: string, endHour12: string, startPer
 };
 
 export const CATEGORY_TYPE_MAP: Record<string, string[]> = {
-  Food: ["cafe", "bakery", "ice_cream_shop", "dessert_restaurant", "coffee_shop", "pizza_restaurant", "sandwich_shop"],
+  Food: ["cafe", "bakery", "ice cream", "dessert", "coffee", "pizza", "sandwich"],
   Sports: ["gym", "sports_club", "sports_complex", "golf_course", "tennis_court", "fitness_center", "yoga_studio"],
-  Outdoors: ["park", "hiking_area", "nature_preserve", "mountain_peak", "campground", "scenic_spot", "lake", "river"],
+  Outdoors: ["park", "hiking_area", "nature_preserve", "mountain_peak", "campground", "scenic_spot", "playground"],
   Education: ["museum", "library", "art_gallery", "science_center", "historic_site"],
   Shopping: ["shopping_mall", "clothing_store", "gift_shop", "toy_store", "book_store", "electronics_store"],
-  Entertainment: ["movie_theater", "video_arcade", "amusement_park", "playground", "bowling_alley", "mini_golf", "concert_hall"],
+  Entertainment: ["movie_theater", "arcade", "amusement_park", "playground", "bowling", "mini_golf"],
+};
+
+export const SLOT_TO_PLACE_TYPES: Record<string, string[]> = {
+  meal: ["sandwich", "bakery", "pizza", "food", "coffee"],
+  dessert: ["bakery", "ice cream", "dessert", "cafe"],
+  park: ["park", "hiking_area", "nature_preserve", "mountain_peak", "campground", "scenic_spot", "playground"],
+  learningSpot: ["museum", "library", "art_gallery", "science_center", "historic_site"],
+  shop: ["shopping_mall", "gift_shop", "clothing_store", "toy_store", "book_store", "electronics_store"],
+  activityPlace: ["movie_theater", "arcade", "amusement_park", "playground", "bowling", "mini_golf"],
 };
 
 export const DATE_CATEGORIES = ["Food", "Sports", "Outdoors", "Education", "Shopping", "Entertainment"] as const;

@@ -4,7 +4,7 @@ import allRecipes, { Recipe } from "../data/Recipes";
 import type { Activity } from "../data/activities";
 import { getFreeStayInTemplates, IdeaTemplate, LONG_TEMPLATES, SHORT_TEMPLATES, STANDARD_TEMPLATES } from "../data/datePlannerTemplates";
 import type { PlaceSummary } from "./usePlacesActivitiesRecipes";
-import { DATE_CATEGORIES } from "src/utils/utils";
+import { SLOT_TO_PLACE_TYPES } from "src/utils/utils";
 
 export type FilledIdea = {
   template: string;
@@ -40,15 +40,6 @@ type UseFilledIdeasArgs = {
   activities: Activity[];
 };
 
-const SLOT_TO_PLACE_TYPES: Record<string, string[]> = {
-  meal: ["restaurant", "meal_takeaway", "cafe", "pizza_restaurant", "food"],
-  dessert: ["bakery", "ice_cream_shop", "dessert_restaurant", "cafe"],
-  park: ["park", "hiking_area", "nature_preserve", "lake", "river"],
-  learningSpot: ["museum", "library", "book_store", "art_gallery"],
-  shop: ["shopping_mall", "department_store", "clothing_store", "store"],
-  activityPlace: ["amusement_center", "bowling_alley", "movie_theater", "gym", "tourist_attraction"],
-};
-
 function computeWindowDurationMinutes(startHour: number, endHour: number) {
   const start = startHour * 60;
   let end = endHour * 60;
@@ -68,7 +59,7 @@ function formatTimeLabel(totalMinutes: number): string {
 }
 
 function requiresPlaces(template: IdeaTemplate): boolean {
-  return template.slots.some((slot) => DATE_CATEGORIES.includes(slot));
+  return template.slots.some((slot) => Boolean(SLOT_TO_PLACE_TYPES[slot]));
 }
 
 function chooseTemplates(params: PlannedDateResultsParams, places: PlaceSummary[], activities: Activity[]): IdeaTemplate[] {

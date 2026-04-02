@@ -943,7 +943,7 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
                   {places.length ? (
                     places.map((place) => (
                       <Text key={place.id} style={{ fontSize: 14, color: "#2c3e50" }}>
-                        • {place.name}
+                        • {place.name}: {place.type}
                       </Text>
                     ))
                   ) : (
@@ -1052,7 +1052,7 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
         </View>
       ) : null}
 
-      {!isLoading && error ? (
+      {!isLoading && __DEV__ && error ? (
         <View
           style={{
             borderWidth: 1,
@@ -1063,8 +1063,8 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
             marginBottom: 16,
           }}
         >
-          <Text style={{ color: "#9b2226", fontSize: 15, marginBottom: 10 }}>Could not load date ideas.</Text>
-          {__DEV__ && <Text style={{ color: "#9b2226", fontSize: 13, marginBottom: 12 }}>(DEV) {error}</Text>}
+          <Text style={{ color: "#9b2226", fontSize: 15, marginBottom: 10 }}>(DEV) Could not load date ideas.</Text>
+          {<Text style={{ color: "#9b2226", fontSize: 13, marginBottom: 12 }}>{error}</Text>}
           <TouchableOpacity
             onPress={refetch}
             style={{
@@ -1079,7 +1079,7 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
         </View>
       ) : null}
 
-      {!isLoading && !error ? (
+      {!isLoading ? (
         !isAdCompleted ? (
           <View
             style={{

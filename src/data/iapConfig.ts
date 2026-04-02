@@ -90,42 +90,26 @@ export async function purchasePremium(): Promise<PurchasePremiumResult> {
   }
 
   try {
-    // Get available offerings
-    const offerings = await Purchases.getOfferings();
+    const products = await Purchases.getProducts([PREMIUM_PRODUCT_ID]);
 
-    if (!offerings.current) {
-      console.error("No current offering available");
-      return { status: "failed", message: "No current offering available" };
+    if (!products.length) {
+      console.error(`Premium product "${PREMIUM_PRODUCT_ID}" not found via getProducts`);
+      return { status: "not_found", details: { productIdsRequested: [PREMIUM_PRODUCT_ID], products } };
     }
 
-    // RevenueCat package identifiers (e.g. "$rc_lifetime") are different from
-    // store product identifiers (e.g. "lifetime_premium").
-    // We try both so dashboard/package naming does not break purchase flow.
-    const getStoreProductId = (pkg: any): string => {
-      return pkg?.product?.identifier || pkg?.storeProduct?.identifier || "";
-    };
+    const premiumProduct = products[0] as any;
+    let result: any;
 
-    const currentPackages = offerings.current.availablePackages || [];
-    const allPackages = Object.values(offerings.all || {}).flatMap((offering: any) => offering?.availablePackages || []);
-    const candidatePackages = currentPackages.length > 0 ? currentPackages : allPackages;
-
-    // Prefer store product ID match, then fallback to package ID match.
-    const premiumPackage =
-      candidatePackages.find((pkg: any) => getStoreProductId(pkg) === PREMIUM_PRODUCT_ID) ||
-      candidatePackages.find((pkg: any) => pkg?.identifier === PREMIUM_PRODUCT_ID);
-
-    if (!premiumPackage) {
-      const available = candidatePackages.map((pkg: any) => ({
-        packageId: pkg?.identifier,
-        productId: getStoreProductId(pkg),
-      }));
-      console.error("Available RevenueCat packages/products:", available);
-      console.error(`Premium product "${PREMIUM_PRODUCT_ID}" not found`);
-      return { status: "not_found", details: available };
+    if (typeof (Purchases as any).purchaseStoreProduct === "function") {
+      result = await (Purchases as any).purchaseStoreProduct(premiumProduct);
+    } else if (typeof (Purchases as any).purchaseProduct === "function") {
+      result = await (Purchases as any).purchaseProduct(PREMIUM_PRODUCT_ID);
+    } else {
+      return {
+        status: "failed",
+        message: "Installed RevenueCat SDK does not support direct product purchase APIs.",
+      };
     }
-
-    // Purchase the package
-    const result = await Purchases.purchasePackage(premiumPackage);
 
     // Check if premium entitlement is now active
     const activeEntitlement = result.customerInfo.entitlements.active[PREMIUM_ENTITLEMENT_ID];

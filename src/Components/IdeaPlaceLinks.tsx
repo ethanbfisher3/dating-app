@@ -26,14 +26,31 @@ export default function IdeaPlaceLinks({ places, navigation, marginTop = 12 }: I
               navigation.navigate("ActivityDetail", { id: place.id });
               return;
             }
-            const lat = place.location?.latitude;
-            const lng = place.location?.longitude;
+
+            let url: string;
             const label = place.name || "Location";
             const pinLabel = encodeURIComponent(label);
-            const url = Platform.select({
-              ios: `maps:${lat},${lng}?q=${pinLabel}`,
-              android: `geo:${lat},${lng}?q=${lat},${lng}${label ? `(${pinLabel})` : ""}`,
-            });
+            console.log(place);
+            if (place.address) {
+              const query = encodeURIComponent(`${place.address}`);
+              url = Platform.select({
+                ios: `maps:0,0?q=${query}`,
+                android: `geo:0,0?q=${query}`,
+              })!;
+            } else if (place.location) {
+              const lat = place.location.latitude;
+              const lng = place.location.longitude;
+              url = Platform.select({
+                ios: `maps:${lat},${lng}?q=${pinLabel}`,
+                android: `geo:${lat},${lng}?q=${lat},${lng}${label ? `(${pinLabel})` : ""}`,
+              });
+            } else {
+              url = Platform.select({
+                ios: `maps:0,0?q=${pinLabel}`,
+                android: `geo:0,0?q=${pinLabel}`,
+              })!;
+            }
+            console.log(url);
             if (Linking.canOpenURL(url)) {
               Linking.openURL(url);
             }

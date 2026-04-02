@@ -140,98 +140,119 @@ export default function DateIdeaCard({
           >
             Schedule
           </Text>
-          {schedule.map((step, stepIndex) => (
+          {commuteToFirstMinutes !== null && commuteToFirstMinutes !== 0 ? (
             <View
-              key={`${step.startTime}-${step.endTime}-${stepIndex}`}
               style={{
                 marginBottom: 10,
-                padding: 10,
+                paddingHorizontal: 10,
+                paddingVertical: 6,
                 borderRadius: 8,
                 backgroundColor: "#f5f8fb",
               }}
             >
-              <View
+              <Text
                 style={{
-                  display: "flex",
-                  flexDirection: "row",
-                  justifyContent: "space-between",
+                  // marginBottom: 4,
+                  color: "#556677",
+                  fontSize: 13,
+                  fontWeight: "600",
                 }}
               >
-                <View style={{ maxWidth: onRegenerateStep ? "70%" : "100%" }}>
-                  <Text
-                    style={{
-                      fontSize: 14,
-                      fontWeight: "700",
-                      color: "#2c3e50",
-                      marginBottom: 4,
-                    }}
-                  >
-                    {step.startTime} - {step.endTime} ({step.durationMinutes} min)
-                  </Text>
-                  {stepIndex === 0 && commuteToFirstMinutes !== null && commuteToFirstMinutes !== 0 ? (
+                Travel to first stop: ~{commuteToFirstMinutes} min
+              </Text>
+            </View>
+          ) : null}
+          {schedule.map((step, stepIndex) => (
+            <View key={`${step.startTime}-${step.endTime}-${stepIndex}`}>
+              <View
+                style={{
+                  marginBottom: 10,
+                  padding: 10,
+                  borderRadius: 8,
+                  backgroundColor: "#f5f8fb",
+                }}
+              >
+                <View
+                  style={{
+                    display: "flex",
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <View style={{ maxWidth: onRegenerateStep ? "70%" : "100%" }}>
                     <Text
                       style={{
+                        fontSize: 14,
+                        fontWeight: "700",
+                        color: "#2c3e50",
                         marginBottom: 4,
-                        color: "#556677",
-                        fontSize: 13,
-                        fontWeight: "600",
                       }}
                     >
-                      Travel to first stop: ~{commuteToFirstMinutes} min
+                      {step.startTime} - {step.endTime} ({step.durationMinutes} min)
                     </Text>
-                  ) : null}
-                  <Text style={{ fontSize: 14, color: "#2c3e50" }}>{step.title}</Text>
+                    <Text style={{ fontSize: 14, color: "#2c3e50" }}>{step.title}</Text>
 
-                  {step.travelToNextMinutes !== null && step.travelToNextMinutes !== 0 ? (
-                    <Text
+                    {step.travelToNextMinutes !== null && step.travelToNextMinutes !== 0 ? (
+                      <Text
+                        style={{
+                          marginTop: 6,
+                          color: "#556677",
+                          fontSize: 13,
+                          fontWeight: "600",
+                        }}
+                      >
+                        Travel to next stop: ~{step.travelToNextMinutes} min
+                      </Text>
+                    ) : null}
+                  </View>
+
+                  {onRegenerateStep ? (
+                    <TouchableOpacity
+                      onPress={() => onRegenerateStep(stepIndex)}
+                      disabled={isRegeneratingStep?.(stepIndex)}
                       style={{
-                        marginTop: 6,
-                        color: "#556677",
-                        fontSize: 13,
-                        fontWeight: "600",
+                        backgroundColor: isRegeneratingStep?.(stepIndex) ? "#ccc" : "#e63f67",
+                        borderRadius: 6,
+                        paddingVertical: 6,
+                        paddingHorizontal: 10,
+                        alignSelf: "flex-start",
                       }}
                     >
-                      Travel to next stop: ~{step.travelToNextMinutes} min
-                    </Text>
+                      <Text
+                        style={{
+                          color: "#fff",
+                          fontWeight: "700",
+                          fontSize: 12,
+                        }}
+                      >
+                        {isRegeneratingStep?.(stepIndex) ? "Loading..." : "Regenerate"}
+                      </Text>
+                    </TouchableOpacity>
                   ) : null}
                 </View>
-
-                {onRegenerateStep ? (
-                  <TouchableOpacity
-                    onPress={() => onRegenerateStep(stepIndex)}
-                    disabled={isRegeneratingStep?.(stepIndex)}
-                    style={{
-                      backgroundColor: isRegeneratingStep?.(stepIndex) ? "#ccc" : "#e63f67",
-                      borderRadius: 6,
-                      paddingVertical: 6,
-                      paddingHorizontal: 10,
-                      alignSelf: "flex-start",
-                    }}
-                  >
-                    <Text
-                      style={{
-                        color: "#fff",
-                        fontWeight: "700",
-                        fontSize: 12,
-                      }}
-                    >
-                      {isRegeneratingStep?.(stepIndex) ? "Loading..." : "Regenerate"}
-                    </Text>
-                  </TouchableOpacity>
-                ) : null}
               </View>
 
               {stepIndex === schedule.length - 1 && commuteFromLastMinutes !== null && commuteFromLastMinutes !== 0 ? (
-                <Text
+                <View
                   style={{
-                    marginTop: 6,
-                    color: "#556677",
-                    fontSize: 13,
-                    fontWeight: "600",
+                    marginBottom: 10,
+                    paddingHorizontal: 10,
+                    paddingVertical: 6,
+                    borderRadius: 8,
+                    backgroundColor: "#f5f8fb",
                   }}
                 >
-                  Travel from this place back home: ~{commuteFromLastMinutes} min
-                </Text>
+                  <Text
+                    style={{
+                      // marginTop: 6,
+                      color: "#556677",
+                      fontSize: 13,
+                      fontWeight: "600",
+                    }}
+                  >
+                    Travel from this place back home: ~{commuteFromLastMinutes} min
+                  </Text>
+                </View>
               ) : null}
             </View>
           ))}
