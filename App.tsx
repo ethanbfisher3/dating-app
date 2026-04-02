@@ -21,6 +21,7 @@ import DateCalendar from "./src/screens/DateCalendar";
 import recipes from "./src/data/Recipes";
 import { initializeRevenueCat } from "./src/data/iapConfig";
 import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
+import mobileAds from "react-native-google-mobile-ads";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -67,14 +68,8 @@ export default function App() {
     if (Platform.OS === "android") {
       NavigationBar.setVisibilityAsync("hidden");
     }
-  }, []);
-
-  useEffect(() => {
-    // Initialize RevenueCat for in-app purchases
+    mobileAds().initialize();
     initializeRevenueCat();
-  }, []);
-
-  useEffect(() => {
     const recipeImages = recipes.map((recipe) => recipe.image).filter((image): image is number => typeof image === "number");
     const uniqueRecipeImages = [...new Set(recipeImages)];
 

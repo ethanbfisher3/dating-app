@@ -67,12 +67,11 @@ export async function initializeRevenueCat(): Promise<void> {
       return;
     }
 
-    await Purchases.configure({
+    Purchases.configure({
       apiKey,
     });
 
     isInitialized = true;
-    console.log("RevenueCat initialized successfully");
   } catch (error) {
     isInitialized = false;
     console.error("Failed to initialize RevenueCat:", error);
@@ -146,7 +145,6 @@ export async function purchasePremium(): Promise<PurchasePremiumResult> {
     }
 
     if (error.code === PURCHASES_ERROR_CODE.PURCHASE_CANCELLED_ERROR) {
-      console.log("User cancelled purchase");
       return { status: "cancelled" };
     } else if (error.code === PURCHASES_ERROR_CODE.PURCHASE_NOT_ALLOWED_ERROR) {
       console.error("User not allowed to make purchases");

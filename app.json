@@ -38,7 +38,15 @@
           "userTrackingUsageDescription": "This identifier will be used to deliver personalized ads to you."
         }
       ],
-      "expo-video"
+      "expo-video",
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "useFrameworks": "static"
+          }
+        }
+      ]
     ]
   }
 }

@@ -30,7 +30,6 @@ export default function IdeaPlaceLinks({ places, navigation, marginTop = 12 }: I
             let url: string;
             const label = place.name || "Location";
             const pinLabel = encodeURIComponent(label);
-            console.log(place);
             if (place.address) {
               const query = encodeURIComponent(`${place.address}`);
               url = Platform.select({
@@ -50,7 +49,6 @@ export default function IdeaPlaceLinks({ places, navigation, marginTop = 12 }: I
                 android: `geo:0,0?q=${pinLabel}`,
               })!;
             }
-            console.log(url);
             if (Linking.canOpenURL(url)) {
               Linking.openURL(url);
             }

@@ -1,11 +1,10 @@
-import { useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   Image,
   KeyboardAvoidingView,
   Modal,
-  NativeModules,
   Platform,
   ScrollView,
   Text,
@@ -21,6 +20,7 @@ import { saveDateIdea, canSaveIdea } from "../data/savedIdeasStore";
 import { usePremium } from "../hooks/usePremium";
 import PaywallModal from "../Components/PaywallModal";
 import DateIdeaCard from "../Components/DateIdeaCard";
+import CustomNativeAd from "../Components/CustomNativeAd";
 import { DATE_CATEGORIES } from "src/utils/utils";
 
 const IMAGES = [
@@ -35,16 +35,15 @@ const IMAGES = [
   require("../assets/images/date_images/origami.jpg"),
 ];
 
-const TEST_REWARDED_AD_UNIT_ID_ANDROID = "ca-app-pub-3940256099942544/5224354917";
-const TEST_REWARDED_AD_UNIT_ID_IOS = "ca-app-pub-3940256099942544/1712485313";
-
 export default function PlannedDateResults({ route, navigation }: AppScreenProps<"PlannedDateResults">) {
   const { isUnlocked } = usePremium();
   const [paywallVisible, setPaywallVisible] = useState(false);
   const [paywallReason, setPaywallReason] = useState<"date_history_limit" | "mile_radius_limit" | "ideas_limit" | "general">("general");
   const [image, setImage] = useState(IMAGES[Math.floor(Math.random() * IMAGES.length)]);
-  const [isAdCompleted, setIsAdCompleted] = useState(true);
-  const [adStatusMessage, setAdStatusMessage] = useState<string | null>(null);
+  const [nativeAdReady, setNativeAdReady] = useState(false);
+  const [nativeAdFailed, setNativeAdFailed] = useState(false);
+  const [nativeAdDisplayComplete, setNativeAdDisplayComplete] = useState(false);
+  const nativeAdHoldTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -175,79 +174,29 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
 
   const { places, recipes, activities, sourceFile, isLoading, error, refetch } = useDatePlannerIdeas(plannerParams);
 
-  useLayoutEffect(() => {
-    if (!isLoading) {
-      return;
-    }
+  useEffect(() => {
+    if (isLoading) {
+      setNativeAdReady(false);
+      setNativeAdFailed(false);
+      setNativeAdDisplayComplete(false);
 
-    if (!NativeModules.RNGoogleMobileAdsModule) {
-      setIsAdCompleted(true);
-      setAdStatusMessage(null);
-      return;
-    }
-
-    setIsAdCompleted(false);
-    setAdStatusMessage("Loading ad video...");
-
-    const rewardedAdUnitId =
-      (__DEV__
-        ? Platform.select({
-            android: TEST_REWARDED_AD_UNIT_ID_ANDROID,
-            ios: TEST_REWARDED_AD_UNIT_ID_IOS,
-          })
-        : Platform.select({
-            android: process.env.EXPO_PUBLIC_ADMOB_REWARDED_ID_ANDROID,
-            ios: process.env.EXPO_PUBLIC_ADMOB_REWARDED_ID_IOS,
-          })) || TEST_REWARDED_AD_UNIT_ID_ANDROID;
-
-    const { AdEventType, RewardedAd, RewardedAdEventType } = require("react-native-google-mobile-ads") as any;
-
-    const rewarded = RewardedAd.createForAdRequest(rewardedAdUnitId, {
-      requestNonPersonalizedAdsOnly: true,
-    });
-
-    let didEarnReward = false;
-
-    const unsubscribeLoaded = rewarded.addAdEventListener(RewardedAdEventType.LOADED, () => {
-      setAdStatusMessage("Ad ready. Playing now...");
-      rewarded.show().catch(() => undefined);
-    });
-
-    const unsubscribeOpened = rewarded.addAdEventListener(AdEventType.OPENED, () => {
-      setAdStatusMessage("Watching ad... complete the video to unlock your ideas.");
-    });
-
-    const unsubscribeEarned = rewarded.addAdEventListener(RewardedAdEventType.EARNED_REWARD, () => {
-      didEarnReward = true;
-      setIsAdCompleted(true);
-      setAdStatusMessage("Ad completed. Finalizing your date ideas...");
-    });
-
-    const unsubscribeClosed = rewarded.addAdEventListener(AdEventType.CLOSED, () => {
-      if (didEarnReward) {
-        setAdStatusMessage(null);
-        return;
+      if (nativeAdHoldTimerRef.current) {
+        clearTimeout(nativeAdHoldTimerRef.current);
+        nativeAdHoldTimerRef.current = null;
       }
-
-      setAdStatusMessage("Ad was skipped. Please watch the full video to unlock ideas.");
-      rewarded.load();
-    });
-
-    const unsubscribeError = rewarded.addAdEventListener(AdEventType.ERROR, () => {
-      setIsAdCompleted(true);
-      setAdStatusMessage("Ad unavailable right now. Showing ideas without ad.");
-    });
-
-    rewarded.load();
-
-    return () => {
-      unsubscribeLoaded();
-      unsubscribeOpened();
-      unsubscribeEarned();
-      unsubscribeClosed();
-      unsubscribeError();
-    };
+    }
   }, [isLoading]);
+
+  const resetNativeAdGate = () => {
+    setNativeAdReady(false);
+    setNativeAdFailed(false);
+    setNativeAdDisplayComplete(false);
+
+    if (nativeAdHoldTimerRef.current) {
+      clearTimeout(nativeAdHoldTimerRef.current);
+      nativeAdHoldTimerRef.current = null;
+    }
+  };
 
   const filledIdeas = useFilledIdeas({
     params: plannerParams,
@@ -362,6 +311,18 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
     return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
   })();
 
+  const shouldShowLoadingGate =
+    !error &&
+    (isLoading || (!isUnlocked && !nativeAdFailed && !nativeAdDisplayComplete));
+
+  useEffect(() => {
+    return () => {
+      if (nativeAdHoldTimerRef.current) {
+        clearTimeout(nativeAdHoldTimerRef.current);
+      }
+    };
+  }, []);
+
   const handleEditInputFocus = (event: any) => {
     const target = event?.target;
     if (!target) {
@@ -373,7 +334,7 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
     }, 120);
   };
 
-  if (isLoading && !error) {
+  if (shouldShowLoadingGate) {
     return (
       <View
         style={{
@@ -382,6 +343,7 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
           justifyContent: "center",
           alignItems: "center",
           paddingHorizontal: 24,
+          paddingVertical: 32,
         }}
       >
         <ActivityIndicator size="large" color="#1e90ff" />
@@ -407,19 +369,29 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
         >
           Finding places and building the best matches for your preferences.
         </Text>
-        {adStatusMessage ? (
-          <Text
-            style={{
-              marginTop: 10,
-              color: "#1e90ff",
-              fontSize: 14,
-              textAlign: "center",
-              lineHeight: 20,
-              fontWeight: "600",
-            }}
-          >
-            {adStatusMessage}
-          </Text>
+        {!isUnlocked ? (
+          <View style={{ width: "100%", marginTop: 24 }}>
+            <CustomNativeAd
+              onLoaded={() => {
+                setNativeAdReady(true);
+                setNativeAdDisplayComplete(false);
+
+                if (nativeAdHoldTimerRef.current) {
+                  clearTimeout(nativeAdHoldTimerRef.current);
+                }
+
+                nativeAdHoldTimerRef.current = setTimeout(() => {
+                  setNativeAdDisplayComplete(true);
+                  nativeAdHoldTimerRef.current = null;
+                }, 5000);
+              }}
+              onError={() => {
+                console.warn("[PlannedDateResults] Native ad failed to load; allowing results to continue.");
+                setNativeAdFailed(true);
+                setNativeAdDisplayComplete(true);
+              }}
+            />
+          </View>
         ) : null}
       </View>
     );
@@ -483,6 +455,7 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
 
       <TouchableOpacity
         onPress={() => {
+          resetNativeAdGate();
           setImage(IMAGES[Math.floor(Math.random() * IMAGES.length)]);
           refetch();
         }}
@@ -1079,33 +1052,8 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
         </View>
       ) : null}
 
-      {!isLoading ? (
-        !isAdCompleted ? (
-          <View
-            style={{
-              borderWidth: 1,
-              borderColor: "#dce6ef",
-              borderRadius: 12,
-              backgroundColor: "#f6f9fc",
-              padding: 16,
-              marginBottom: 16,
-              alignItems: "center",
-            }}
-          >
-            <ActivityIndicator size="small" color="#1e90ff" />
-            <Text
-              style={{
-                marginTop: 10,
-                color: "#2c3e50",
-                fontSize: 15,
-                textAlign: "center",
-              }}
-            >
-              {adStatusMessage || "Please finish the ad video to unlock your date ideas."}
-            </Text>
-          </View>
-        ) : (
-          filledIdeas.map((idea, index) => {
+      {!isLoading
+        ? filledIdeas.map((idea, index) => {
             const modifiedPlaces = modifiedIdeas.get(index)?.places;
             const ideaPlacesRecord = modifiedPlaces || idea.places || {};
             const ideaPlaces = Object.values(ideaPlacesRecord).filter(Boolean);
@@ -1140,8 +1088,7 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
               />
             );
           })
-        )
-      ) : null}
+        : null}
 
       <PaywallModal visible={paywallVisible} onClose={() => setPaywallVisible(false)} reason={paywallReason} />
     </ScrollView>
