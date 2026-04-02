@@ -12,11 +12,6 @@ import PlanDateInputsModal from "../Components/PlanDateInputsModal";
 import usePurchases from "src/hooks/usePurchases";
 import PageInfoModal from "../Components/PageInfoModal";
 
-const ADDRESS_OFF_DEFAULT_LOCATION = {
-  latitude: 36.071281486295156,
-  longitude: -78.52239044679854,
-};
-
 export default function PlanADate({ navigation }: { navigation: AppNavigation }) {
   const { isUnlocked } = usePremium();
   const { lifetimePremium } = usePurchases();
@@ -35,15 +30,13 @@ export default function PlanADate({ navigation }: { navigation: AppNavigation })
     latitude: number;
     longitude: number;
   } | null>(null);
-  const [useMyAddressEnabled, setUseMyAddressEnabled] = useState(true);
   const [categoriesChecked, setCategoriesChecked] = useState(Array(DATE_CATEGORIES.length).fill(true));
   const [isGeneratingIdeas, setIsGeneratingIdeas] = useState(false);
   const [paywallVisible, setPaywallVisible] = useState(false);
   const [infoVisible, setInfoVisible] = useState(false);
-  const [serverTarget, setServerTarget] = useState<string>("localhost");
+  const [serverTarget, setServerTarget] = useState<string>("render");
 
   useEffect(() => {
-    setServerTarget(process.env.EXPO_PUBLIC_PLACES_SERVER_URL);
     const loadLocation = async () => {
       try {
         const { status } = await Location.requestForegroundPermissionsAsync();
@@ -139,10 +132,9 @@ export default function PlanADate({ navigation }: { navigation: AppNavigation })
       Alert.alert("Distance Limited", "Premium users can search up to 25+ miles. Free tier is limited to 5 miles.");
     }
 
-    const resolvedUserLocation = useMyAddressEnabled ? (actualUserLocation ?? ADDRESS_OFF_DEFAULT_LOCATION) : ADDRESS_OFF_DEFAULT_LOCATION;
-
-    if (useMyAddressEnabled && !actualUserLocation) {
-      Alert.alert("Location Not Ready", "Your current location is not available yet. Using the default location for this search.");
+    if (!actualUserLocation) {
+      Alert.alert("Location Not Ready", "Your current location is not available yet. No places will be shown until it is loaded.");
+      setMaxDistance("0");
     }
 
     setIsGeneratingIdeas(true);
@@ -158,7 +150,7 @@ export default function PlanADate({ navigation }: { navigation: AppNavigation })
       maxDistance: finalMaxDistance,
       categories: selectedCategories,
       serverTarget,
-      userLocation: resolvedUserLocation,
+      userLocation: actualUserLocation,
     });
 
     setTimeout(() => setIsGeneratingIdeas(false), 500);
@@ -321,32 +313,6 @@ export default function PlanADate({ navigation }: { navigation: AppNavigation })
               <Text style={{ fontSize: 13, color: "#1f7a45", fontWeight: "500" }}>You can save unlimited date ideas.</Text>
             </View>
           </View>
-        )}
-
-        {__DEV__ && (
-          <TouchableOpacity
-            style={{
-              alignSelf: "flex-start",
-              backgroundColor: "#ffe8a3",
-              borderWidth: 1,
-              borderColor: "#d6b656",
-              paddingVertical: 10,
-              paddingHorizontal: 14,
-              borderRadius: 10,
-              marginBottom: 16,
-            }}
-            onPress={() => setUseMyAddressEnabled((prev) => !prev)}
-          >
-            <Text
-              style={{
-                color: "#4a3b00",
-                fontSize: 15,
-                fontWeight: "700",
-              }}
-            >
-              (DEV) Use my address: {useMyAddressEnabled ? "ON" : "OFF"}
-            </Text>
-          </TouchableOpacity>
         )}
 
         <PlanDateInputsModal

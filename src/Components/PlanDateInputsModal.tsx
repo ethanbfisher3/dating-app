@@ -344,35 +344,95 @@ export default function PlanDateInputsModal({
             <View style={{ flexDirection: "row", gap: 12, marginBottom: 12 }}>
               <View style={{ flex: 1 }}>
                 <Text style={{ color: "#4b5b6b", marginBottom: 6 }}>Max Budget ($)</Text>
-                <TextInput
-                  value={maxPrice}
-                  onChangeText={onChangeMaxPrice}
-                  keyboardType="number-pad"
+                <View
                   style={{
+                    flexDirection: "row",
                     borderWidth: 1,
                     borderColor: "#dce6ef",
                     borderRadius: 10,
-                    paddingHorizontal: 12,
-                    paddingVertical: 10,
-                    fontSize: 16,
+                    overflow: "hidden",
+                    backgroundColor: "#fff",
                   }}
-                />
+                >
+                  <TextInput
+                    value={maxPrice}
+                    onChangeText={onChangeMaxPrice}
+                    keyboardType="number-pad"
+                    style={{
+                      flex: 1,
+                      paddingHorizontal: 12,
+                      paddingVertical: 10,
+                      fontSize: 16,
+                    }}
+                  />
+                  <TouchableOpacity
+                    onPress={() => onChangeMaxPrice("0")}
+                    style={{
+                      minWidth: 76,
+                      paddingHorizontal: 12,
+                      justifyContent: "center",
+                      alignItems: "center",
+                      borderLeftWidth: 1,
+                      borderLeftColor: "#dce6ef",
+                      backgroundColor: maxPrice === "0" ? "#1e90ff" : "#fff",
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontWeight: "700",
+                        color: maxPrice === "0" ? "#fff" : "#1f2d3d",
+                      }}
+                    >
+                      Free
+                    </Text>
+                  </TouchableOpacity>
+                </View>
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={{ color: "#4b5b6b", marginBottom: 6 }}>Max Distance (miles)</Text>
-                <TextInput
-                  value={maxDistance}
-                  onChangeText={onChangeMaxDistance}
-                  keyboardType="number-pad"
+                <View
                   style={{
+                    flexDirection: "row",
                     borderWidth: 1,
                     borderColor: "#dce6ef",
                     borderRadius: 10,
-                    paddingHorizontal: 12,
-                    paddingVertical: 10,
-                    fontSize: 16,
+                    overflow: "hidden",
+                    backgroundColor: "#fff",
                   }}
-                />
+                >
+                  <TextInput
+                    value={maxDistance}
+                    onChangeText={onChangeMaxDistance}
+                    keyboardType="number-pad"
+                    style={{
+                      flex: 1,
+                      paddingHorizontal: 12,
+                      paddingVertical: 10,
+                      fontSize: 16,
+                    }}
+                  />
+                  <TouchableOpacity
+                    onPress={() => onChangeMaxDistance("0")}
+                    style={{
+                      minWidth: 92,
+                      paddingHorizontal: 12,
+                      justifyContent: "center",
+                      alignItems: "center",
+                      borderLeftWidth: 1,
+                      borderLeftColor: "#dce6ef",
+                      backgroundColor: maxDistance === "0" ? "#1e90ff" : "#fff",
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontWeight: "700",
+                        color: maxDistance === "0" ? "#fff" : "#1f2d3d",
+                      }}
+                    >
+                      At Home
+                    </Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             </View>
 

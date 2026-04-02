@@ -112,7 +112,7 @@ const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", 
 
 const MAX_PLACES_RETURNED = 50;
 const PRODUCTION_PLACES_SERVER_URL = "https://dating-app-server-9zib.onrender.com";
-const PLACES_REQUEST_TIMEOUT_MS = 8000;
+const PLACES_REQUEST_TIMEOUT_MS = 30000;
 const ENABLE_PRODUCTION_FALLBACK = process.env.EXPO_PUBLIC_ENABLE_PRODUCTION_FALLBACK === "true";
 
 const PLACES_SERVER_BASE_URL =

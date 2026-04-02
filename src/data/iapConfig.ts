@@ -4,7 +4,7 @@ import Constants from "expo-constants";
 import { premiumStore } from "./premiumStore";
 
 // Product ID for your one-time purchase (set up in RevenueCat dashboard)
-export const PREMIUM_PRODUCT_ID = "lifetime_premium";
+export const PREMIUM_PRODUCT_ID = "unlimited_premium_lifetime_date_planner";
 
 // Entitlement ID to check (set up in RevenueCat dashboard)
 export const PREMIUM_ENTITLEMENT_ID = "premium";

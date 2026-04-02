@@ -263,15 +263,16 @@ export default function DateHistoryScreen({ navigation }: { navigation: AppNavig
           <View style={styles.titleRow}>
             <View style={styles.titleTextRow}>
               <Text style={styles.title}>Date History</Text>
-              <Text style={styles.freeCounterText}>
-                ({recordedDates.length} / {FREE_TIER_RECORDED_DATES_LIMIT})
-              </Text>
+              {!isUnlocked && (
+                <Text style={styles.freeCounterText}>
+                  ({recordedDates.length} / {FREE_TIER_RECORDED_DATES_LIMIT})
+                </Text>
+              )}
             </View>
             <TouchableOpacity style={styles.infoButton} onPress={() => setInfoVisible(true)}>
               <Ionicons name="information-circle-outline" size={22} color="#007AFF" />
             </TouchableOpacity>
           </View>
-          {/* <Text style={styles.subtitle}>Record the dates you've been on</Text> */}
         </View>
 
         <Image

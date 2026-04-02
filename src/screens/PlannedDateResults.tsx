@@ -23,14 +23,6 @@ import PaywallModal from "../Components/PaywallModal";
 import DateIdeaCard from "../Components/DateIdeaCard";
 import { DATE_CATEGORIES } from "src/utils/utils";
 
-const DEV_PLACE_SLOT_TYPES: Record<string, string[]> = {
-  meal: ["restaurant", "meal_takeaway", "cafe", "pizza_restaurant"],
-  dessert: ["bakery", "ice_cream_shop", "dessert_restaurant", "cafe"],
-  park: ["park", "hiking_area", "nature_preserve", "lake", "river"],
-  learningSpot: ["museum", "library", "book_store", "art_gallery"],
-  shop: ["shopping_mall", "department_store", "clothing_store", "store"],
-};
-
 const IMAGES = [
   require("../assets/images/date_images/idea.jpg"),
   require("../assets/images/date_images/mall.jpg"),
@@ -51,6 +43,8 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
   const [paywallVisible, setPaywallVisible] = useState(false);
   const [paywallReason, setPaywallReason] = useState<"date_history_limit" | "mile_radius_limit" | "ideas_limit" | "general">("general");
   const [image, setImage] = useState(IMAGES[Math.floor(Math.random() * IMAGES.length)]);
+  const [isAdCompleted, setIsAdCompleted] = useState(true);
+  const [adStatusMessage, setAdStatusMessage] = useState<string | null>(null);
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -82,7 +76,6 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
   const [regeneratingSteps, setRegeneratingSteps] = useState<Set<string>>(new Set());
   const [modifiedIdeas, setModifiedIdeas] = useState<Map<number, any>>(new Map());
   const editModalScrollRef = useRef<ScrollView>(null);
-  const hasAttemptedRewardedAdRef = useRef(false);
 
   const regenerateStep = async (ideaIndex: number, stepIndex: number, idea: any) => {
     const stepKey = `${ideaIndex}-${stepIndex}`;
@@ -183,15 +176,18 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
   const { places, recipes, activities, sourceFile, isLoading, error, refetch } = useDatePlannerIdeas(plannerParams);
 
   useLayoutEffect(() => {
-    if (!isLoading || hasAttemptedRewardedAdRef.current) {
+    if (!isLoading) {
       return;
     }
 
     if (!NativeModules.RNGoogleMobileAdsModule) {
+      setIsAdCompleted(true);
+      setAdStatusMessage(null);
       return;
     }
 
-    hasAttemptedRewardedAdRef.current = true;
+    setIsAdCompleted(false);
+    setAdStatusMessage("Loading ad video...");
 
     const rewardedAdUnitId =
       (__DEV__
@@ -204,34 +200,51 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
             ios: process.env.EXPO_PUBLIC_ADMOB_REWARDED_ID_IOS,
           })) || TEST_REWARDED_AD_UNIT_ID_ANDROID;
 
-    const { AdEventType, RewardedAd, RewardedAdEventType } = require("react-native-google-mobile-ads") as {
-      AdEventType: { ERROR: string };
-      RewardedAdEventType: { LOADED: string };
-      RewardedAd: {
-        createForAdRequest: (
-          adUnitId: string,
-          requestOptions?: { requestNonPersonalizedAdsOnly?: boolean },
-        ) => {
-          addAdEventListener: (eventType: string, listener: () => void) => () => void;
-          show: () => Promise<void>;
-          load: () => void;
-        };
-      };
-    };
+    const { AdEventType, RewardedAd, RewardedAdEventType } = require("react-native-google-mobile-ads") as any;
 
     const rewarded = RewardedAd.createForAdRequest(rewardedAdUnitId, {
       requestNonPersonalizedAdsOnly: true,
     });
 
+    let didEarnReward = false;
+
     const unsubscribeLoaded = rewarded.addAdEventListener(RewardedAdEventType.LOADED, () => {
+      setAdStatusMessage("Ad ready. Playing now...");
       rewarded.show().catch(() => undefined);
     });
 
-    const unsubscribeError = rewarded.addAdEventListener(AdEventType.ERROR, () => undefined);
+    const unsubscribeOpened = rewarded.addAdEventListener(AdEventType.OPENED, () => {
+      setAdStatusMessage("Watching ad... complete the video to unlock your ideas.");
+    });
+
+    const unsubscribeEarned = rewarded.addAdEventListener(RewardedAdEventType.EARNED_REWARD, () => {
+      didEarnReward = true;
+      setIsAdCompleted(true);
+      setAdStatusMessage("Ad completed. Finalizing your date ideas...");
+    });
+
+    const unsubscribeClosed = rewarded.addAdEventListener(AdEventType.CLOSED, () => {
+      if (didEarnReward) {
+        setAdStatusMessage(null);
+        return;
+      }
+
+      setAdStatusMessage("Ad was skipped. Please watch the full video to unlock ideas.");
+      rewarded.load();
+    });
+
+    const unsubscribeError = rewarded.addAdEventListener(AdEventType.ERROR, () => {
+      setIsAdCompleted(true);
+      setAdStatusMessage("Ad unavailable right now. Showing ideas without ad.");
+    });
+
     rewarded.load();
 
     return () => {
       unsubscribeLoaded();
+      unsubscribeOpened();
+      unsubscribeEarned();
+      unsubscribeClosed();
       unsubscribeError();
     };
   }, [isLoading]);
@@ -244,11 +257,6 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
   });
 
   const { maxDistance } = plannerParams;
-
-  const devPlaceSlotCounts = Object.entries(DEV_PLACE_SLOT_TYPES).map(([slot, allowedTypes]) => ({
-    slot,
-    count: places.filter((place) => place.type === slot || allowedTypes.includes(place.type)).length,
-  }));
 
   const clampHour12 = (value: number) => {
     if (Number.isNaN(value)) return 1;
@@ -399,6 +407,20 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
         >
           Finding places and building the best matches for your preferences.
         </Text>
+        {adStatusMessage ? (
+          <Text
+            style={{
+              marginTop: 10,
+              color: "#1e90ff",
+              fontSize: 14,
+              textAlign: "center",
+              lineHeight: 20,
+              fontWeight: "600",
+            }}
+          >
+            {adStatusMessage}
+          </Text>
+        ) : null}
       </View>
     );
   }
@@ -1042,7 +1064,7 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
           }}
         >
           <Text style={{ color: "#9b2226", fontSize: 15, marginBottom: 10 }}>Could not load date ideas.</Text>
-          <Text style={{ color: "#9b2226", fontSize: 13, marginBottom: 12 }}>{error}</Text>
+          {__DEV__ && <Text style={{ color: "#9b2226", fontSize: 13, marginBottom: 12 }}>(DEV) {error}</Text>}
           <TouchableOpacity
             onPress={refetch}
             style={{
@@ -1057,8 +1079,33 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
         </View>
       ) : null}
 
-      {!isLoading && !error
-        ? filledIdeas.map((idea, index) => {
+      {!isLoading && !error ? (
+        !isAdCompleted ? (
+          <View
+            style={{
+              borderWidth: 1,
+              borderColor: "#dce6ef",
+              borderRadius: 12,
+              backgroundColor: "#f6f9fc",
+              padding: 16,
+              marginBottom: 16,
+              alignItems: "center",
+            }}
+          >
+            <ActivityIndicator size="small" color="#1e90ff" />
+            <Text
+              style={{
+                marginTop: 10,
+                color: "#2c3e50",
+                fontSize: 15,
+                textAlign: "center",
+              }}
+            >
+              {adStatusMessage || "Please finish the ad video to unlock your date ideas."}
+            </Text>
+          </View>
+        ) : (
+          filledIdeas.map((idea, index) => {
             const modifiedPlaces = modifiedIdeas.get(index)?.places;
             const ideaPlacesRecord = modifiedPlaces || idea.places || {};
             const ideaPlaces = Object.values(ideaPlacesRecord).filter(Boolean);
@@ -1093,7 +1140,8 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
               />
             );
           })
-        : null}
+        )
+      ) : null}
 
       <PaywallModal visible={paywallVisible} onClose={() => setPaywallVisible(false)} reason={paywallReason} />
     </ScrollView>

@@ -1,7 +1,9 @@
 Add Revenuecat api keys for apple
 
-Restyle max budget and max distance to have buttons for 'Free' and 'At Home'
-
+Fix if the date ideas don't load
+Fix if the user isn't connected to the internet
+Fix the categories of returned places on the server
+How can i test ads on Expo?
 
 Next update:
 More recipes
