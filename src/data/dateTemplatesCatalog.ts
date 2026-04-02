@@ -17,7 +17,7 @@ export const SHORT_DATE_TEMPLATES: TemplateLike[] = [
     slots: ["activity", "recipe"],
   },
   {
-    template: "Coffee stop at {meal} and a stroll at {park}",
+    template: "Stop at {meal} and a stroll at {park}",
     slots: ["meal", "park"],
   },
   {
@@ -25,7 +25,7 @@ export const SHORT_DATE_TEMPLATES: TemplateLike[] = [
     slots: ["shop", "dessert"],
   },
   {
-    template: "Start with {activity}, then treat yourselves at {dessert}",
+    template: "{activity} and then treat yourselves at {dessert}",
     slots: ["activity", "dessert"],
   },
   {
@@ -37,7 +37,7 @@ export const SHORT_DATE_TEMPLATES: TemplateLike[] = [
     slots: ["activityPlace", "meal"],
   },
   {
-    template: "Make {recipe} and end with {activity}",
+    template: "Make {recipe} and {activity} to finish it off",
     slots: ["recipe", "activity"],
   },
 ];
@@ -81,7 +81,7 @@ export const STANDARD_DATE_TEMPLATES: TemplateLike[] = [
     slots: ["shop", "meal", "activity"],
   },
   {
-    template: "Go to {learningSpot}, then {activity}, then {dessert}",
+    template: "Go to {learningSpot}, {activity}, then {dessert}",
     slots: ["learningSpot", "activity", "dessert"],
   },
   {
@@ -90,7 +90,7 @@ export const STANDARD_DATE_TEMPLATES: TemplateLike[] = [
   },
   { template: "Make {recipe}, then head to {park}", slots: ["recipe", "park"] },
   {
-    template: "Start with {activity}, then visit {learningSpot}",
+    template: "{activity}, then visit {learningSpot}",
     slots: ["activity", "learningSpot"],
   },
   {
@@ -106,7 +106,7 @@ export const STANDARD_DATE_TEMPLATES: TemplateLike[] = [
     slots: ["learningSpot", "shop", "meal"],
   },
   {
-    template: "Start with {activity}, eat at {meal}, then {activity}",
+    template: "{activity}, eat at {meal}, and finally {activity}",
     slots: ["activity", "meal", "activity"],
   },
   {
@@ -122,7 +122,7 @@ export const STANDARD_DATE_TEMPLATES: TemplateLike[] = [
     slots: ["shop", "activity", "park"],
   },
   {
-    template: "Start at {meal}, then {activityPlace}, then {activity}",
+    template: "Start at {meal}, then {activityPlace}, and {activity} to end",
     slots: ["meal", "activityPlace", "activity"],
   },
   {
@@ -177,7 +177,7 @@ export const LONG_DATE_TEMPLATES: TemplateLike[] = [
     slots: ["meal", "park", "shop", "dessert"],
   },
   {
-    template: "Go to {activityPlace}, then {activity}, then eat at {meal}, then {activity}",
+    template: "Go to {activityPlace}, then {activity}, then eat at {meal}. Finally, {activity}",
     slots: ["activityPlace", "activity", "meal", "activity"],
   },
   {
@@ -185,11 +185,11 @@ export const LONG_DATE_TEMPLATES: TemplateLike[] = [
     slots: ["learningSpot", "park", "activityPlace", "dessert"],
   },
   {
-    template: "Make {recipe}, then browse {shop}, then {activity}, and end at {meal}",
+    template: "Make {recipe}, then browse {shop}, {activity}, and end at {meal}",
     slots: ["recipe", "shop", "activity", "meal"],
   },
   {
-    template: "Visit {park}, have {meal}, do {activity}, visit {learningSpot}, and get {dessert}",
+    template: "Visit {park}, have {meal}, {activity}, visit {learningSpot}, and get {dessert}",
     slots: ["park", "meal", "activity", "learningSpot", "dessert"],
   },
   {
@@ -197,7 +197,7 @@ export const LONG_DATE_TEMPLATES: TemplateLike[] = [
     slots: ["shop", "activityPlace", "recipe", "dessert"],
   },
   {
-    template: "Start with {activity}, then {activity}, then dinner at {meal}, then a walk at {park}",
+    template: "{activity}, then {activity}, then have dinner at {meal}, then a walk at {park}",
     slots: ["activity", "activity", "meal", "park"],
   },
   {
@@ -205,7 +205,7 @@ export const LONG_DATE_TEMPLATES: TemplateLike[] = [
     slots: ["learningSpot", "activityPlace", "activity", "meal"],
   },
   {
-    template: "Begin at {meal}, go to {shop}, continue with {activity}, then dessert at {dessert}",
+    template: "Begin at {meal}, go to {shop}, {activity}, then dessert at {dessert}",
     slots: ["meal", "shop", "activity", "dessert"],
   },
   {
@@ -213,7 +213,7 @@ export const LONG_DATE_TEMPLATES: TemplateLike[] = [
     slots: ["park", "learningSpot", "activity", "activityPlace"],
   },
   {
-    template: "Make {recipe}, enjoy {activity}, walk at {park}, and finish at {meal}",
+    template: "Make {recipe}, {activity}, walk at {park}, and finish at {meal}",
     slots: ["recipe", "activity", "park", "meal"],
   },
   {
@@ -225,7 +225,7 @@ export const LONG_DATE_TEMPLATES: TemplateLike[] = [
     slots: ["meal", "learningSpot", "park", "activity", "dessert"],
   },
   {
-    template: "Go to {activity}, then {activityPlace}, then {activity}, then eat at {meal}",
+    template: "{activity}, then {activityPlace}, then {activity}, then eat at {meal}",
     slots: ["activity", "activityPlace", "activity", "meal"],
   },
   {
@@ -233,7 +233,7 @@ export const LONG_DATE_TEMPLATES: TemplateLike[] = [
     slots: ["park", "recipe", "learningSpot", "dessert"],
   },
   {
-    template: "Explore {shop}, then have {meal}, then {activityPlace}, and finish with {activity}",
+    template: "Explore {shop}, then have {meal}, then {activityPlace}, and {activity}",
     slots: ["shop", "meal", "activityPlace", "activity"],
   },
   {

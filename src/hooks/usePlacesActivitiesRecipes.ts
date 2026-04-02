@@ -115,7 +115,8 @@ const PRODUCTION_PLACES_SERVER_URL = "https://dating-app-server-9zib.onrender.co
 const PLACES_REQUEST_TIMEOUT_MS = 8000;
 const ENABLE_PRODUCTION_FALLBACK = process.env.EXPO_PUBLIC_ENABLE_PRODUCTION_FALLBACK === "true";
 
-const PLACES_SERVER_BASE_URL = process.env.EXPO_PUBLIC_PLACES_SERVER_URL || process.env.EXPO_PUBLIC_API_BASE_URL || "http://localhost:3000";
+const PLACES_SERVER_BASE_URL =
+  process.env.EXPO_PUBLIC_PLACES_SERVER_URL || process.env.EXPO_PUBLIC_API_BASE_URL || PRODUCTION_PLACES_SERVER_URL;
 
 function getPlacesServerBaseUrls(serverTarget: string): string[] {
   const unique = new Set<string>();

@@ -60,5 +60,6 @@ export const CATEGORY_TYPE_MAP: Record<string, string[]> = {
   Entertainment: ["movie_theater", "video_arcade", "amusement_park", "playground", "bowling_alley", "mini_golf", "concert_hall"],
 };
 
-export const DATE_CATEGORIES = Object.keys(CATEGORY_TYPE_MAP);
+export const DATE_CATEGORIES = ["Food", "Sports", "Outdoors", "Education", "Shopping", "Entertainment"] as const;
+
 export type DateCategory = (typeof DATE_CATEGORIES)[number];

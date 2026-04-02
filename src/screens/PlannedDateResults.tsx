@@ -5,6 +5,7 @@ import {
   Image,
   KeyboardAvoidingView,
   Modal,
+  NativeModules,
   Platform,
   ScrollView,
   Text,
@@ -30,10 +31,26 @@ const DEV_PLACE_SLOT_TYPES: Record<string, string[]> = {
   shop: ["shopping_mall", "department_store", "clothing_store", "store"],
 };
 
+const IMAGES = [
+  require("../assets/images/date_images/idea.jpg"),
+  require("../assets/images/date_images/mall.jpg"),
+  require("../assets/images/date_images/mini_golf.jpg"),
+  require("../assets/images/date_images/museum.jpg"),
+  require("../assets/images/date_images/laser_tag.jpg"),
+  require("../assets/images/date_images/video_games.jpg"),
+  require("../assets/images/date_images/board_games.jpg"),
+  require("../assets/images/date_images/puzzle.jpg"),
+  require("../assets/images/date_images/origami.jpg"),
+];
+
+const TEST_REWARDED_AD_UNIT_ID_ANDROID = "ca-app-pub-3940256099942544/5224354917";
+const TEST_REWARDED_AD_UNIT_ID_IOS = "ca-app-pub-3940256099942544/1712485313";
+
 export default function PlannedDateResults({ route, navigation }: AppScreenProps<"PlannedDateResults">) {
   const { isUnlocked } = usePremium();
   const [paywallVisible, setPaywallVisible] = useState(false);
   const [paywallReason, setPaywallReason] = useState<"date_history_limit" | "mile_radius_limit" | "ideas_limit" | "general">("general");
+  const [image, setImage] = useState(IMAGES[Math.floor(Math.random() * IMAGES.length)]);
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -65,6 +82,7 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
   const [regeneratingSteps, setRegeneratingSteps] = useState<Set<string>>(new Set());
   const [modifiedIdeas, setModifiedIdeas] = useState<Map<number, any>>(new Map());
   const editModalScrollRef = useRef<ScrollView>(null);
+  const hasAttemptedRewardedAdRef = useRef(false);
 
   const regenerateStep = async (ideaIndex: number, stepIndex: number, idea: any) => {
     const stepKey = `${ideaIndex}-${stepIndex}`;
@@ -164,6 +182,60 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
 
   const { places, recipes, activities, sourceFile, isLoading, error, refetch } = useDatePlannerIdeas(plannerParams);
 
+  useLayoutEffect(() => {
+    if (!isLoading || hasAttemptedRewardedAdRef.current) {
+      return;
+    }
+
+    if (!NativeModules.RNGoogleMobileAdsModule) {
+      return;
+    }
+
+    hasAttemptedRewardedAdRef.current = true;
+
+    const rewardedAdUnitId =
+      (__DEV__
+        ? Platform.select({
+            android: TEST_REWARDED_AD_UNIT_ID_ANDROID,
+            ios: TEST_REWARDED_AD_UNIT_ID_IOS,
+          })
+        : Platform.select({
+            android: process.env.EXPO_PUBLIC_ADMOB_REWARDED_ID_ANDROID,
+            ios: process.env.EXPO_PUBLIC_ADMOB_REWARDED_ID_IOS,
+          })) || TEST_REWARDED_AD_UNIT_ID_ANDROID;
+
+    const { AdEventType, RewardedAd, RewardedAdEventType } = require("react-native-google-mobile-ads") as {
+      AdEventType: { ERROR: string };
+      RewardedAdEventType: { LOADED: string };
+      RewardedAd: {
+        createForAdRequest: (
+          adUnitId: string,
+          requestOptions?: { requestNonPersonalizedAdsOnly?: boolean },
+        ) => {
+          addAdEventListener: (eventType: string, listener: () => void) => () => void;
+          show: () => Promise<void>;
+          load: () => void;
+        };
+      };
+    };
+
+    const rewarded = RewardedAd.createForAdRequest(rewardedAdUnitId, {
+      requestNonPersonalizedAdsOnly: true,
+    });
+
+    const unsubscribeLoaded = rewarded.addAdEventListener(RewardedAdEventType.LOADED, () => {
+      rewarded.show().catch(() => undefined);
+    });
+
+    const unsubscribeError = rewarded.addAdEventListener(AdEventType.ERROR, () => undefined);
+    rewarded.load();
+
+    return () => {
+      unsubscribeLoaded();
+      unsubscribeError();
+    };
+  }, [isLoading]);
+
   const filledIdeas = useFilledIdeas({
     params: plannerParams,
     places,
@@ -261,6 +333,8 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
       return;
     }
 
+    setImage(IMAGES[Math.floor(Math.random() * IMAGES.length)]);
+
     setPlannerParams({
       selectedDate: draftSelectedDate,
       startHour: convertTo24Hour(nextStartHour12, draftStartPeriod),
@@ -350,7 +424,7 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
       </Text>
 
       <Image
-        source={require("../assets/images/idea.jpg")}
+        source={image}
         style={{
           width: "100%",
           height: 200,
@@ -386,7 +460,10 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
       </TouchableOpacity>
 
       <TouchableOpacity
-        onPress={refetch}
+        onPress={() => {
+          setImage(IMAGES[Math.floor(Math.random() * IMAGES.length)]);
+          refetch();
+        }}
         disabled={isLoading}
         style={{
           backgroundColor: "#28a745",
@@ -836,30 +913,6 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
                       fontSize: 12,
                       fontWeight: "700",
                       color: "#667788",
-                      marginBottom: 4,
-                    }}
-                  >
-                    Slot candidate counts
-                  </Text>
-                  {devPlaceSlotCounts.map(({ slot, count }) => (
-                    <Text
-                      key={slot}
-                      style={{
-                        fontSize: 13,
-                        color: "#556677",
-                        marginBottom: 2,
-                      }}
-                    >
-                      • {slot}: {count}
-                    </Text>
-                  ))}
-
-                  <Text
-                    style={{
-                      fontSize: 12,
-                      fontWeight: "700",
-                      color: "#667788",
-                      marginTop: 6,
                       marginBottom: 2,
                     }}
                   >

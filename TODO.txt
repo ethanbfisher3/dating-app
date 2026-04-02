@@ -1,9 +1,14 @@
 Add Revenuecat api keys for apple
 
-When the user opens the app, the app could automatically query the server for places nearby with their current location...
 Restyle max budget and max distance to have buttons for 'Free' and 'At Home'
-'Date Idea Generator' instead of 'Date Planner'. Make the page a place where the user can put down their plans and it can generate maybe one idea at a time for the user
-Randomize the image on the planned dates results page
+
+
+Next update:
+More recipes
+More activities
+Incorporate pictures on the date results page / Restyle that page
+More date templates/Fix current date templates, add more activities, and recipes, more categories/more specific categories (like dropdowns from food > dessert, lunch, etc)
+When the user opens the app, the app could automatically query the server for places nearby with their current location...
 
 Test:
 Test for if the user doesn't have internet or their location is turned off
@@ -12,17 +17,14 @@ Premium cost changes to other currencies based on user location
 
 
 Maybe:
-Incorporate pictures on the date results page
+'Date Idea Generator' instead of 'Date Planner'. Make the page a place where the user can put down their plans and it can generate maybe one idea at a time for the user
 Search button in the saved ideas
 Add a spot for the user to add comments?
 
 
 Eventually:
-More date templates/Fix current date templates, add more activities, and recipes, more categories/more specific categories (like dropdowns from food > dessert, lunch, etc)
 users can input their own date ideas
 users can upload pictures or reviews and there can be a 'recent dates in provo' section on the app to make it more like social media. 
 Then, when a user is looking at date ideas or a place, it will show them dates that have taken place at that spot
 Ratings for recipes that you like (upvoting/downvoting)
-
-To make the app useable for anyone regardless of location, first check if the places contains places nearby the user, 
-otherwise query the server to generate new places. Places should regenerate once every couple weeks just to keep everything updated
+Use database on the server instead of querying Mapbox every time
