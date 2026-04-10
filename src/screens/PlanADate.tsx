@@ -25,6 +25,8 @@ export default function PlanADate({ navigation }: { navigation: AppNavigation })
   const [startPeriod, setStartPeriod] = useState<"AM" | "PM">("PM");
   const [endHour12, setEndHour12] = useState<string>("9");
   const [endPeriod, setEndPeriod] = useState<"AM" | "PM">("PM");
+  const [dateLengthHours, setDateLengthHours] = useState<string>("2");
+  const [dateLengthMinutes, setDateLengthMinutes] = useState<string>("0");
   const [maxDistance, setMaxDistance] = useState<string>(isUnlocked ? "10" : "5");
   const [actualUserLocation, setActualUserLocation] = useState<{
     latitude: number;
@@ -83,6 +85,19 @@ export default function PlanADate({ navigation }: { navigation: AppNavigation })
     return hour24;
   };
 
+  const sanitizeHourOrMinute = (text: string, maximum: number) => {
+    if (text.trim() === "") {
+      return "";
+    }
+
+    const parsed = Number.parseInt(text, 10);
+    if (Number.isNaN(parsed) || parsed < 0) {
+      return "";
+    }
+
+    return String(Math.min(parsed, maximum));
+  };
+
   const toggleCategory = (index: number) => {
     const updated = [...categoriesChecked];
     updated[index] = !updated[index];
@@ -124,6 +139,35 @@ export default function PlanADate({ navigation }: { navigation: AppNavigation })
 
     const start24 = convertTo24Hour(Number.parseInt(startHour12, 10), startPeriod);
     const end24 = convertTo24Hour(Number.parseInt(endHour12, 10), endPeriod);
+    const dateLengthHoursValue = Number.parseInt(dateLengthHours || "0", 10);
+    const dateLengthMinutesValue = Number.parseInt(dateLengthMinutes || "0", 10);
+
+    if (
+      Number.isNaN(dateLengthHoursValue) ||
+      Number.isNaN(dateLengthMinutesValue) ||
+      dateLengthHoursValue < 0 ||
+      dateLengthMinutesValue < 0
+    ) {
+      Alert.alert("Invalid Date Length", "Please enter a valid date length.");
+      return;
+    }
+
+    const parsedDateLengthMinutes = dateLengthHoursValue * 60 + dateLengthMinutesValue;
+    if (parsedDateLengthMinutes <= 0) {
+      Alert.alert("Invalid Date Length", "Date length must be at least 1 minute.");
+      return;
+    }
+
+    let windowDurationMinutes = (end24 - start24) * 60;
+    if (windowDurationMinutes <= 0) {
+      windowDurationMinutes += 24 * 60;
+    }
+
+    if (parsedDateLengthMinutes > windowDurationMinutes) {
+      Alert.alert("Date Length Too Long", "Date length must fit inside your selected start and end times.");
+      return;
+    }
+
     const selectedDateIso = selectedDate.toISOString().slice(0, 10);
 
     let finalMaxDistance = parsedDistance;
@@ -147,6 +191,7 @@ export default function PlanADate({ navigation }: { navigation: AppNavigation })
       selectedDate: selectedDateIso,
       startHour: start24,
       endHour: end24,
+      dateLengthMinutes: parsedDateLengthMinutes,
       maxDistance: finalMaxDistance,
       categories: selectedCategories,
       serverTarget,
@@ -324,6 +369,8 @@ export default function PlanADate({ navigation }: { navigation: AppNavigation })
           startPeriod={startPeriod}
           endHour12={endHour12}
           endPeriod={endPeriod}
+          dateLengthHours={dateLengthHours}
+          dateLengthMinutes={dateLengthMinutes}
           maxDistance={maxDistance}
           categoriesChecked={categoriesChecked}
           selectedCategoriesCount={selectedCategoriesCount}
@@ -363,6 +410,8 @@ export default function PlanADate({ navigation }: { navigation: AppNavigation })
           }}
           onSetStartPeriod={setStartPeriod}
           onSetEndPeriod={setEndPeriod}
+          onChangeDateLengthHours={(text) => setDateLengthHours(sanitizeHourOrMinute(text, 23))}
+          onChangeDateLengthMinutes={(text) => setDateLengthMinutes(sanitizeHourOrMinute(text, 59))}
           onChangeMaxDistance={setMaxDistance}
           onToggleCategory={toggleCategory}
           onSetServerTarget={setServerTarget}

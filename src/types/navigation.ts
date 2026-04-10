@@ -5,6 +5,7 @@ export type PlannedDateResultsParams = {
   selectedDate: string;
   startHour: number;
   endHour: number;
+  dateLengthMinutes: number;
   maxDistance: number;
   categories: string[];
   serverTarget: string;

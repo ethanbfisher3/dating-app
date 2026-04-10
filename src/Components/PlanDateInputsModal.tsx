@@ -12,6 +12,8 @@ type PlanDateInputsModalProps = {
   startPeriod: "AM" | "PM";
   endHour12: string;
   endPeriod: "AM" | "PM";
+  dateLengthHours: string;
+  dateLengthMinutes: string;
   maxDistance: string;
   categoriesChecked: boolean[];
   selectedCategoriesCount: number;
@@ -26,6 +28,8 @@ type PlanDateInputsModalProps = {
   onChangeEndHour12: (value: string) => void;
   onSetStartPeriod: (value: "AM" | "PM") => void;
   onSetEndPeriod: (value: "AM" | "PM") => void;
+  onChangeDateLengthHours: (value: string) => void;
+  onChangeDateLengthMinutes: (value: string) => void;
   onChangeMaxDistance: (value: string) => void;
   onToggleCategory: (index: number) => void;
   onSetServerTarget: (value: string) => void;
@@ -41,6 +45,8 @@ export default function PlanDateInputsModal({
   startPeriod,
   endHour12,
   endPeriod,
+  dateLengthHours,
+  dateLengthMinutes,
   maxDistance,
   categoriesChecked,
   selectedCategoriesCount,
@@ -55,6 +61,8 @@ export default function PlanDateInputsModal({
   onChangeEndHour12,
   onSetStartPeriod,
   onSetEndPeriod,
+  onChangeDateLengthHours,
+  onChangeDateLengthMinutes,
   onChangeMaxDistance,
   onToggleCategory,
   onSetServerTarget,
@@ -337,6 +345,49 @@ export default function PlanDateInputsModal({
                       </Text>
                     </TouchableOpacity>
                   ))}
+                </View>
+              </View>
+            </View>
+
+            <View style={{ flexDirection: "row", gap: 12, marginBottom: 12 }}>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: "#4b5b6b", marginBottom: 6 }}>Date Length</Text>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    gap: 8,
+                  }}
+                >
+                  <TextInput
+                    value={dateLengthHours}
+                    onChangeText={onChangeDateLengthHours}
+                    keyboardType="number-pad"
+                    placeholder="Hours"
+                    style={{
+                      flex: 1,
+                      borderWidth: 1,
+                      borderColor: "#dce6ef",
+                      borderRadius: 10,
+                      paddingHorizontal: 12,
+                      paddingVertical: 10,
+                      fontSize: 16,
+                    }}
+                  />
+                  <TextInput
+                    value={dateLengthMinutes}
+                    onChangeText={onChangeDateLengthMinutes}
+                    keyboardType="number-pad"
+                    placeholder="Minutes"
+                    style={{
+                      flex: 1,
+                      borderWidth: 1,
+                      borderColor: "#dce6ef",
+                      borderRadius: 10,
+                      paddingHorizontal: 12,
+                      paddingVertical: 10,
+                      fontSize: 16,
+                    }}
+                  />
                 </View>
               </View>
             </View>

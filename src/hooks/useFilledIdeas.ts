@@ -47,6 +47,24 @@ function computeWindowDurationMinutes(startHour: number, endHour: number) {
   return end - start;
 }
 
+function getEffectiveDateDurationMinutes(params: PlannedDateResultsParams): number {
+  const windowDuration = computeWindowDurationMinutes(params.startHour, params.endHour);
+  const requestedDuration =
+    typeof params.dateLengthMinutes === "number" && params.dateLengthMinutes > 0 ? params.dateLengthMinutes : windowDuration;
+
+  return Math.min(windowDuration, requestedDuration);
+}
+
+function getRandomQuarterHourOffset(maxOffsetMinutes: number): number {
+  if (maxOffsetMinutes < 15) {
+    return 0;
+  }
+
+  const maxQuarterSteps = Math.floor(maxOffsetMinutes / 15);
+  const chosenStep = Math.floor(Math.random() * (maxQuarterSteps + 1));
+  return chosenStep * 15;
+}
+
 function formatTimeLabel(totalMinutes: number): string {
   const minutesInDay = 24 * 60;
   const normalizedMinutes = ((totalMinutes % minutesInDay) + minutesInDay) % minutesInDay;
@@ -63,7 +81,7 @@ function requiresPlaces(template: IdeaTemplate): boolean {
 }
 
 function chooseTemplates(params: PlannedDateResultsParams, places: PlaceSummary[], activities: Activity[]): IdeaTemplate[] {
-  const duration = computeWindowDurationMinutes(params.startHour, params.endHour);
+  const duration = getEffectiveDateDurationMinutes(params);
 
   let base: IdeaTemplate[];
   if (duration <= 90) {
@@ -429,7 +447,7 @@ function buildFilledIdea(
     placeRecord[key] = entry.place;
   });
 
-  const totalMinutes = computeWindowDurationMinutes(params.startHour, params.endHour);
+  const totalMinutes = getEffectiveDateDurationMinutes(params);
 
   const firstEntry = selectedEntries[0];
   const lastEntry = selectedEntries[selectedEntries.length - 1];
@@ -473,7 +491,11 @@ function buildFilledIdea(
 
   const slotDurations = constrainedDurations || chunkMinutesEvenly(availableActivityMinutes, Math.max(1, selectedEntries.length));
 
-  let currentMinute = params.startHour * 60 + commuteToFirstMinutes;
+  const windowDurationMinutes = computeWindowDurationMinutes(params.startHour, params.endHour);
+  const maxStartOffsetMinutes = Math.max(0, windowDurationMinutes - totalMinutes);
+  const randomStartOffsetMinutes = getRandomQuarterHourOffset(maxStartOffsetMinutes);
+
+  let currentMinute = params.startHour * 60 + randomStartOffsetMinutes + commuteToFirstMinutes;
   const schedule = selectedEntries.map((entry, index) => {
     const durationMinutes = slotDurations[index] || 0;
     const startMinute = currentMinute;

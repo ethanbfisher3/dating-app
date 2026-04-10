@@ -350,7 +350,7 @@ const getAvailableAtHomeIdeas = (
 } => {
   const budget = typeof params.maxPrice === "number" && !Number.isNaN(params.maxPrice) ? params.maxPrice : Number.POSITIVE_INFINITY;
 
-  const totalMinutes = computeWindowDurationMinutes(params.startHour, params.endHour);
+  const totalMinutes = getEffectiveDateDurationMinutes(params);
 
   const parsedDate = new Date(`${toIsoDate(params.selectedDate)}T12:00:00`);
   const monthName = MONTHS[parsedDate.getMonth()] || "";
@@ -391,6 +391,14 @@ function computeWindowDurationMinutes(startHour: number, endHour: number) {
   let end = endHour * 60;
   if (end <= start) end += 24 * 60;
   return end - start;
+}
+
+function getEffectiveDateDurationMinutes(params: PlannedDateResultsParams): number {
+  const windowDuration = computeWindowDurationMinutes(params.startHour, params.endHour);
+  const requestedDuration =
+    typeof params.dateLengthMinutes === "number" && params.dateLengthMinutes > 0 ? params.dateLengthMinutes : windowDuration;
+
+  return Math.min(windowDuration, requestedDuration);
 }
 
 function toIsoDate(dateString: string): string {

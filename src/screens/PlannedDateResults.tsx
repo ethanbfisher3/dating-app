@@ -63,6 +63,15 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
   const [draftStartPeriod, setDraftStartPeriod] = useState<"AM" | "PM">(initialStartHour24 < 12 ? "AM" : "PM");
   const [draftEndHour12, setDraftEndHour12] = useState(String(initialEndHour24 % 12 === 0 ? 12 : initialEndHour24 % 12));
   const [draftEndPeriod, setDraftEndPeriod] = useState<"AM" | "PM">(initialEndHour24 < 12 ? "AM" : "PM");
+  const initialDateLengthMinutes =
+    typeof route.params.dateLengthMinutes === "number" && route.params.dateLengthMinutes > 0
+      ? route.params.dateLengthMinutes
+      : Math.max(
+          60,
+          (initialEndHour24 > initialStartHour24 ? initialEndHour24 - initialStartHour24 : 24 - initialStartHour24 + initialEndHour24) * 60,
+        );
+  const [draftDateLengthHours, setDraftDateLengthHours] = useState(String(Math.floor(initialDateLengthMinutes / 60)));
+  const [draftDateLengthMinutes, setDraftDateLengthMinutes] = useState(String(initialDateLengthMinutes % 60));
   const [draftMaxPrice, setDraftMaxPrice] = useState(String(route.params.maxPrice));
   const [draftMaxDistance, setDraftMaxDistance] = useState(String(route.params.maxDistance));
   const [draftCategoriesChecked, setDraftCategoriesChecked] = useState(
@@ -221,6 +230,19 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
     return hour12 === 12 ? 12 : hour12 + 12;
   };
 
+  const sanitizeHourOrMinute = (text: string, maximum: number) => {
+    if (text.trim() === "") {
+      return "";
+    }
+
+    const parsed = Number.parseInt(text, 10);
+    if (Number.isNaN(parsed) || parsed < 0) {
+      return "";
+    }
+
+    return String(Math.min(parsed, maximum));
+  };
+
   const toggleDraftCategory = (index: number) => {
     setDraftCategoriesChecked((current) => {
       const updated = [...current];
@@ -238,6 +260,8 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
     setDraftStartPeriod(startHour24 < 12 ? "AM" : "PM");
     setDraftEndHour12(String(endHour24 % 12 === 0 ? 12 : endHour24 % 12));
     setDraftEndPeriod(endHour24 < 12 ? "AM" : "PM");
+    setDraftDateLengthHours(String(Math.floor((plannerParams.dateLengthMinutes || 0) / 60)));
+    setDraftDateLengthMinutes(String((plannerParams.dateLengthMinutes || 0) % 60));
     setDraftMaxPrice(String(plannerParams.maxPrice));
     setDraftMaxDistance(String(plannerParams.maxDistance));
     setDraftCategoriesChecked(DATE_CATEGORIES.map((category) => plannerParams.categories.includes(category)));
@@ -249,6 +273,8 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
   const applyEditsAndRegenerate = () => {
     const nextStartHour12 = Number.parseInt(draftStartHour12, 10);
     const nextEndHour12 = Number.parseInt(draftEndHour12, 10);
+    const nextDateLengthHours = Number.parseInt(draftDateLengthHours || "0", 10);
+    const nextDateLengthMinutes = Number.parseInt(draftDateLengthMinutes || "0", 10);
     const nextMaxPrice = Number.parseInt(draftMaxPrice, 10);
     let nextMaxDistance = Number.parseInt(draftMaxDistance, 10);
     const nextCategories = DATE_CATEGORIES.filter((_, index) => draftCategoriesChecked[index]);
@@ -273,6 +299,17 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
       return;
     }
 
+    if (Number.isNaN(nextDateLengthHours) || Number.isNaN(nextDateLengthMinutes) || nextDateLengthHours < 0 || nextDateLengthMinutes < 0) {
+      setEditError("Date length must be valid hours and minutes.");
+      return;
+    }
+
+    const totalDateLengthMinutes = nextDateLengthHours * 60 + nextDateLengthMinutes;
+    if (totalDateLengthMinutes <= 0) {
+      setEditError("Date length must be at least 1 minute.");
+      return;
+    }
+
     if (Number.isNaN(nextMaxDistance) || nextMaxDistance < 0) {
       setEditError("Distance must be a non-negative number.");
       return;
@@ -290,12 +327,25 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
       return;
     }
 
+    const start24 = convertTo24Hour(nextStartHour12, draftStartPeriod);
+    const end24 = convertTo24Hour(nextEndHour12, draftEndPeriod);
+    let windowDurationMinutes = (end24 - start24) * 60;
+    if (windowDurationMinutes <= 0) {
+      windowDurationMinutes += 24 * 60;
+    }
+
+    if (totalDateLengthMinutes > windowDurationMinutes) {
+      setEditError("Date length must fit inside your selected start and end times.");
+      return;
+    }
+
     setImage(IMAGES[Math.floor(Math.random() * IMAGES.length)]);
 
     setPlannerParams({
       selectedDate: draftSelectedDate,
-      startHour: convertTo24Hour(nextStartHour12, draftStartPeriod),
-      endHour: convertTo24Hour(nextEndHour12, draftEndPeriod),
+      startHour: start24,
+      endHour: end24,
+      dateLengthMinutes: totalDateLengthMinutes,
       maxPrice: nextMaxPrice,
       maxDistance: nextMaxDistance,
       serverTarget: plannerParams.serverTarget,
@@ -311,9 +361,7 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
     return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
   })();
 
-  const shouldShowLoadingGate =
-    !error &&
-    (isLoading || (!isUnlocked && !nativeAdFailed && !nativeAdDisplayComplete));
+  const shouldShowLoadingGate = !error && (isLoading || (!isUnlocked && !nativeAdFailed && !nativeAdDisplayComplete));
 
   useEffect(() => {
     return () => {
@@ -709,6 +757,46 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
                         </Text>
                       </TouchableOpacity>
                     ))}
+                  </View>
+                </View>
+              </View>
+
+              <View style={{ flexDirection: "row", gap: 12, marginBottom: 12 }}>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: "#4b5b6b", marginBottom: 6 }}>Date Length</Text>
+                  <View style={{ flexDirection: "row", gap: 8 }}>
+                    <TextInput
+                      value={draftDateLengthHours}
+                      onChangeText={(text) => setDraftDateLengthHours(sanitizeHourOrMinute(text, 23))}
+                      keyboardType="number-pad"
+                      placeholder="Hours"
+                      onFocus={handleEditInputFocus}
+                      style={{
+                        flex: 1,
+                        borderWidth: 1,
+                        borderColor: "#dce6ef",
+                        borderRadius: 10,
+                        paddingHorizontal: 12,
+                        paddingVertical: 10,
+                        fontSize: 16,
+                      }}
+                    />
+                    <TextInput
+                      value={draftDateLengthMinutes}
+                      onChangeText={(text) => setDraftDateLengthMinutes(sanitizeHourOrMinute(text, 59))}
+                      keyboardType="number-pad"
+                      placeholder="Minutes"
+                      onFocus={handleEditInputFocus}
+                      style={{
+                        flex: 1,
+                        borderWidth: 1,
+                        borderColor: "#dce6ef",
+                        borderRadius: 10,
+                        paddingHorizontal: 12,
+                        paddingVertical: 10,
+                        fontSize: 16,
+                      }}
+                    />
                   </View>
                 </View>
               </View>
