@@ -216,11 +216,6 @@ const styles = StyleSheet.create({
     marginTop: -16,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 8,
   },
   tabLabel: {
     fontSize: 12,
