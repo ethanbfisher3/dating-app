@@ -308,28 +308,30 @@ export default function Info({ goToTab }) {
         </View>
       </View>
 
-      {__DEV__ && isUnlocked && (
+      {__DEV__ && (
         <TouchableOpacity
           activeOpacity={0.9}
           onPress={handleRemovePremium}
+          disabled={!isUnlocked}
           style={{
-            backgroundColor: "#fff5f5",
+            backgroundColor: isUnlocked ? "#fff5f5" : "#f3f4f6",
             padding: 16,
             borderRadius: 12,
             marginBottom: 20,
             borderWidth: 1,
-            borderColor: "#d93025",
+            borderColor: isUnlocked ? "#d93025" : "#c9ced6",
+            opacity: isUnlocked ? 1 : 0.8,
           }}
         >
           <Text
             style={{
               textAlign: "center",
-              color: "#d93025",
+              color: isUnlocked ? "#d93025" : "#697281",
               fontWeight: "800",
               fontSize: 15,
             }}
           >
-            Remove Premium (DEV)
+            {isUnlocked ? "Remove Premium (DEV)" : "Premium Already Removed (DEV)"}
           </Text>
         </TouchableOpacity>
       )}

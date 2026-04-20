@@ -6,7 +6,7 @@ import type { AppNavigation, RootStackParamList } from "./src/types/navigation";
 import { View, StatusBar, TouchableOpacity, StyleSheet, Platform } from "react-native";
 import * as NavigationBar from "expo-navigation-bar";
 import { Asset } from "expo-asset";
-import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { GestureHandlerRootView, PanGestureHandler, State } from "react-native-gesture-handler";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import PagerView from "react-native-pager-view";
 import Home from "./src/screens/Home";
@@ -19,11 +19,13 @@ import SavedIdeas from "./src/screens/SavedIdeas";
 import DateHistory from "./src/screens/DateHistory";
 import DateCalendar from "./src/screens/DateCalendar";
 import recipes from "./src/data/Recipes";
-import { initializeRevenueCat } from "./src/data/iapConfig";
 import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
 import mobileAds from "react-native-google-mobile-ads";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
+const EDGE_SWIPE_WIDTH = 28;
+const SWIPE_BACK_DISTANCE = 70;
+const SWIPE_BACK_VELOCITY = 600;
 
 const TABS = [
   {
@@ -63,13 +65,51 @@ const TABS = [
   },
 ];
 
+function SwipeBackLayout({ navigation, children }: { navigation: AppNavigation; children: React.ReactNode }) {
+  const handleStateChange = useCallback(
+    (event: any) => {
+      if (event.nativeEvent.state !== State.END) {
+        return;
+      }
+
+      const { translationX, velocityX } = event.nativeEvent;
+      const movedFarEnough = translationX > SWIPE_BACK_DISTANCE;
+      const movedFastEnough = velocityX > SWIPE_BACK_VELOCITY;
+
+      if ((movedFarEnough || movedFastEnough) && navigation.canGoBack()) {
+        navigation.goBack();
+      }
+    },
+    [navigation],
+  );
+
+  return (
+    <View style={{ flex: 1 }}>
+      {children}
+      {navigation.canGoBack() && (
+        <PanGestureHandler activeOffsetX={[-10, 10]} failOffsetY={[-15, 15]} onHandlerStateChange={handleStateChange}>
+          <View
+            collapsable={false}
+            style={{
+              position: "absolute",
+              left: 0,
+              top: 0,
+              bottom: 0,
+              width: EDGE_SWIPE_WIDTH,
+            }}
+          />
+        </PanGestureHandler>
+      )}
+    </View>
+  );
+}
+
 export default function App() {
   useEffect(() => {
     if (Platform.OS === "android") {
       NavigationBar.setVisibilityAsync("hidden");
     }
     mobileAds().initialize();
-    initializeRevenueCat();
     const recipeImages = recipes.map((recipe) => recipe.image).filter((image): image is number => typeof image === "number");
     const uniqueRecipeImages = [...new Set(recipeImages)];
 
@@ -82,14 +122,62 @@ export default function App() {
         <NavigationContainer>
           <Stack.Navigator>
             <Stack.Screen name="MainTabs" component={MainTabs} options={{ headerShown: false }} />
-            <Stack.Screen name="Date Planner" component={PlanADate} />
-            <Stack.Screen name="Recipe Ideas" component={RecipesPage} />
-            <Stack.Screen name="PlanADate" component={PlanADate} />
-            <Stack.Screen name="SavedIdeas" component={SavedIdeas} />
-            <Stack.Screen name="RecipeDetail" component={RecipeDetail} />
-            <Stack.Screen name="ActivityDetail" component={ActivityDetail} />
-            <Stack.Screen name="PlannedDateResults" component={PlannedDateResults} />
-            <Stack.Screen name="DateCalendar" component={DateCalendar} />
+            <Stack.Screen name="Date Planner">
+              {({ navigation }) => (
+                <SwipeBackLayout navigation={navigation as any}>
+                  <PlanADate navigation={navigation as any} />
+                </SwipeBackLayout>
+              )}
+            </Stack.Screen>
+            <Stack.Screen name="Recipe Ideas">
+              {({ navigation }) => (
+                <SwipeBackLayout navigation={navigation as any}>
+                  <RecipesPage navigation={navigation as any} />
+                </SwipeBackLayout>
+              )}
+            </Stack.Screen>
+            <Stack.Screen name="PlanADate">
+              {({ navigation }) => (
+                <SwipeBackLayout navigation={navigation as any}>
+                  <PlanADate navigation={navigation as any} />
+                </SwipeBackLayout>
+              )}
+            </Stack.Screen>
+            <Stack.Screen name="SavedIdeas">
+              {({ navigation }) => (
+                <SwipeBackLayout navigation={navigation as any}>
+                  <SavedIdeas navigation={navigation as any} />
+                </SwipeBackLayout>
+              )}
+            </Stack.Screen>
+            <Stack.Screen name="RecipeDetail">
+              {({ navigation, route }) => (
+                <SwipeBackLayout navigation={navigation as any}>
+                  <RecipeDetail navigation={navigation as any} route={route as any} />
+                </SwipeBackLayout>
+              )}
+            </Stack.Screen>
+            <Stack.Screen name="ActivityDetail">
+              {({ navigation, route }) => (
+                <SwipeBackLayout navigation={navigation as any}>
+                  <ActivityDetail navigation={navigation as any} route={route as any} />
+                </SwipeBackLayout>
+              )}
+            </Stack.Screen>
+            <Stack.Screen name="PlannedDateResults">
+              {({ navigation, route }) => (
+                <SwipeBackLayout navigation={navigation as any}>
+                  <PlannedDateResults navigation={navigation as any} route={route as any} />
+                </SwipeBackLayout>
+              )}
+            </Stack.Screen>
+            <Stack.Screen name="DateCalendar">
+              {({ navigation }) => (
+                <SwipeBackLayout navigation={navigation as any}>
+                  <DateCalendar navigation={navigation as any} />
+                </SwipeBackLayout>
+              )}
+            </Stack.Screen>
           </Stack.Navigator>
         </NavigationContainer>
       </SafeAreaProvider>

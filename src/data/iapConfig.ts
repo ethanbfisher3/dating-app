@@ -4,13 +4,14 @@ import Constants from "expo-constants";
 import { premiumStore } from "./premiumStore";
 
 // Product ID for your one-time purchase (set up in RevenueCat dashboard)
-export const PREMIUM_PRODUCT_ID = "unlimited_premium_lifetime_date_planner";
+export const PREMIUM_PRODUCT_ID = "lifetime_premium";
 
 // Entitlement ID to check (set up in RevenueCat dashboard)
-export const PREMIUM_ENTITLEMENT_ID = "premium";
+export const PREMIUM_ENTITLEMENT_ID = "EthDog GameDev Pro";
 
 let isInitialized = false;
 let isInitializationAttempted = false;
+let initializationPromise: Promise<void> | null = null;
 
 export type PurchasePremiumResult =
   | { status: "success" }
@@ -29,53 +30,103 @@ function isTestStoreApiKey(apiKey: string): boolean {
 }
 
 async function ensureRevenueCatInitialized(): Promise<boolean> {
-  if (!isInitialized && !isInitializationAttempted) {
+  if (!isInitialized) {
     await initializeRevenueCat();
   }
 
   return isInitialized;
 }
 
+async function findPremiumPackage() {
+  const offerings = await Purchases.getOfferings();
+  const allOfferings = Object.values(offerings.all || {});
+  const allPackages = allOfferings.flatMap((offering) => offering.availablePackages || []);
+
+  const matchingPackage =
+    allPackages.find((pkg) => pkg.product.identifier === PREMIUM_PRODUCT_ID) ||
+    allPackages.find((pkg) => pkg.identifier === PREMIUM_PRODUCT_ID) ||
+    offerings.current?.availablePackages?.[0] ||
+    allPackages[0] ||
+    null;
+
+  return matchingPackage;
+}
+
 export async function initializeRevenueCat(): Promise<void> {
   if (isInitialized) return;
-
-  isInitializationAttempted = true;
-
-  try {
-    // Enable debug logging in development
-    if (__DEV__) {
-      await Purchases.setLogLevel(LOG_LEVEL.DEBUG);
-    }
-
-    const nativeStoreApiKey =
-      Platform.OS === "ios" ? process.env.EXPO_PUBLIC_REVENUECAT_API_KEY_APPLE : process.env.EXPO_PUBLIC_REVENUECAT_API_KEY_GOOGLE;
-    const testStoreApiKey = process.env.EXPO_PUBLIC_REVENUECAT_API_KEY_TEST_STORE;
-    const runningInExpoGo = isExpoGoRuntime();
-    const apiKey = runningInExpoGo && testStoreApiKey ? testStoreApiKey : nativeStoreApiKey;
-
-    if (!apiKey) {
-      console.warn(
-        "RevenueCat API key not found. Set EXPO_PUBLIC_REVENUECAT_API_KEY_TEST_STORE for Expo Go or native platform keys for dev/production builds.",
-      );
-      return;
-    }
-
-    if (runningInExpoGo && !isTestStoreApiKey(apiKey)) {
-      console.warn(
-        "RevenueCat native store keys do not work in Expo Go. Set EXPO_PUBLIC_REVENUECAT_API_KEY_TEST_STORE or use a development build.",
-      );
-      return;
-    }
-
-    Purchases.configure({
-      apiKey,
-    });
-
-    isInitialized = true;
-  } catch (error) {
-    isInitialized = false;
-    console.error("Failed to initialize RevenueCat:", error);
+  if (initializationPromise) {
+    await initializationPromise;
+    return;
   }
+
+  initializationPromise = (async () => {
+    isInitializationAttempted = true;
+
+    try {
+      // Enable debug logging in development
+      if (__DEV__) {
+        await Purchases.setLogLevel(LOG_LEVEL.DEBUG);
+      }
+
+      const nativeStoreApiKey =
+        Platform.OS === "ios" ? process.env.EXPO_PUBLIC_REVENUECAT_API_KEY_APPLE : process.env.EXPO_PUBLIC_REVENUECAT_API_KEY_GOOGLE;
+      const testStoreApiKey = process.env.EXPO_PUBLIC_REVENUECAT_API_KEY_TEST_STORE;
+      const runningInExpoGo = isExpoGoRuntime();
+      const apiKey = runningInExpoGo && testStoreApiKey ? testStoreApiKey : nativeStoreApiKey;
+
+      if (!apiKey) {
+        console.warn(
+          "RevenueCat API key not found. Set EXPO_PUBLIC_REVENUECAT_API_KEY_TEST_STORE for Expo Go or native platform keys for dev/production builds.",
+        );
+        return;
+      }
+
+      if (runningInExpoGo && !isTestStoreApiKey(apiKey)) {
+        console.warn(
+          "RevenueCat native store keys do not work in Expo Go. Set EXPO_PUBLIC_REVENUECAT_API_KEY_TEST_STORE or use a development build.",
+        );
+        return;
+      }
+
+      Purchases.configure({
+        apiKey,
+      });
+
+      // Force refresh cached product data
+      await Purchases.invalidateCustomerInfoCache();
+
+      isInitialized = true;
+
+      // List available products
+      try {
+        const offerings = await Purchases.getOfferings();
+        const allProducts = offerings.all;
+
+        if (Object.keys(allProducts).length > 0) {
+          console.log("📦 Available RevenueCat Products:");
+          Object.entries(allProducts).forEach(([offeringId, offering]) => {
+            console.log(`  Offering: ${offeringId}`);
+            offering.availablePackages.forEach((pkg) => {
+              console.log(
+                `    - ${pkg.product.title} | package=${pkg.identifier} | product=${pkg.product.identifier} | ${pkg.product.priceString}`,
+              );
+            });
+          });
+        } else {
+          console.log("No offerings configured in RevenueCat");
+        }
+      } catch (error) {
+        console.warn("Could not fetch available products:", error);
+      }
+    } catch (error) {
+      isInitialized = false;
+      console.error("Failed to initialize RevenueCat:", error);
+    } finally {
+      initializationPromise = null;
+    }
+  })();
+
+  await initializationPromise;
 }
 
 export async function purchasePremium(): Promise<PurchasePremiumResult> {
@@ -89,20 +140,21 @@ export async function purchasePremium(): Promise<PurchasePremiumResult> {
   }
 
   try {
-    const products = await Purchases.getProducts([PREMIUM_PRODUCT_ID]);
+    const premiumPackage = await findPremiumPackage();
 
-    if (!products.length) {
-      console.error(`Premium product "${PREMIUM_PRODUCT_ID}" not found via getProducts`);
-      return { status: "not_found", details: { productIdsRequested: [PREMIUM_PRODUCT_ID], products } };
+    if (!premiumPackage) {
+      console.error(`Premium package/product "${PREMIUM_PRODUCT_ID}" not found via offerings`);
+      return { status: "not_found", details: { productIdRequested: PREMIUM_PRODUCT_ID } };
     }
 
-    const premiumProduct = products[0] as any;
     let result: any;
 
-    if (typeof (Purchases as any).purchaseStoreProduct === "function") {
-      result = await (Purchases as any).purchaseStoreProduct(premiumProduct);
+    if (typeof (Purchases as any).purchasePackage === "function") {
+      result = await (Purchases as any).purchasePackage(premiumPackage);
+    } else if (typeof (Purchases as any).purchaseStoreProduct === "function") {
+      result = await (Purchases as any).purchaseStoreProduct(premiumPackage.product);
     } else if (typeof (Purchases as any).purchaseProduct === "function") {
-      result = await (Purchases as any).purchaseProduct(PREMIUM_PRODUCT_ID);
+      result = await (Purchases as any).purchaseProduct(premiumPackage.product.identifier);
     } else {
       return {
         status: "failed",
@@ -126,7 +178,7 @@ export async function purchasePremium(): Promise<PurchasePremiumResult> {
       ...(result.customerInfo.allPurchasedProductIdentifiers || []),
     ].filter(Boolean);
 
-    if (purchasedProductIds.includes(PREMIUM_PRODUCT_ID)) {
+    if (purchasedProductIds.includes(PREMIUM_PRODUCT_ID) || purchasedProductIds.includes(premiumPackage.product.identifier)) {
       await premiumStore.unlockPremium();
       return { status: "success" };
     }
@@ -138,10 +190,20 @@ export async function purchasePremium(): Promise<PurchasePremiumResult> {
   } catch (error: any) {
     const isSandboxTestFailure =
       String(error?.code) === "5" || String(error?.message || "").includes("Test purchase failure: no real transaction occurred");
+    const fullErrorText = `${String(error?.message || "")} ${String(error?.underlyingErrorMessage || "")}`;
+    const hasDeveloperError = fullErrorText.includes("DEVELOPER_ERROR") || fullErrorText.includes("signed correctly");
 
     if (isSandboxTestFailure) {
       // Expected during RevenueCat failed-purchase testing flows.
       return { status: "cancelled" };
+    }
+
+    if (hasDeveloperError) {
+      return {
+        status: "failed",
+        message:
+          "Google Play rejected the purchase setup (DEVELOPER_ERROR). Install this app from your Play testing track using a tester account, and make sure the build is signed with the Play-uploaded key.",
+      };
     }
 
     if (error.code === PURCHASES_ERROR_CODE.PURCHASE_CANCELLED_ERROR) {

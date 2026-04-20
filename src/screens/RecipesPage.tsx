@@ -83,6 +83,7 @@ export default function RecipesPage({ navigation }: { navigation: AppNavigation 
           paddingBottom: 24,
         }}
         keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
         keyboardDismissMode="interactive"
       >
         <View style={styles.header}>
@@ -92,9 +93,6 @@ export default function RecipesPage({ navigation }: { navigation: AppNavigation 
               <Ionicons name="information-circle-outline" size={22} color="#007AFF" />
             </TouchableOpacity>
           </View>
-          {/* <Text style={styles.subtitle}>
-            Fast, simple, and affordable recipes to impress your date.
-          </Text> */}
         </View>
 
         <Image

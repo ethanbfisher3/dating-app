@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Dating App",
+    "name": "DateCraft: Date Planner",
     "slug": "byu-dating-native",
     "platforms": ["ios", "android", "web"],
     "version": "1.0.0",

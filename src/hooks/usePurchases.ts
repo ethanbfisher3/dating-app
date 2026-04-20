@@ -35,8 +35,18 @@ const loadLifetimePremiumProduct = async (): Promise<PurchasesPackage["product"]
     offeringsRequest = (async () => {
       try {
         await initializeRevenueCat();
-        const products = await Purchases.getProducts([PREMIUM_PRODUCT_ID]);
-        cachedLifetimePremium = (products[0] as PurchasesPackage["product"]) || null;
+        const offerings = await Purchases.getOfferings();
+        const allOfferings = Object.values(offerings.all || {});
+        const allPackages = allOfferings.flatMap((offering) => offering.availablePackages || []);
+
+        const matchingPackage =
+          allPackages.find((pkg) => pkg.product.identifier === PREMIUM_PRODUCT_ID) ||
+          allPackages.find((pkg) => pkg.identifier === PREMIUM_PRODUCT_ID) ||
+          offerings.current?.availablePackages?.[0] ||
+          allPackages[0] ||
+          null;
+
+        cachedLifetimePremium = (matchingPackage?.product as PurchasesPackage["product"]) || null;
       } catch {
         cachedLifetimePremium = null;
       } finally {

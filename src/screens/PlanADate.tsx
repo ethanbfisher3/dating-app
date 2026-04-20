@@ -295,70 +295,72 @@ export default function PlanADate({ navigation }: { navigation: AppNavigation })
           <Text style={{ color: "#1e90ff", fontSize: 17, fontWeight: "800" }}>View Date Calendar</Text>
         </TouchableOpacity>
 
-        {!isUnlocked && lifetimePremium ? (
-          <TouchableOpacity
-            activeOpacity={0.9}
-            onPress={() => setPaywallVisible(true)}
-            style={{
-              backgroundColor: "#f0f7ff",
-              borderRadius: 12,
-              borderWidth: 2,
-              borderColor: "#007AFF",
-              padding: 16,
-              marginBottom: 20,
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 12,
-            }}
-          >
-            <Ionicons name="star" size={28} color="#007AFF" />
-            <View style={{ flex: 1 }}>
-              <Text
-                style={{
-                  fontSize: 16,
-                  fontWeight: "800",
-                  color: "#007AFF",
-                  marginBottom: 2,
-                }}
-              >
-                Unlock Premium
-              </Text>
-              <Text style={{ fontSize: 13, color: "#0051D5", fontWeight: "500" }}>
-                Save unlimited ideas for only {lifetimePremium.priceString}
-              </Text>
+        {lifetimePremium ? (
+          !isUnlocked ? (
+            <TouchableOpacity
+              activeOpacity={0.9}
+              onPress={() => setPaywallVisible(true)}
+              style={{
+                backgroundColor: "#f0f7ff",
+                borderRadius: 12,
+                borderWidth: 2,
+                borderColor: "#007AFF",
+                padding: 16,
+                marginBottom: 20,
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 12,
+              }}
+            >
+              <Ionicons name="star" size={28} color="#007AFF" />
+              <View style={{ flex: 1 }}>
+                <Text
+                  style={{
+                    fontSize: 16,
+                    fontWeight: "800",
+                    color: "#007AFF",
+                    marginBottom: 2,
+                  }}
+                >
+                  Unlock Premium
+                </Text>
+                <Text style={{ fontSize: 13, color: "#0051D5", fontWeight: "500" }}>
+                  Save unlimited ideas for only {lifetimePremium.priceString}
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color="#007AFF" />
+            </TouchableOpacity>
+          ) : (
+            <View
+              style={{
+                backgroundColor: "#eefaf0",
+                borderRadius: 12,
+                borderWidth: 2,
+                borderColor: "#2e9f5b",
+                padding: 16,
+                marginBottom: 20,
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 12,
+              }}
+            >
+              <Ionicons name="checkmark-circle" size={28} color="#2e9f5b" />
+              <View style={{ flex: 1 }}>
+                <Text
+                  style={{
+                    fontSize: 16,
+                    fontWeight: "800",
+                    color: "#2e9f5b",
+                    marginBottom: 2,
+                  }}
+                >
+                  You are a premium user
+                </Text>
+                <Text style={{ fontSize: 13, color: "#1f7a45", fontWeight: "500" }}>You can save unlimited date ideas.</Text>
+              </View>
             </View>
-            <Ionicons name="chevron-forward" size={20} color="#007AFF" />
-          </TouchableOpacity>
-        ) : (
-          <View
-            style={{
-              backgroundColor: "#eefaf0",
-              borderRadius: 12,
-              borderWidth: 2,
-              borderColor: "#2e9f5b",
-              padding: 16,
-              marginBottom: 20,
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 12,
-            }}
-          >
-            <Ionicons name="checkmark-circle" size={28} color="#2e9f5b" />
-            <View style={{ flex: 1 }}>
-              <Text
-                style={{
-                  fontSize: 16,
-                  fontWeight: "800",
-                  color: "#2e9f5b",
-                  marginBottom: 2,
-                }}
-              >
-                You are a premium user
-              </Text>
-              <Text style={{ fontSize: 13, color: "#1f7a45", fontWeight: "500" }}>You can save unlimited date ideas.</Text>
-            </View>
-          </View>
-        )}
+          )
+        ) : null}
 
         <PlanDateInputsModal
           visible={isModalVisible}
