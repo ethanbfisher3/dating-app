@@ -68,28 +68,26 @@ export async function initializeRevenueCat(): Promise<void> {
         await Purchases.setLogLevel(LOG_LEVEL.DEBUG);
       }
 
-      const nativeStoreApiKey =
-        Platform.OS === "ios" ? process.env.EXPO_PUBLIC_REVENUECAT_API_KEY_APPLE : process.env.EXPO_PUBLIC_REVENUECAT_API_KEY_GOOGLE;
-      const testStoreApiKey = process.env.EXPO_PUBLIC_REVENUECAT_API_KEY_TEST_STORE;
       const runningInExpoGo = isExpoGoRuntime();
-      const apiKey = runningInExpoGo && testStoreApiKey ? testStoreApiKey : nativeStoreApiKey;
+      const revenueCatApiKey = runningInExpoGo
+        ? process.env.EXPO_PUBLIC_REVENUECAT_API_KEY_TEST_STORE
+        : Platform.OS === "ios"
+          ? process.env.EXPO_PUBLIC_REVENUECAT_API_KEY_APPLE
+          : Platform.OS === "android"
+            ? process.env.EXPO_PUBLIC_REVENUECAT_API_KEY_GOOGLE
+            : undefined;
 
-      if (!apiKey) {
+      if (!revenueCatApiKey) {
         console.warn(
-          "RevenueCat API key not found. Set EXPO_PUBLIC_REVENUECAT_API_KEY_TEST_STORE for Expo Go or native platform keys for dev/production builds.",
-        );
-        return;
-      }
-
-      if (runningInExpoGo && !isTestStoreApiKey(apiKey)) {
-        console.warn(
-          "RevenueCat native store keys do not work in Expo Go. Set EXPO_PUBLIC_REVENUECAT_API_KEY_TEST_STORE or use a development build.",
+          runningInExpoGo
+            ? "RevenueCat API key not found for Expo Go. Set EXPO_PUBLIC_REVENUECAT_API_KEY_TEST_STORE (or revenueCatApiKeyTestStore in Expo extra)."
+            : `RevenueCat API key not found for ${Platform.OS}. Set EXPO_PUBLIC_REVENUECAT_API_KEY_${Platform.OS === "ios" ? "APPLE" : "GOOGLE"} in your EAS/local env.`,
         );
         return;
       }
 
       Purchases.configure({
-        apiKey,
+        apiKey: revenueCatApiKey,
       });
 
       // Force refresh cached product data

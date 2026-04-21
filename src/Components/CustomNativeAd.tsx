@@ -4,7 +4,7 @@ import { NativeAd, NativeAdView, NativeAsset, NativeAssetType, NativeMediaView, 
 
 // 1. Define your real IDs
 const ANDROID_AD_UNIT_ID = "ca-app-pub-9592701510571371/7208407410";
-const IOS_AD_UNIT_ID = "ca-app-pub-9592701510571371/YOUR_IOS_ID_HERE";
+const IOS_AD_UNIT_ID = "ca-app-pub-9592701510571371/1696926982";
 
 // 2. Conditionally select the correct real ID based on the OS
 const PRODUCTION_ID = Platform.select({
