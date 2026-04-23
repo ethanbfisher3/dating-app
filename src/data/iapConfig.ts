@@ -70,11 +70,11 @@ export async function initializeRevenueCat(): Promise<void> {
 
       const runningInExpoGo = isExpoGoRuntime();
       const revenueCatApiKey = runningInExpoGo
-        ? process.env.EXPO_PUBLIC_REVENUECAT_API_KEY_TEST_STORE
+        ? Constants.expoConfig.extra.revenueCatApiKeyTestStore
         : Platform.OS === "ios"
-          ? process.env.EXPO_PUBLIC_REVENUECAT_API_KEY_APPLE
+          ? Constants.expoConfig.extra.revenueCatApiKeyApple
           : Platform.OS === "android"
-            ? process.env.EXPO_PUBLIC_REVENUECAT_API_KEY_GOOGLE
+            ? Constants.expoConfig.extra.revenueCatApiKeyGoogle
             : undefined;
 
       if (!revenueCatApiKey) {

@@ -123,7 +123,7 @@ export default function SavedIdeas({ navigation }: { navigation: AppNavigation }
       />
 
       {lifetimePremium ? (
-        isUnlocked ? (
+        !isUnlocked ? (
           <TouchableOpacity
             activeOpacity={0.9}
             onPress={() => setPaywallVisible(true)}
