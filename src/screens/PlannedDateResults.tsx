@@ -40,8 +40,6 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
   const [paywallVisible, setPaywallVisible] = useState(false);
   const [paywallReason, setPaywallReason] = useState<"date_history_limit" | "mile_radius_limit" | "ideas_limit" | "general">("general");
   const [image, setImage] = useState(IMAGES[Math.floor(Math.random() * IMAGES.length)]);
-  const [nativeAdReady, setNativeAdReady] = useState(false);
-  const [nativeAdFailed, setNativeAdFailed] = useState(false);
   const [nativeAdDisplayComplete, setNativeAdDisplayComplete] = useState(false);
   const nativeAdHoldTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -170,8 +168,6 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
         });
         return newMap;
       });
-
-      Alert.alert(`Updated with ${newCandidate.value}!`);
     } finally {
       setRegeneratingSteps((prev) => {
         const next = new Set(prev);
@@ -183,10 +179,21 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
 
   const { places, recipes, activities, sourceFile, isLoading, error, refetch } = useDatePlannerIdeas(plannerParams);
 
+  const startNativeAdHoldTimer = () => {
+    setNativeAdDisplayComplete(false);
+
+    if (nativeAdHoldTimerRef.current) {
+      clearTimeout(nativeAdHoldTimerRef.current);
+    }
+
+    nativeAdHoldTimerRef.current = setTimeout(() => {
+      setNativeAdDisplayComplete(true);
+      nativeAdHoldTimerRef.current = null;
+    }, 5000);
+  };
+
   useEffect(() => {
     if (isLoading) {
-      setNativeAdReady(false);
-      setNativeAdFailed(false);
       setNativeAdDisplayComplete(false);
 
       if (nativeAdHoldTimerRef.current) {
@@ -197,8 +204,6 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
   }, [isLoading]);
 
   const resetNativeAdGate = () => {
-    setNativeAdReady(false);
-    setNativeAdFailed(false);
     setNativeAdDisplayComplete(false);
 
     if (nativeAdHoldTimerRef.current) {
@@ -361,7 +366,7 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
     return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
   })();
 
-  const shouldShowLoadingGate = !error && (isLoading || (!isUnlocked && !nativeAdFailed && !nativeAdDisplayComplete));
+  const shouldShowLoadingGate = !error && (isLoading || (!isUnlocked && !nativeAdDisplayComplete));
 
   useEffect(() => {
     return () => {
@@ -421,22 +426,11 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
           <View style={{ width: "100%", marginTop: 24 }}>
             <CustomNativeAd
               onLoaded={() => {
-                setNativeAdReady(true);
-                setNativeAdDisplayComplete(false);
-
-                if (nativeAdHoldTimerRef.current) {
-                  clearTimeout(nativeAdHoldTimerRef.current);
-                }
-
-                nativeAdHoldTimerRef.current = setTimeout(() => {
-                  setNativeAdDisplayComplete(true);
-                  nativeAdHoldTimerRef.current = null;
-                }, 5000);
+                startNativeAdHoldTimer();
               }}
               onError={() => {
                 console.warn("[PlannedDateResults] Native ad failed to load; allowing results to continue.");
-                setNativeAdFailed(true);
-                setNativeAdDisplayComplete(true);
+                startNativeAdHoldTimer();
               }}
             />
           </View>

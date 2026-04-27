@@ -178,7 +178,7 @@ export default function PlanADate({ navigation }: { navigation: AppNavigation })
 
     if (!actualUserLocation) {
       Alert.alert("Location Not Ready", "Your current location is not available yet. No places will be shown until it is loaded.");
-      setMaxDistance("0");
+      return;
     }
 
     setIsGeneratingIdeas(true);

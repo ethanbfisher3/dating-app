@@ -6,8 +6,6 @@ const dateCategoryToNodes: Record<DateCategory, string[]> = {
   Outdoors: [
     'nwr["leisure"~"park|garden|nature_reserve"]',
     'nwr["leisure"~"park|nature_reserve|recreation_ground|dog_park"]',
-    'nwr["highway"~"path|footway|cycleway"]',
-    'nwr["natural"~"wood|water|peak|scrub"]',
     'nwr["tourism"~"viewpoint|picnic_site|camp_site"]',
     'nwr["leisure"="pitch"]',
   ],
@@ -35,23 +33,42 @@ const dateCategoryToNodes: Record<DateCategory, string[]> = {
   ],
 };
 
-const createQuery = (categories: DateCategory[], userLocation: { lat: number; lon: number }, distanceMeters: number) => {
+const OVERPASS_QUERY_DEBUG_PREFIX = "[OverpassQuery]";
+const DEFAULT_OVERPASS_RESULT_LIMIT = 12;
+
+function logOverpassQueryDebug(message: string, details?: unknown) {
+  console.log(OVERPASS_QUERY_DEBUG_PREFIX, message, details ?? "");
+}
+
+const createQuery = (
+  categories: DateCategory[],
+  userLocation: { lat: number; lon: number },
+  distanceMeters: number,
+  resultLimit: number = DEFAULT_OVERPASS_RESULT_LIMIT,
+) => {
   const nodesString = categories
     .map((cat) => {
       const nodes = dateCategoryToNodes[cat] || [];
 
-      return nodes
-        .map((node) => `${node}["name"]["addr:street"](around:${distanceMeters},${userLocation.lat},${userLocation.lon});`)
-        .join("\n");
+      return nodes.map((node) => `${node}(around:${distanceMeters},${userLocation.lat},${userLocation.lon});`).join("\n");
     })
     .join("\n");
 
-  const queryLimit = Number(process.env.MAX_RESULTS_PER_QUERY) || 100;
-
-  return `
+  const query = `
 [out:json];(
 ${nodesString}
-);out center ${queryLimit};`;
+  );out center ${Math.max(1, Math.floor(resultLimit))};`;
+
+  logOverpassQueryDebug("built query", {
+    categories,
+    userLocation,
+    distanceMeters,
+    resultLimit: Math.max(1, Math.floor(resultLimit)),
+    queryLength: query.length,
+    queryPreview: query.slice(0, 500),
+  });
+
+  return query;
 };
 
 export default createQuery;
