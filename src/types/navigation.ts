@@ -27,7 +27,7 @@ export type RootStackParamList = {
   Clubs: undefined;
   EventsPage: undefined;
   "Date Ideas": undefined;
-  "Date Planner": undefined;
+  DateCraft: undefined;
   "Recipe Ideas": undefined;
   DateIdeas: undefined;
   PlanADate: undefined;

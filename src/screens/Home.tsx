@@ -152,7 +152,7 @@ export default function Info({ goToTab }) {
           >
             <TouchableOpacity
               activeOpacity={0.8}
-              onPress={() => goToTab?.("Date Planner")}
+              onPress={() => goToTab?.("DateCraft")}
               style={{ flexDirection: "row", alignItems: "center", flex: 1 }}
             >
               <Text

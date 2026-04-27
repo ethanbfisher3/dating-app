@@ -1,5 +1,5 @@
 import React from "react";
-import { KeyboardAvoidingView, Modal, Platform, ScrollView, Switch, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { KeyboardAvoidingView, Modal, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { DATE_CATEGORIES } from "../utils/utils";
 
@@ -32,7 +32,6 @@ type PlanDateInputsModalProps = {
   onChangeDateLengthMinutes: (value: string) => void;
   onChangeMaxDistance: (value: string) => void;
   onToggleCategory: (index: number) => void;
-  onSetServerTarget: (value: string) => void;
   onSubmit: () => void;
 };
 
@@ -65,7 +64,6 @@ export default function PlanDateInputsModal({
   onChangeDateLengthMinutes,
   onChangeMaxDistance,
   onToggleCategory,
-  onSetServerTarget,
   onSubmit,
 }: PlanDateInputsModalProps) {
   const handleDateChange = (event: any, value?: Date) => {
@@ -499,20 +497,8 @@ export default function PlanDateInputsModal({
                   backgroundColor: "#fff",
                 }}
               >
-                <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-                  <View style={{ flex: 1, paddingRight: 8 }}>
-                    <Text style={{ color: "#2c3e50", fontSize: 15, fontWeight: "700" }}>(DEV) Server Source</Text>
-                    <Text style={{ marginTop: 2, color: "#667788", fontSize: 13 }}>
-                      {serverTarget === "render" ? "Render server" : "Localhost server"}
-                    </Text>
-                  </View>
-                  <Switch
-                    value={serverTarget === "render"}
-                    onValueChange={(isRender) => onSetServerTarget(isRender ? "render" : "localhost")}
-                    trackColor={{ false: "#9dc7ff", true: "#7fd8a4" }}
-                    thumbColor="#ffffff"
-                  />
-                </View>
+                <Text style={{ color: "#2c3e50", fontSize: 15, fontWeight: "700" }}>(DEV) Place Source</Text>
+                <Text style={{ marginTop: 2, color: "#667788", fontSize: 13 }}>Overpass query API</Text>
               </View>
             ) : null}
 

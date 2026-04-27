@@ -3,18 +3,10 @@ import type { PlannedDateResultsParams } from "../types/navigation";
 import activities, { Activity } from "../data/activities";
 import recipes, { Recipe } from "../data/Recipes";
 import type { DateCategory } from "src/utils/utils";
+import createOverpassQuery from "../data/overpass/overpass";
 
 export type PlaceSummary = PlannerPlace & {
   sourceKind: "place" | "activity" | "recipe";
-};
-
-export type PlacesSearchResponse = {
-  count: number;
-  places: PlannerPlace[];
-  meta: {
-    fromCache: boolean;
-    source: string;
-  };
 };
 
 export type PlacesServerResponse = {
@@ -104,105 +96,97 @@ export type PlannerPlace = {
   name: string;
 };
 
-type JsonObject = Record<string, unknown>;
+type OverpassElement = {
+  id: number;
+  type: "node" | "way" | "relation";
+  lat?: number;
+  lon?: number;
+  center?: {
+    lat?: number;
+    lon?: number;
+  };
+  tags?: Record<string, string>;
+};
+
+type OverpassResponse = {
+  elements?: OverpassElement[];
+};
 
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
 const MAX_PLACES_RETURNED = 50;
-const PRODUCTION_PLACES_SERVER_URL = "https://dating-app-server-9zib.onrender.com";
-const PLACES_REQUEST_TIMEOUT_MS = 30000;
-const ENABLE_PRODUCTION_FALLBACK = process.env.EXPO_PUBLIC_ENABLE_PRODUCTION_FALLBACK === "true";
+const OVERPASS_INTERPRETER_URL = process.env.EXPO_PUBLIC_OVERPASS_INTERPRETER_URL || "https://overpass-api.de/api/interpreter";
+const OVERPASS_REQUEST_TIMEOUT_MS = 30000;
+const METERS_PER_MILE = 1609.34;
 
-const PLACES_SERVER_BASE_URL =
-  process.env.EXPO_PUBLIC_PLACES_SERVER_URL || process.env.EXPO_PUBLIC_API_BASE_URL || PRODUCTION_PLACES_SERVER_URL;
+const SUPPORTED_DATE_CATEGORIES = new Set<DateCategory>(["Food", "Sports", "Outdoors", "Education", "Shopping", "Entertainment"]);
 
-function getPlacesServerBaseUrls(serverTarget: string): string[] {
-  const unique = new Set<string>();
-
-  if (serverTarget === "render") {
-    unique.add(PRODUCTION_PLACES_SERVER_URL);
-    return Array.from(unique);
-  }
-
-  const normalizedBase = PLACES_SERVER_BASE_URL.replace(/\/$/, "");
-  const parsedBase = (() => {
-    try {
-      return new URL(normalizedBase);
-    } catch {
-      return null;
-    }
-  })();
-
-  const basePort = parsedBase?.port ? `:${parsedBase.port}` : "";
-  const protocol = parsedBase?.protocol === "https:" ? "https" : "http";
-
-  const localCandidates = new Set<string>();
-
-  localCandidates.add(normalizedBase);
-
-  if (parsedBase) {
-    const hostname = parsedBase.hostname;
-
-    if (hostname === "localhost") {
-      localCandidates.add(`${protocol}://127.0.0.1${basePort}`);
-      localCandidates.add(`${protocol}://10.0.2.2${basePort}`);
-    }
-
-    if (hostname === "127.0.0.1") {
-      localCandidates.add(`${protocol}://localhost${basePort}`);
-      localCandidates.add(`${protocol}://10.0.2.2${basePort}`);
-    }
-
-    if (hostname === "10.0.2.2") {
-      localCandidates.add(`${protocol}://localhost${basePort}`);
-      localCandidates.add(`${protocol}://127.0.0.1${basePort}`);
-    }
-  }
-
-  for (const url of localCandidates) {
-    unique.add(url.replace(/\/$/, ""));
-  }
-
-  if (ENABLE_PRODUCTION_FALLBACK) {
-    unique.add(PRODUCTION_PLACES_SERVER_URL);
-  }
-
-  return Array.from(unique);
-}
-
-function toServerSourceLabel(serverBaseUrl: string): string {
-  if (serverBaseUrl === PRODUCTION_PLACES_SERVER_URL) {
-    return "Places Server (Render)";
-  }
-
+function toSourceLabel(baseUrl: string): string {
   try {
-    const host = new URL(serverBaseUrl).host;
-    return `Places Server (${host})`;
+    const host = new URL(baseUrl).host;
+    return `Overpass API (${host})`;
   } catch {
-    return `Places Server (${serverBaseUrl})`;
+    return `Overpass API (${baseUrl})`;
   }
 }
 
-function isObject(value: unknown): value is JsonObject {
-  return typeof value === "object" && value !== null;
+function toSupportedDateCategories(categories: string[]): DateCategory[] {
+  return categories.filter((category): category is DateCategory => SUPPORTED_DATE_CATEGORIES.has(category as DateCategory));
 }
 
-function pickFirstString(...values: unknown[]): string | undefined {
-  for (const value of values) {
-    if (typeof value === "string") {
-      const trimmed = value.trim();
-      if (trimmed) {
-        return trimmed;
-      }
-    }
+function toPlaceTypeFromTags(tags: Record<string, string>): string {
+  return (
+    tags.amenity || tags.leisure || tags.shop || tags.sport || tags.tourism || tags.historic || tags.highway || tags.natural || "place"
+  );
+}
+
+function toAddressFromTags(tags: Record<string, string>): string {
+  const fullAddress = tags["addr:full"];
+  if (fullAddress) {
+    return fullAddress;
   }
 
-  return undefined;
+  const parts = [tags["addr:housenumber"], tags["addr:street"], tags["addr:city"]].filter(
+    (value): value is string => typeof value === "string" && value.trim().length > 0,
+  );
+
+  return parts.join(" ");
 }
 
-async function fetchPlacesFromServer(params: PlannedDateResultsParams): Promise<{
+function toPlannerPlaceFromOverpassElement(element: OverpassElement): PlannerPlace | null {
+  if (!element.tags) {
+    return null;
+  }
+
+  const lat = typeof element.lat === "number" ? element.lat : element.center?.lat;
+  const lon = typeof element.lon === "number" ? element.lon : element.center?.lon;
+  if (typeof lat !== "number" || typeof lon !== "number") {
+    return null;
+  }
+
+  const name = element.tags.name?.trim();
+  if (!name) {
+    return null;
+  }
+
+  const type = toPlaceTypeFromTags(element.tags);
+  const address = toAddressFromTags(element.tags);
+
+  return {
+    id: `${element.type}:${element.id}`,
+    name,
+    type,
+    address,
+    location: {
+      latitude: lat,
+      longitude: lon,
+    },
+  };
+}
+
+async function fetchPlacesFromOverpass(params: PlannedDateResultsParams): Promise<{
   winner: {
     places: PlannerPlace[];
     fromCache: boolean;
@@ -210,96 +194,125 @@ async function fetchPlacesFromServer(params: PlannedDateResultsParams): Promise<
   } | null;
   responses: PlacesServerResponse[];
 }> {
-  const serverBaseUrls = getPlacesServerBaseUrls(params.serverTarget ?? "localhost");
   const responses: PlacesServerResponse[] = [];
 
   if (!params.userLocation || params.maxDistance <= 0) {
     return {
       winner: {
         places: [],
-        fromCache: true,
-        serverBaseUrl: serverBaseUrls[0] || PLACES_SERVER_BASE_URL,
+        fromCache: false,
+        serverBaseUrl: OVERPASS_INTERPRETER_URL,
       },
       responses,
     };
   }
 
-  for (const serverBaseUrl of serverBaseUrls) {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), PLACES_REQUEST_TIMEOUT_MS);
-    try {
-      const response = await fetch(`${serverBaseUrl}/places/search`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        signal: controller.signal,
-        body: JSON.stringify({
-          userLocation: params.userLocation,
-          maxDistance: params.maxDistance,
-          maxPrice: params.maxPrice,
-          categories: params.categories,
-          maxResults: MAX_PLACES_RETURNED,
-        }),
-      });
+  const categories = toSupportedDateCategories(params.categories || []);
+  if (!categories.length) {
+    return {
+      winner: {
+        places: [],
+        fromCache: false,
+        serverBaseUrl: OVERPASS_INTERPRETER_URL,
+      },
+      responses,
+    };
+  }
 
-      if (!response.ok) {
-        const details = await response.text();
-        responses.push({
-          serverBaseUrl,
-          serverLabel: toServerSourceLabel(serverBaseUrl),
-          ok: false,
-          statusCode: response.status,
-          details: details || "request failed",
-        });
-        continue;
-      }
+  const distanceMeters = Math.max(0, Math.round(params.maxDistance * METERS_PER_MILE));
+  if (distanceMeters <= 0) {
+    return {
+      winner: {
+        places: [],
+        fromCache: false,
+        serverBaseUrl: OVERPASS_INTERPRETER_URL,
+      },
+      responses,
+    };
+  }
 
-      const payload = (await response.json()) as PlacesSearchResponse;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), OVERPASS_REQUEST_TIMEOUT_MS);
+  try {
+    const query = createOverpassQuery(
+      categories,
+      {
+        lat: params.userLocation.latitude,
+        lon: params.userLocation.longitude,
+      },
+      distanceMeters,
+    );
 
+    const response = await fetch(OVERPASS_INTERPRETER_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "text/plain",
+      },
+      signal: controller.signal,
+      body: query,
+    });
+
+    if (!response.ok) {
+      const details = await response.text();
       responses.push({
-        serverBaseUrl,
-        serverLabel: toServerSourceLabel(serverBaseUrl),
-        ok: true,
+        serverBaseUrl: OVERPASS_INTERPRETER_URL,
+        serverLabel: toSourceLabel(OVERPASS_INTERPRETER_URL),
+        ok: false,
         statusCode: response.status,
-        details: payload.meta.fromCache ? "OK (cache hit)" : "OK (live fetch)",
+        details: details || "request failed",
       });
 
       return {
-        winner: {
-          places: payload.places,
-          fromCache: payload.meta.fromCache,
-          serverBaseUrl,
-        },
+        winner: null,
         responses,
       };
-    } catch (error: any) {
-      if (error?.name === "AbortError") {
-        responses.push({
-          serverBaseUrl,
-          serverLabel: toServerSourceLabel(serverBaseUrl),
-          ok: false,
-          statusCode: null,
-          details: `timeout after ${PLACES_REQUEST_TIMEOUT_MS}ms`,
-        });
-      } else {
-        responses.push({
-          serverBaseUrl,
-          serverLabel: toServerSourceLabel(serverBaseUrl),
-          ok: false,
-          statusCode: null,
-          details: error?.message || "network error",
-        });
-      }
-    } finally {
-      clearTimeout(timeoutId);
     }
-  }
 
-  return {
-    winner: null,
-    responses,
-  };
+    const payload = (await response.json()) as OverpassResponse;
+    const places = (payload.elements || []).map(toPlannerPlaceFromOverpassElement).filter((place): place is PlannerPlace => Boolean(place));
+
+    responses.push({
+      serverBaseUrl: OVERPASS_INTERPRETER_URL,
+      serverLabel: toSourceLabel(OVERPASS_INTERPRETER_URL),
+      ok: true,
+      statusCode: response.status,
+      details: `OK (${places.length} places)`,
+    });
+
+    return {
+      winner: {
+        places,
+        fromCache: false,
+        serverBaseUrl: OVERPASS_INTERPRETER_URL,
+      },
+      responses,
+    };
+  } catch (error: any) {
+    if (error?.name === "AbortError") {
+      responses.push({
+        serverBaseUrl: OVERPASS_INTERPRETER_URL,
+        serverLabel: toSourceLabel(OVERPASS_INTERPRETER_URL),
+        ok: false,
+        statusCode: null,
+        details: `timeout after ${OVERPASS_REQUEST_TIMEOUT_MS}ms`,
+      });
+    } else {
+      responses.push({
+        serverBaseUrl: OVERPASS_INTERPRETER_URL,
+        serverLabel: toSourceLabel(OVERPASS_INTERPRETER_URL),
+        ok: false,
+        statusCode: null,
+        details: error?.message || "network error",
+      });
+    }
+
+    return {
+      winner: null,
+      responses,
+    };
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 function normalizeHour12(hour12: number, period: string): number {
@@ -425,7 +438,7 @@ export default function useDatePlannerIdeas(params: PlannedDateResultsParams): {
   refetch: () => void;
 } {
   const [matchedPlaces, setMatchedPlaces] = useState<PlaceSummary[]>([]);
-  const [sourceFile, setSourceFile] = useState("Places Server");
+  const [sourceFile, setSourceFile] = useState("Overpass API");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [serverResponses, setServerResponses] = useState<PlacesServerResponse[]>([]);
@@ -442,11 +455,11 @@ export default function useDatePlannerIdeas(params: PlannedDateResultsParams): {
         setSourceFile("");
         setServerResponses([]);
       } else {
-        const serverResult = await fetchPlacesFromServer(params);
+        const serverResult = await fetchPlacesFromOverpass(params);
         setServerResponses(serverResult.responses);
 
         if (!serverResult.winner) {
-          setError("Could not load places from localhost or Render server.");
+          setError("Could not load places from Overpass API.");
           setMatchedPlaces([]);
           setSourceFile("");
           return;
@@ -454,8 +467,7 @@ export default function useDatePlannerIdeas(params: PlannedDateResultsParams): {
 
         const serverPlaces = serverResult.winner.places.map(toPlaceSummary);
         const combinedPlaces = dedupePlaceSummariesById(serverPlaces).slice(0, MAX_PLACES_RETURNED);
-        const baseLabel = toServerSourceLabel(serverResult.winner.serverBaseUrl);
-        const placesSourceLabel = serverResult.winner.fromCache ? `${baseLabel} Cache` : `${baseLabel} API`;
+        const placesSourceLabel = toSourceLabel(serverResult.winner.serverBaseUrl);
 
         setMatchedPlaces(combinedPlaces);
         setSourceFile(placesSourceLabel);

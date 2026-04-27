@@ -43,8 +43,8 @@ const TABS = [
     component: DateHistory,
   },
   {
-    key: "Date Planner",
-    title: "Date Planner",
+    key: "DateCraft",
+    title: "DateCraft",
     icon: "calendar",
     iconOutline: "calendar-outline",
     component: PlanADate,
@@ -122,7 +122,7 @@ export default function App() {
         <NavigationContainer>
           <Stack.Navigator>
             <Stack.Screen name="MainTabs" component={MainTabs} options={{ headerShown: false }} />
-            <Stack.Screen name="Date Planner">
+            <Stack.Screen name="DateCraft">
               {({ navigation }) => (
                 <SwipeBackLayout navigation={navigation as any}>
                   <PlanADate navigation={navigation as any} />
@@ -237,7 +237,7 @@ function MainTabs({ navigation }: { navigation: AppNavigation }) {
           {TABS.map((tab, index) => {
             const isActive = currentPage === index;
             const iconName = isActive ? tab.icon : tab.iconOutline;
-            const isCenterTab = tab.key === "Date Planner";
+            const isCenterTab = tab.key === "DateCraft";
             const color = isActive ? "#1e90ff" : "#8e8e93";
             const centerButtonColor = isActive ? "#e63f67" : "#f05a7e";
 

@@ -36,7 +36,7 @@ export default function PlanADate({ navigation }: { navigation: AppNavigation })
   const [isGeneratingIdeas, setIsGeneratingIdeas] = useState(false);
   const [paywallVisible, setPaywallVisible] = useState(false);
   const [infoVisible, setInfoVisible] = useState(false);
-  const [serverTarget, setServerTarget] = useState<string>("render");
+  const serverTarget = "overpass";
 
   useEffect(() => {
     const loadLocation = async () => {
@@ -416,7 +416,6 @@ export default function PlanADate({ navigation }: { navigation: AppNavigation })
           onChangeDateLengthMinutes={(text) => setDateLengthMinutes(sanitizeHourOrMinute(text, 59))}
           onChangeMaxDistance={setMaxDistance}
           onToggleCategory={toggleCategory}
-          onSetServerTarget={setServerTarget}
           onSubmit={handleGenerateIdeas}
         />
 
