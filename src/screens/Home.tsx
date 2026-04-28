@@ -9,10 +9,10 @@ import DateCalendar from "./DateCalendar";
 
 export default function Info({ goToTab }) {
   const [expandedOffers, setExpandedOffers] = useState({
-    dateHistory: false,
-    datePlanner: false,
-    recipeIdeas: false,
-    savedIdeas: false,
+    dateHistory: true,
+    datePlanner: true,
+    recipeIdeas: true,
+    savedIdeas: true,
   });
   const [paywallVisible, setPaywallVisible] = useState(false);
   const { isUnlocked, resetPremium } = usePremium();
@@ -123,9 +123,9 @@ export default function Info({ goToTab }) {
               </Text>
             </TouchableOpacity>
 
-            <TouchableOpacity activeOpacity={0.8} onPress={() => toggleOffer("dateHistory")}>
+            {/* <TouchableOpacity activeOpacity={0.8} onPress={() => toggleOffer("dateHistory")}>
               <Ionicons name={expandedOffers.dateHistory ? "chevron-up" : "chevron-down"} size={20} color="#1e90ff" />
-            </TouchableOpacity>
+            </TouchableOpacity> */}
           </View>
 
           {expandedOffers.dateHistory && (
@@ -178,9 +178,9 @@ export default function Info({ goToTab }) {
               </Text>
             </TouchableOpacity>
 
-            <TouchableOpacity activeOpacity={0.8} onPress={() => toggleOffer("datePlanner")}>
+            {/* <TouchableOpacity activeOpacity={0.8} onPress={() => toggleOffer("datePlanner")}>
               <Ionicons name={expandedOffers.datePlanner ? "chevron-up" : "chevron-down"} size={20} color="#1e90ff" />
-            </TouchableOpacity>
+            </TouchableOpacity> */}
           </View>
 
           {expandedOffers.datePlanner && (
@@ -233,9 +233,9 @@ export default function Info({ goToTab }) {
               </Text>
             </TouchableOpacity>
 
-            <TouchableOpacity activeOpacity={0.8} onPress={() => toggleOffer("recipeIdeas")}>
+            {/* <TouchableOpacity activeOpacity={0.8} onPress={() => toggleOffer("recipeIdeas")}>
               <Ionicons name={expandedOffers.recipeIdeas ? "chevron-up" : "chevron-down"} size={20} color="#1e90ff" />
-            </TouchableOpacity>
+            </TouchableOpacity> */}
           </View>
 
           {expandedOffers.recipeIdeas && (
@@ -263,14 +263,13 @@ export default function Info({ goToTab }) {
             <TouchableOpacity
               activeOpacity={0.8}
               onPress={() => goToTab?.("Saved Ideas")}
-              style={{ flexDirection: "row", alignItems: "center", flex: 1 }}
+              style={{ flexDirection: "row", alignItems: "center", flex: 1, marginBottom: 6 }}
             >
               <Text
                 style={{
                   fontSize: 18,
                   fontWeight: "700",
                   color: "#1a1a1a",
-                  marginBottom: 6,
                 }}
               >
                 <Ionicons name="bookmark-outline" size={20} color="#f05a7e" />{" "}
@@ -280,7 +279,6 @@ export default function Info({ goToTab }) {
                   fontSize: 18,
                   fontWeight: "700",
                   color: "#1a1a1a",
-                  marginBottom: 6,
                   textDecorationLine: "underline",
                 }}
               >
@@ -288,9 +286,9 @@ export default function Info({ goToTab }) {
               </Text>
             </TouchableOpacity>
 
-            <TouchableOpacity activeOpacity={0.8} onPress={() => toggleOffer("savedIdeas")}>
+            {/* <TouchableOpacity activeOpacity={0.8} onPress={() => toggleOffer("savedIdeas")}>
               <Ionicons name={expandedOffers.savedIdeas ? "chevron-up" : "chevron-down"} size={20} color="#1e90ff" />
-            </TouchableOpacity>
+            </TouchableOpacity> */}
           </View>
 
           {expandedOffers.savedIdeas && (

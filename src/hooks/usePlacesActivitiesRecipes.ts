@@ -167,8 +167,7 @@ const MONTHS = ["January", "February", "March", "April", "May", "June", "July", 
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
 const MAX_PLACES_RETURNED = 50;
-const OVERPASS_RESULTS_PER_CATEGORY = 8;
-const OVERPASS_QUERY_RADIUS_METERS = 800;
+const OVERPASS_QUERY_RADIUS_METERS = 2500;
 const OVERPASS_INTERPRETER_URL = process.env.EXPO_PUBLIC_OVERPASS_INTERPRETER_URL || "https://overpass-api.de/api/interpreter";
 const OVERPASS_FALLBACK_URLS = [
   "https://overpass.kumi.systems/api/interpreter",
@@ -178,11 +177,6 @@ const OVERPASS_FALLBACK_URLS = [
 const OVERPASS_REQUEST_TIMEOUT_MS = 12000;
 const METERS_PER_MILE = 1609.34;
 const SUPPORTED_DATE_CATEGORIES = new Set<DateCategory>(["Food", "Sports", "Outdoors", "Education", "Shopping", "Entertainment"]);
-const OVERPASS_DEBUG_PREFIX = "[usePlacesActivitiesRecipes]";
-
-function logOverpassDebug(message: string, details?: unknown) {
-  console.log(OVERPASS_DEBUG_PREFIX, message, details ?? "");
-}
 
 function summarizeOverpassElements(elements: OverpassElement[]) {
   let nodes = 0;
@@ -244,25 +238,15 @@ function toSupportedDateCategories(categories: string[]): DateCategory[] {
   return categories.filter((category): category is DateCategory => SUPPORTED_DATE_CATEGORIES.has(category as DateCategory));
 }
 
-function getRandomPointWithinRadius(
-  center: { latitude: number; longitude: number },
-  radiusMeters: number,
-): {
-  latitude: number;
-  longitude: number;
-} {
-  const earthRadiusMeters = 6371000;
-  const distance = radiusMeters * Math.sqrt(Math.random());
-  const angle = Math.random() * Math.PI * 2;
-  const centerLatitudeRadians = (center.latitude * Math.PI) / 180;
+function shufflePlaces<T>(places: T[]): T[] {
+  const shuffled = [...places];
 
-  const deltaLatitude = (distance * Math.cos(angle)) / earthRadiusMeters;
-  const deltaLongitude = (distance * Math.sin(angle)) / (earthRadiusMeters * Math.max(Math.cos(centerLatitudeRadians), 0.000001));
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
+  }
 
-  return {
-    latitude: center.latitude + (deltaLatitude * 180) / Math.PI,
-    longitude: center.longitude + (deltaLongitude * 180) / Math.PI,
-  };
+  return shuffled;
 }
 
 function toPlaceTypeFromTags(tags: Record<string, string>): string {
@@ -365,8 +349,8 @@ async function fetchPlacesForCategoryFromOverpass(
   hadSuccess: boolean;
   serverBaseUrl: string | null;
 }> {
-  const queryCenter = getRandomPointWithinRadius(params.userLocation, distanceMeters);
-  const queryRadiusMeters = Math.max(350, Math.min(OVERPASS_QUERY_RADIUS_METERS, Math.round(distanceMeters * 0.2)));
+  const queryCenter = params.userLocation;
+  const queryRadiusMeters = Math.max(750, Math.min(OVERPASS_QUERY_RADIUS_METERS, Math.round(distanceMeters)));
   const query = createOverpassQuery(
     [category],
     {
@@ -374,7 +358,6 @@ async function fetchPlacesForCategoryFromOverpass(
       lon: queryCenter.longitude,
     },
     queryRadiusMeters,
-    OVERPASS_RESULTS_PER_CATEGORY,
   );
 
   const requestAttempts: Array<{
@@ -400,31 +383,11 @@ async function fetchPlacesForCategoryFromOverpass(
     },
   ];
 
-  logOverpassDebug("category query prepared", {
-    category,
-    queryCenter,
-    queryRadiusMeters,
-    queryLength: query.length,
-    queryPreview: query.slice(0, 300),
-  });
-
   for (const serverBaseUrl of uniqueOverpassUrls) {
     for (const attempt of requestAttempts) {
       const requestUrl = attempt.toRequestUrl(serverBaseUrl);
       const attemptController = new AbortController();
       const attemptTimeoutId = setTimeout(() => attemptController.abort(), OVERPASS_REQUEST_TIMEOUT_MS);
-
-      logOverpassDebug("sending Overpass request", {
-        category,
-        serverBaseUrl,
-        requestUrl,
-        attempt: attempt.label,
-        method: attempt.method,
-        contentType: attempt.contentType,
-        bodyLength: attempt.body.length,
-        queryCenter,
-        queryRadiusMeters,
-      });
 
       const attemptStart = Date.now();
       const resultPromise = fetch(requestUrl, {
@@ -447,31 +410,16 @@ async function fetchPlacesForCategoryFromOverpass(
               statusCode: response.status,
               details: `[${category}][${attempt.label}] ${details || "request failed"}`,
             });
-
-            logOverpassDebug("overpass request failed", {
-              category,
-              serverBaseUrl,
-              attempt: attempt.label,
-              method: attempt.method,
-              statusCode: response.status,
-              elapsedMs,
-              detailPreview: (details || "").slice(0, 300),
-            });
             return null;
           }
 
-          const parseStart = Date.now();
           const payload = (await response.json()) as OverpassResponse;
-          const parseMs = Date.now() - parseStart;
           const elements = payload.elements || [];
-          logOverpassDebug("overpass payload summary", {
+
+          console.log("[usePlacesActivitiesRecipes]", {
             category,
-            serverBaseUrl,
-            attempt: attempt.label,
-            method: attempt.method,
             elapsedMs,
-            parseMs,
-            summary: summarizeOverpassElements(elements),
+            elementCount: elements.length,
           });
 
           const places = elements.map(toPlannerPlaceFromOverpassElement).filter((place): place is PlannerPlace => Boolean(place));
@@ -496,15 +444,6 @@ async function fetchPlacesForCategoryFromOverpass(
               statusCode: null,
               details: `[${category}][${attempt.label}] timeout after ${OVERPASS_REQUEST_TIMEOUT_MS}ms`,
             });
-
-            logOverpassDebug("overpass request timed out", {
-              category,
-              serverBaseUrl,
-              attempt: attempt.label,
-              method: attempt.method,
-              timeoutMs: OVERPASS_REQUEST_TIMEOUT_MS,
-              elapsedMs,
-            });
             return null;
           }
 
@@ -514,16 +453,6 @@ async function fetchPlacesForCategoryFromOverpass(
             ok: false,
             statusCode: null,
             details: `[${category}][${attempt.label}] ${error?.message || "network error"}`,
-          });
-
-          logOverpassDebug("overpass request errored", {
-            category,
-            serverBaseUrl,
-            attempt: attempt.label,
-            method: attempt.method,
-            message: error?.message,
-            stack: error?.stack,
-            elapsedMs,
           });
 
           return null;
@@ -578,7 +507,6 @@ async function fetchPlacesFromOverpass(params: PlannedDateResultsParams): Promis
 
   let categories = toSupportedDateCategories(params.categories || []);
   if (typeof params.maxPrice === "number" && params.maxPrice <= 0) {
-    logOverpassDebug("excluding categories due to zero budget", { requestedCategories: params.categories });
     categories = categories.filter((c) => c !== "Food" && c !== "Shopping");
   }
   if (!categories.length) {
@@ -652,21 +580,15 @@ async function fetchPlacesFromOverpass(params: PlannedDateResultsParams): Promis
       } else if (result.hadSuccess && !placesByCategory.has(result.category)) {
         placesByCategory.set(result.category, []);
       }
-
-      logOverpassDebug("category completed", {
-        category: result.category,
-        categoryHadSuccess: result.hadSuccess,
-        collectedCount: Array.from(placesByCategory.values()).reduce((total, places) => total + places.length, 0),
-        categoryCount: (placesByCategory.get(result.category) || []).length,
-      });
     }
 
-    const balancedPlaces = mergePlacesEvenlyByCategory(categories, placesByCategory).slice(0, MAX_PLACES_RETURNED);
+    const balancedPlaces = mergePlacesEvenlyByCategory(categories, placesByCategory);
+    const finalPlaces = shufflePlaces(balancedPlaces).slice(0, MAX_PLACES_RETURNED);
 
-    if (balancedPlaces.length) {
+    if (finalPlaces.length) {
       return {
         winner: {
-          places: balancedPlaces,
+          places: finalPlaces,
           fromCache: false,
           serverBaseUrl: firstSuccessfulServerBaseUrl || uniqueOverpassUrls[0] || OVERPASS_INTERPRETER_URL,
         },
@@ -872,45 +794,18 @@ export default function useDatePlannerIdeas(params: PlannedDateResultsParams): {
   const atHomeOptions = useMemo(() => getAvailableAtHomeIdeas(params), [params]);
 
   const fetchIdeas = useCallback(async () => {
+    const planningStartMs = Date.now();
     setIsLoading(true);
     setError(null);
 
-    logOverpassDebug("user location status", {
-      hasUserLocation: Boolean(params.userLocation),
-      userLocation: params.userLocation ?? null,
-    });
-
-    logOverpassDebug("fetchIdeas start", {
-      selectedDate: params.selectedDate,
-      startHour: params.startHour,
-      endHour: params.endHour,
-      dateLengthMinutes: params.dateLengthMinutes,
-      maxPrice: params.maxPrice,
-      maxDistance: params.maxDistance,
-      categories: params.categories,
-      hasUserLocation: Boolean(params.userLocation),
-      userLocation: params.userLocation ?? null,
-      overpassUrl: OVERPASS_INTERPRETER_URL,
-    });
-
     try {
       if (params.maxDistance <= 0 || !params.userLocation) {
-        logOverpassDebug("skipping Overpass because location or distance is missing", {
-          maxDistance: params.maxDistance,
-          hasUserLocation: Boolean(params.userLocation),
-        });
         setMatchedPlaces([]);
         setSourceFile("");
         setServerResponses([]);
       } else {
         const supportedCategories = toSupportedDateCategories(params.categories || []);
-        logOverpassDebug("supported categories resolved", {
-          requestedCategories: params.categories,
-          supportedCategories,
-        });
-
         if (!supportedCategories.length) {
-          logOverpassDebug("no supported categories for Overpass; skipping request");
           setMatchedPlaces([]);
           setSourceFile("");
           setServerResponses([]);
@@ -918,54 +813,29 @@ export default function useDatePlannerIdeas(params: PlannedDateResultsParams): {
         }
 
         const serverResult = await fetchPlacesFromOverpass(params);
-        logOverpassDebug("overpass fetch completed", {
-          hasWinner: Boolean(serverResult.winner),
-          responseCount: serverResult.responses.length,
-          responses: serverResult.responses,
-        });
         setServerResponses(serverResult.responses);
 
         if (!serverResult.winner) {
-          logOverpassDebug("no winner from Overpass", {
-            responses: serverResult.responses,
-          });
           setError("Could not load places from Overpass API.");
           setMatchedPlaces([]);
           setSourceFile("");
           return;
         }
 
-        logOverpassDebug("raw overpass places", {
-          count: serverResult.winner.places.length,
-          sample: serverResult.winner.places.slice(0, 5).map((place) => ({
-            id: place.id,
-            name: place.name,
-            type: place.type,
-            address: place.address,
-            location: place.location,
-          })),
-        });
-
         const serverPlaces = serverResult.winner.places.map(toPlaceSummary);
         const dedupedPlaces = dedupePlaceSummariesById(serverPlaces);
         const combinedPlaces = dedupedPlaces.slice(0, MAX_PLACES_RETURNED);
-        logOverpassDebug("post-processing places", {
-          mappedCount: serverPlaces.length,
-          dedupedCount: dedupedPlaces.length,
-          returnedCount: combinedPlaces.length,
-          maxReturned: MAX_PLACES_RETURNED,
-        });
         const placesSourceLabel = toSourceLabel(serverResult.winner.serverBaseUrl);
+
+        console.log("[usePlacesActivitiesRecipes] date ideas fully planned", {
+          elapsedMs: Date.now() - planningStartMs,
+          placesCount: combinedPlaces.length,
+        });
 
         setMatchedPlaces(combinedPlaces);
         setSourceFile(placesSourceLabel);
       }
     } catch (fetchError: any) {
-      logOverpassDebug("fetchIdeas threw", {
-        message: fetchError?.message,
-        name: fetchError?.name,
-        stack: fetchError?.stack,
-      });
       setError(fetchError?.message || "Failed to fetch date planner ideas.");
       setMatchedPlaces([]);
       setSourceFile("");

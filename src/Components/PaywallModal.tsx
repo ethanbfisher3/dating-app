@@ -142,13 +142,21 @@ export default function PaywallModal({ visible, onClose, onPurchase, reason = "g
               <View style={styles.feature}>
                 <Ionicons name="checkmark-circle" size={24} color="#A29BFE" style={styles.featureIcon} />
                 <View style={styles.featureContent}>
+                  <Text style={styles.featureText}>25 Date Ideas</Text>
+                  <Text style={styles.featureSubtext}>Premium users get 25 planned ideas instead of 10</Text>
+                </View>
+              </View>
+
+              <View style={styles.feature}>
+                <Ionicons name="checkmark-circle" size={24} color="#4ECDC4" style={styles.featureIcon} />
+                <View style={styles.featureContent}>
                   <Text style={styles.featureText}>One-Time Purchase</Text>
                   <Text style={styles.featureSubtext}>No subscription required!</Text>
                 </View>
               </View>
 
               <View style={styles.feature}>
-                <Ionicons name="checkmark-circle" size={24} color="#4ECDC4" style={styles.featureIcon} />
+                <Ionicons name="checkmark-circle" size={24} color="#FF9F43" style={styles.featureIcon} />
                 <View style={styles.featureContent}>
                   <Text style={styles.featureText}>Ad Free</Text>
                   <Text style={styles.featureSubtext}>No ads when generating date ideas</Text>

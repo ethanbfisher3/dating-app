@@ -1,5 +1,7 @@
 Add Revenuecat api keys for apple
 
+Have the app remember areas that are local, maybe have the app query overpass the moment it's opened and the location is available just to have the information
+
 Next update:
 More recipes
 More activities

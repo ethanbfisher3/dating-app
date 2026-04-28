@@ -4,8 +4,7 @@ const dateCategoryToNodes: Record<DateCategory, string[]> = {
   Food: ['nwr["amenity"~"restaurant|fast_food|cafe|food_court|ice_cream"]'],
   Sports: ['nwr["sport"~"tennis|golf|fitness|yoga"]'],
   Outdoors: [
-    'nwr["leisure"~"park|garden|nature_reserve"]',
-    'nwr["leisure"~"park|nature_reserve|recreation_ground|dog_park"]',
+    'nwr["leisure"~"park|garden|nature_reserve|recreation_ground|dog_park"]',
     'nwr["tourism"~"viewpoint|picnic_site|camp_site"]',
     'nwr["leisure"="pitch"]',
   ],
@@ -33,12 +32,7 @@ const dateCategoryToNodes: Record<DateCategory, string[]> = {
   ],
 };
 
-const OVERPASS_QUERY_DEBUG_PREFIX = "[OverpassQuery]";
-const DEFAULT_OVERPASS_RESULT_LIMIT = 12;
-
-function logOverpassQueryDebug(message: string, details?: unknown) {
-  console.log(OVERPASS_QUERY_DEBUG_PREFIX, message, details ?? "");
-}
+const DEFAULT_OVERPASS_RESULT_LIMIT = 50;
 
 const createQuery = (
   categories: DateCategory[],
@@ -58,15 +52,6 @@ const createQuery = (
 [out:json];(
 ${nodesString}
   );out center ${Math.max(1, Math.floor(resultLimit))};`;
-
-  logOverpassQueryDebug("built query", {
-    categories,
-    userLocation,
-    distanceMeters,
-    resultLimit: Math.max(1, Math.floor(resultLimit)),
-    queryLength: query.length,
-    queryPreview: query.slice(0, 500),
-  });
 
   return query;
 };

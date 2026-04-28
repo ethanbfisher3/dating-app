@@ -5,6 +5,7 @@ import type { Activity } from "../data/activities";
 import { getFreeStayInTemplates, IdeaTemplate, LONG_TEMPLATES, SHORT_TEMPLATES, STANDARD_TEMPLATES } from "../data/datePlannerTemplates";
 import type { PlaceSummary } from "./usePlacesActivitiesRecipes";
 import { SLOT_TO_PLACE_TYPES } from "src/utils/utils";
+import { usePremium } from "./usePremium";
 
 export type FilledIdea = {
   template: string;
@@ -526,23 +527,56 @@ function buildFilledIdea(
 }
 
 export default function useFilledIdeas({ params, places, recipes, activities }: UseFilledIdeasArgs): FilledIdea[] {
+  const { isUnlocked } = usePremium();
+
   return useMemo(() => {
+    const ideaGenerationStartMs = Date.now();
+
+    const logIdeaPhase = (phase: string, startedAtMs: number, details?: Record<string, unknown>) => {
+      console.log("[useFilledIdeas]", {
+        phase,
+        elapsedMs: Date.now() - startedAtMs,
+        ...details,
+      });
+    };
+
+    const dedupeStartMs = Date.now();
     const uniquePlaces = dedupeByKey(places, (place) => `${place.id}__${place.name}__${place.address}`);
     const uniqueRecipes = dedupeByKey(recipes, (recipe) => recipe.name);
     const uniqueActivities = dedupeByKey(activities, (activity) => `${activity.id}__${activity.name}`);
+    logIdeaPhase("dedupe", dedupeStartMs, {
+      placesIn: places.length,
+      placesOut: uniquePlaces.length,
+      recipesIn: recipes.length,
+      recipesOut: uniqueRecipes.length,
+      activitiesIn: activities.length,
+      activitiesOut: uniqueActivities.length,
+    });
 
+    const shuffleStartMs = Date.now();
     const randomizedPlaces = shuffleIdeas(uniquePlaces);
     const randomizedRecipes = shuffleIdeas(uniqueRecipes);
     const randomizedActivities = shuffleIdeas(uniqueActivities);
+    logIdeaPhase("shuffle", shuffleStartMs, {
+      places: randomizedPlaces.length,
+      recipes: randomizedRecipes.length,
+      activities: randomizedActivities.length,
+    });
 
+    const templateSelectionStartMs = Date.now();
     const templates = shuffleIdeas(chooseTemplates(params, randomizedPlaces, randomizedActivities));
-    const targetCount = 10;
+    logIdeaPhase("template-selection", templateSelectionStartMs, {
+      templates: templates.length,
+    });
+
+    const targetCount = isUnlocked ? 25 : 10;
     const poolTargetCount = Math.max(targetCount * 4, 30);
     const ideas: FilledIdea[] = [];
     const seenIdeas = new Set<string>();
     const placeUsageById = new Map<string, number>();
     const maxAttempts = Math.max(poolTargetCount * templates.length * 25, 300);
 
+    const buildStartMs = Date.now();
     let cursor = 0;
     while (ideas.length < poolTargetCount && cursor < maxAttempts) {
       const template = templates[cursor % templates.length];
@@ -571,9 +605,26 @@ export default function useFilledIdeas({ params, places, recipes, activities }: 
       }
       cursor += 1;
     }
+    logIdeaPhase("build-pool", buildStartMs, {
+      poolTargetCount,
+      maxAttempts,
+      attemptsUsed: cursor,
+      ideasBuilt: ideas.length,
+    });
 
-    return shuffleIdeas(ideas).slice(0, targetCount);
-  }, [activities, params, places, recipes]);
+    const finalShuffleStartMs = Date.now();
+    const finalIdeas = shuffleIdeas(ideas).slice(0, targetCount);
+    logIdeaPhase("final-shuffle", finalShuffleStartMs, {
+      finalIdeas: finalIdeas.length,
+    });
+
+    console.log("[useFilledIdeas] idea generation complete", {
+      elapsedMs: Date.now() - ideaGenerationStartMs,
+      finalIdeas: finalIdeas.length,
+    });
+
+    return finalIdeas;
+  }, [activities, isUnlocked, params, places, recipes]);
 }
 
 export {
