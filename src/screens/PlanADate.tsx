@@ -7,6 +7,7 @@ import { DATE_CATEGORIES, timesAreInvalid } from "../utils/utils";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { usePremium } from "../hooks/usePremium";
 import { addPlannedDate } from "../data/plannedDatesStore";
+import { fetchPlacesFromOverpassWithCache } from "../hooks/usePlacesActivitiesRecipes";
 import PaywallModal from "../Components/PaywallModal";
 import PlanDateInputsModal from "../Components/PlanDateInputsModal";
 import usePurchases from "src/hooks/usePurchases";
@@ -171,22 +172,13 @@ export default function PlanADate({ navigation }: { navigation: AppNavigation })
     const selectedDateIso = selectedDate.toISOString().slice(0, 10);
 
     let finalMaxDistance = parsedDistance;
-    if (!isUnlocked && finalMaxDistance > 5) {
-      finalMaxDistance = 5;
-      Alert.alert("Distance Limited", "Premium users can search up to 25+ miles. Free tier is limited to 5 miles.");
-    }
 
     if (!actualUserLocation) {
       Alert.alert("Location Not Ready", "Your current location is not available yet. No places will be shown until it is loaded.");
       return;
     }
 
-    setIsGeneratingIdeas(true);
-    addPlannedDate(selectedDateIso);
-    setShowDatePicker(false);
-    setIsModalVisible(false);
-
-    navigation.navigate("PlannedDateResults", {
+    const plannerParams = {
       maxPrice: parsedPrice,
       selectedDate: selectedDateIso,
       startHour: start24,
@@ -196,7 +188,16 @@ export default function PlanADate({ navigation }: { navigation: AppNavigation })
       categories: selectedCategories,
       serverTarget,
       userLocation: actualUserLocation,
-    });
+    };
+
+    setIsGeneratingIdeas(true);
+    addPlannedDate(selectedDateIso);
+    setShowDatePicker(false);
+    setIsModalVisible(false);
+
+    void fetchPlacesFromOverpassWithCache(plannerParams);
+
+    navigation.navigate("PlannedDateResults", plannerParams);
 
     setTimeout(() => setIsGeneratingIdeas(false), 500);
   };

@@ -1,11 +1,9 @@
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useState } from "react";
 import { ScrollView, Text, View, TouchableOpacity, Alert, Image } from "react-native";
-import appInfo from "src/data/info";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { usePremium } from "../hooks/usePremium";
 import PaywallModal from "../Components/PaywallModal";
-import DateCalendar from "./DateCalendar";
 
 export default function Info({ goToTab }) {
   const [expandedOffers, setExpandedOffers] = useState({
@@ -52,7 +50,7 @@ export default function Info({ goToTab }) {
           color: "#1a1a1a",
         }}
       >
-        {appInfo.appName}
+        DateCraft
       </Text>
 
       <View style={{ width: "100%" }}>

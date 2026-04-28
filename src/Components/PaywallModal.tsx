@@ -5,7 +5,6 @@ import { usePremium } from "../hooks/usePremium";
 import { purchasePremium } from "../data/iapConfig";
 import { FREE_TIER_RECORDED_DATES_LIMIT } from "../data/dateHistoryStore";
 import { FREE_TIER_SAVED_IDEAS_LIMIT } from "../data/savedIdeasStore";
-import Purchases, { LOG_LEVEL, PURCHASES_ERROR_CODE, type PurchasesPackage } from "react-native-purchases";
 import usePurchases from "src/hooks/usePurchases";
 
 interface PaywallProps {
@@ -104,18 +103,6 @@ export default function PaywallModal({ visible, onClose, onPurchase, reason = "g
             {/* Title & Description */}
             <Text style={styles.title}>{title}</Text>
             <Text style={styles.description}>{description}</Text>
-
-            {/* <View style={styles.comparisonCard}>
-              <Text style={styles.comparisonTitle}>What You Get Today (Free)</Text>
-              <Text style={styles.comparisonLine}>• Date history: up to {FREE_TIER_RECORDED_DATES_LIMIT} records</Text>
-              <Text style={styles.comparisonLine}>• Saved ideas: up to {FREE_TIER_SAVED_IDEAS_LIMIT}</Text>
-              <Text style={styles.comparisonLine}>• Radius: up to {FREE_TIER_RADIUS_MILES} miles</Text>
-
-              <Text style={styles.comparisonTitlePremium}>What You Get With Premium</Text>
-              <Text style={styles.comparisonLinePremium}>• Unlimited date history</Text>
-              <Text style={styles.comparisonLinePremium}>• Unlimited saved ideas</Text>
-              <Text style={styles.comparisonLinePremium}>• Unlimited radius and date idea generation</Text>
-            </View> */}
 
             {/* Feature List */}
             <View style={styles.featuresContainer}>

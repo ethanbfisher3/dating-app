@@ -320,13 +320,6 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
       return;
     }
 
-    // Enforce distance limit for free users
-    if (!isUnlocked && nextMaxDistance > 5) {
-      setPaywallReason("mile_radius_limit");
-      setPaywallVisible(true);
-      return;
-    }
-
     if (!nextCategories.length) {
       setEditError("Add at least one category.");
       return;
