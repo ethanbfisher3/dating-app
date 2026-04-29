@@ -97,6 +97,7 @@ export type BYUEventSummary = {
 export type PlannerPlace = {
   id: string;
   type: string;
+  types?: string[];
   address: string;
   location: { latitude?: number; longitude?: number };
   name: string;
@@ -333,6 +334,7 @@ function toStoredOverpassPlace(place: PlannerPlace): StoredOverpassPlace {
   return {
     id: place.id,
     type: place.type,
+    types: place.types,
     address: place.address,
     location: {
       latitude: place.location.latitude,
@@ -398,6 +400,52 @@ function toPlaceTypeFromTags(tags: Record<string, string>): string {
   return (
     tags.amenity || tags.leisure || tags.shop || tags.sport || tags.tourism || tags.historic || tags.highway || tags.natural || "place"
   );
+}
+
+function toPlaceTypesFromTags(tags: Record<string, string>): string[] {
+  const types = new Set<string>();
+
+  if (tags.amenity) {
+    types.add("amenity");
+    types.add(tags.amenity);
+  }
+
+  if (tags.leisure) {
+    types.add("leisure");
+    types.add(tags.leisure);
+  }
+
+  if (tags.shop) {
+    types.add("shop");
+    types.add(tags.shop);
+  }
+
+  if (tags.sport) {
+    types.add("sport");
+    types.add(tags.sport);
+  }
+
+  if (tags.tourism) {
+    types.add("tourism");
+    types.add(tags.tourism);
+  }
+
+  if (tags.historic) {
+    types.add("historic");
+    types.add(tags.historic);
+  }
+
+  if (tags.natural) {
+    types.add("natural");
+    types.add(tags.natural);
+  }
+
+  if (tags.highway) {
+    types.add("highway");
+    types.add(tags.highway);
+  }
+
+  return [...types];
 }
 
 function toAddressFromTags(tags: Record<string, string>): string {
@@ -474,6 +522,7 @@ function toPlannerPlaceFromOverpassElement(element: OverpassElement): PlannerPla
     id: `${element.type}:${element.id}`,
     name,
     type,
+    types: toPlaceTypesFromTags(element.tags),
     address,
     location: {
       latitude: coordinate.lat,
@@ -1008,6 +1057,7 @@ export default function useDatePlannerIdeas(params: PlannedDateResultsParams): {
         return;
       }
 
+          types: place.types,
       const cachedPlaces = getCachedOverpassPlaces(params).map(toPlaceSummary);
       if (cachedPlaces.length) {
         setMatchedPlaces(cachedPlaces);

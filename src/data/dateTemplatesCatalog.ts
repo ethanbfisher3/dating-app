@@ -5,36 +5,36 @@ type TemplateLike = {
 
 export const SHORT_DATE_TEMPLATES: TemplateLike[] = [
   { template: "Grab a bite at {restaurant}", slots: ["restaurant"] },
-  { template: "Take a walk at {park}", slots: ["park"] },
+  { template: "Take a walk at {leisure}", slots: ["leisure"] },
   { template: "{activity}", slots: ["activity"] },
   { template: "Make {recipe} together", slots: ["recipe"] },
   { template: "Get dessert at {ice_cream}", slots: ["ice_cream"] },
-  { template: "Visit {museum}", slots: ["museum"] },
-  { template: "Browse around {mall}", slots: ["mall"] },
-  { template: "Play around at {amusement_arcade}", slots: ["amusement_arcade"] },
+  { template: "Visit {tourism}", slots: ["tourism"] },
+  { template: "Browse around {shop}", slots: ["shop"] },
+  { template: "Spend time at {leisure}", slots: ["leisure"] },
   {
     template: "{activity} and then make {recipe}",
     slots: ["activity", "recipe"],
   },
   {
-    template: "Stop at {restaurant} and a stroll at {park}",
-    slots: ["restaurant", "park"],
+    template: "Stop at {restaurant} and then stroll at {leisure}",
+    slots: ["restaurant", "leisure"],
   },
   {
-    template: "Explore {mall}, then get dessert at {ice_cream}",
-    slots: ["mall", "ice_cream"],
+    template: "Explore {shop}, then get dessert at {ice_cream}",
+    slots: ["shop", "ice_cream"],
   },
   {
     template: "{activity} and then treat yourselves at {ice_cream}",
     slots: ["activity", "ice_cream"],
   },
   {
-    template: "Visit {museum}, then walk through {park}",
-    slots: ["museum", "park"],
+    template: "Visit {tourism}, then walk through {leisure}",
+    slots: ["tourism", "leisure"],
   },
   {
-    template: "Try {amusement_arcade}, then grab a quick bite at {restaurant}",
-    slots: ["amusement_arcade", "restaurant"],
+    template: "Try {leisure}, then grab a quick bite at {restaurant}",
+    slots: ["leisure", "restaurant"],
   },
   {
     template: "Make {recipe} and {activity} to finish it off",
@@ -43,7 +43,7 @@ export const SHORT_DATE_TEMPLATES: TemplateLike[] = [
 ];
 
 export const STANDARD_DATE_TEMPLATES: TemplateLike[] = [
-  { template: "Start at {restaurant}, then walk at {park}", slots: ["restaurant", "park"] },
+  { template: "Start at {restaurant}, then walk at {leisure}", slots: ["restaurant", "leisure"] },
   {
     template: "{activity}, then grab dessert at {ice_cream}",
     slots: ["activity", "ice_cream"],
@@ -53,191 +53,191 @@ export const STANDARD_DATE_TEMPLATES: TemplateLike[] = [
     slots: ["recipe", "ice_cream"],
   },
   {
-    template: "Visit {museum}, then stop at {restaurant}",
-    slots: ["museum", "restaurant"],
+    template: "Visit {tourism}, then stop at {restaurant}",
+    slots: ["tourism", "restaurant"],
   },
   {
-    template: "Browse {mall} and then {activity}",
-    slots: ["mall", "activity"],
+    template: "Browse {shop} and then {activity}",
+    slots: ["shop", "activity"],
   },
   {
     template: "{activity} and then {activity}",
     slots: ["activity", "activity"],
   },
   {
-    template: "Lunch at {restaurant}, then explore {museum}",
-    slots: ["restaurant", "museum"],
+    template: "Lunch at {restaurant}, then explore {tourism}",
+    slots: ["restaurant", "tourism"],
   },
   {
-    template: "Walk through {park}, then shop at {mall}",
-    slots: ["park", "mall"],
+    template: "Walk through {leisure}, then shop at {shop}",
+    slots: ["leisure", "shop"],
   },
   {
-    template: "Start with {amusement_arcade}, then dessert at {ice_cream}",
-    slots: ["amusement_arcade", "ice_cream"],
+    template: "Start with {leisure}, then dessert at {ice_cream}",
+    slots: ["leisure", "ice_cream"],
   },
   {
-    template: "Visit {mall}, eat at {restaurant}, then {activity}",
-    slots: ["mall", "restaurant", "activity"],
+    template: "Visit {shop}, eat at {restaurant}, then {activity}",
+    slots: ["shop", "restaurant", "activity"],
   },
   {
-    template: "Go to {museum}, {activity}, then {ice_cream}",
-    slots: ["museum", "activity", "ice_cream"],
+    template: "Go to {tourism}, {activity}, then {ice_cream}",
+    slots: ["tourism", "activity", "ice_cream"],
   },
   {
-    template: "Try {amusement_arcade}, walk at {park}, and end at {restaurant}",
-    slots: ["amusement_arcade", "park", "restaurant"],
+    template: "Try {leisure}, walk at {leisure}, and end at {restaurant}",
+    slots: ["leisure", "leisure", "restaurant"],
   },
-  { template: "Make {recipe}, then head to {park}", slots: ["recipe", "park"] },
+  { template: "Make {recipe}, then head to {leisure}", slots: ["recipe", "leisure"] },
   {
-    template: "{activity}, then visit {museum}",
-    slots: ["activity", "museum"],
-  },
-  {
-    template: "Visit {park}, then {amusement_arcade}",
-    slots: ["park", "amusement_arcade"],
+    template: "{activity}, then visit {tourism}",
+    slots: ["activity", "tourism"],
   },
   {
-    template: "Meal at {restaurant}, activity at {amusement_arcade}, and dessert at {ice_cream}",
-    slots: ["restaurant", "amusement_arcade", "ice_cream"],
+    template: "Visit {leisure}, then {leisure}",
+    slots: ["leisure", "leisure"],
   },
   {
-    template: "Explore {museum}, browse {mall}, then grab {restaurant}",
-    slots: ["museum", "mall", "restaurant"],
+    template: "Meal at {restaurant}, activity at {leisure}, and dessert at {ice_cream}",
+    slots: ["restaurant", "leisure", "ice_cream"],
+  },
+  {
+    template: "Explore {tourism}, browse {shop}, then grab {restaurant}",
+    slots: ["tourism", "shop", "restaurant"],
   },
   {
     template: "{activity}, eat at {restaurant}, and finally {activity}",
     slots: ["activity", "restaurant", "activity"],
   },
   {
-    template: "Walk around {park}, make {recipe}, and finish with {ice_cream}",
-    slots: ["park", "recipe", "ice_cream"],
+    template: "Walk around {leisure}, make {recipe}, and finish with {ice_cream}",
+    slots: ["leisure", "recipe", "ice_cream"],
   },
   {
-    template: "Go to {amusement_arcade}, then {activity}, then dessert at {ice_cream}",
-    slots: ["amusement_arcade", "activity", "ice_cream"],
+    template: "Go to {leisure}, then {activity}, then dessert at {ice_cream}",
+    slots: ["leisure", "activity", "ice_cream"],
   },
   {
-    template: "Explore {mall}, then {activity}, then relax at {park}",
-    slots: ["mall", "activity", "park"],
+    template: "Explore {shop}, then {activity}, then relax at {leisure}",
+    slots: ["shop", "activity", "leisure"],
   },
   {
-    template: "Start at {restaurant}, then {amusement_arcade}, and {activity} to end",
-    slots: ["restaurant", "amusement_arcade", "activity"],
+    template: "Start at {restaurant}, then {leisure}, and {activity} to end",
+    slots: ["restaurant", "leisure", "activity"],
   },
   {
-    template: "Visit {museum}, then make {recipe}",
-    slots: ["museum", "recipe"],
+    template: "Visit {tourism}, then make {recipe}",
+    slots: ["tourism", "recipe"],
   },
   {
-    template: "{activity}, then {amusement_arcade}, then {ice_cream}",
-    slots: ["activity", "amusement_arcade", "ice_cream"],
+    template: "{activity}, then {leisure}, then {ice_cream}",
+    slots: ["activity", "leisure", "ice_cream"],
   },
   {
-    template: "Begin at {park}, grab {restaurant}, and browse {mall}",
-    slots: ["park", "restaurant", "mall"],
+    template: "Begin at {leisure}, grab {restaurant}, and browse {shop}",
+    slots: ["leisure", "restaurant", "shop"],
   },
 ];
 
 export const LONG_DATE_TEMPLATES: TemplateLike[] = [
   {
-    template: "Start at {park}, eat at {restaurant}, {activity}, and finish with {ice_cream}",
-    slots: ["park", "restaurant", "activity", "ice_cream"],
+    template: "Start at {leisure}, eat at {restaurant}, {activity}, and finish with {ice_cream}",
+    slots: ["leisure", "restaurant", "activity", "ice_cream"],
   },
   {
-    template: "Visit {museum}, explore {mall}, then have {restaurant} for dinner",
-    slots: ["museum", "mall", "restaurant"],
+    template: "Visit {tourism}, explore {shop}, then have {restaurant} for dinner",
+    slots: ["tourism", "shop", "restaurant"],
   },
   {
-    template: "Make {recipe}, then go to {park}, and finish with {ice_cream}",
-    slots: ["recipe", "park", "ice_cream"],
+    template: "Make {recipe}, then go to {leisure}, and finish with {ice_cream}",
+    slots: ["recipe", "leisure", "ice_cream"],
   },
   {
     template: "First, {activity}. Then, {activity}. Finally, {activity}.",
     slots: ["activity", "activity", "activity"],
   },
   {
-    template: "Start with {restaurant}, visit {museum}, then {activity}, and dessert at {ice_cream}",
-    slots: ["restaurant", "museum", "activity", "ice_cream"],
+    template: "Start with {restaurant}, visit {tourism}, then {activity}, and dessert at {ice_cream}",
+    slots: ["restaurant", "tourism", "activity", "ice_cream"],
   },
   {
-    template: "Walk at {park}, browse {mall}, enjoy {amusement_arcade}, then eat at {restaurant}",
-    slots: ["park", "mall", "amusement_arcade", "restaurant"],
+    template: "Walk at {leisure}, browse {shop}, enjoy {leisure}, then eat at {restaurant}",
+    slots: ["leisure", "shop", "leisure", "restaurant"],
   },
   {
-    template: "Make {recipe}, go to {amusement_arcade}, then relax at {park}",
-    slots: ["recipe", "amusement_arcade", "park"],
+    template: "Make {recipe}, go to {leisure}, then relax at {leisure}",
+    slots: ["recipe", "leisure", "leisure"],
   },
   {
-    template: "Explore {museum}, then {activity}, then {activity}, and end with {ice_cream}",
-    slots: ["museum", "activity", "activity", "ice_cream"],
+    template: "Explore {tourism}, then {activity}, then {activity}, and end with {ice_cream}",
+    slots: ["tourism", "activity", "activity", "ice_cream"],
   },
   {
-    template: "Meal at {restaurant}, walk at {park}, shop at {mall}, and dessert at {ice_cream}",
-    slots: ["restaurant", "park", "mall", "ice_cream"],
+    template: "Meal at {restaurant}, walk at {leisure}, shop at {shop}, and dessert at {ice_cream}",
+    slots: ["restaurant", "leisure", "shop", "ice_cream"],
   },
   {
-    template: "Go to {amusement_arcade}, then {activity}, then eat at {restaurant}. Finally, {activity}",
-    slots: ["amusement_arcade", "activity", "restaurant", "activity"],
+    template: "Go to {leisure}, then {activity}, then eat at {restaurant}. Finally, {activity}",
+    slots: ["leisure", "activity", "restaurant", "activity"],
   },
   {
-    template: "Start at {museum}, continue to {park}, then {amusement_arcade}, then {ice_cream}",
-    slots: ["museum", "park", "amusement_arcade", "ice_cream"],
+    template: "Start at {tourism}, continue to {leisure}, then {leisure}, then {ice_cream}",
+    slots: ["tourism", "leisure", "leisure", "ice_cream"],
   },
   {
-    template: "Make {recipe}, then browse {mall}, {activity}, and end at {restaurant}",
-    slots: ["recipe", "mall", "activity", "restaurant"],
+    template: "Make {recipe}, then browse {shop}, {activity}, and end at {restaurant}",
+    slots: ["recipe", "shop", "activity", "restaurant"],
   },
   {
-    template: "Visit {park}, have {restaurant}, {activity}, visit {museum}, and get {ice_cream}",
-    slots: ["park", "restaurant", "activity", "museum", "ice_cream"],
+    template: "Visit {leisure}, have {restaurant}, {activity}, visit {tourism}, and get {ice_cream}",
+    slots: ["leisure", "restaurant", "activity", "tourism", "ice_cream"],
   },
   {
-    template: "Explore {mall}, then {amusement_arcade}, then make {recipe}, then go for {ice_cream}",
-    slots: ["mall", "amusement_arcade", "recipe", "ice_cream"],
+    template: "Explore {shop}, then {leisure}, then make {recipe}, then go for {ice_cream}",
+    slots: ["shop", "leisure", "recipe", "ice_cream"],
   },
   {
-    template: "{activity}, then {activity}, then have dinner at {restaurant}, then a walk at {park}",
-    slots: ["activity", "activity", "restaurant", "park"],
+    template: "{activity}, then {activity}, then have dinner at {restaurant}, then a walk at {leisure}",
+    slots: ["activity", "activity", "restaurant", "leisure"],
   },
   {
-    template: "Go to {museum}, then {amusement_arcade}, then {activity}, and cap it off at {restaurant}",
-    slots: ["museum", "amusement_arcade", "activity", "restaurant"],
+    template: "Go to {tourism}, then {leisure}, then {activity}, and cap it off at {restaurant}",
+    slots: ["tourism", "leisure", "activity", "restaurant"],
   },
   {
-    template: "Begin at {restaurant}, go to {mall}, {activity}, then dessert at {ice_cream}",
-    slots: ["restaurant", "mall", "activity", "ice_cream"],
+    template: "Begin at {restaurant}, go to {shop}, {activity}, then dessert at {ice_cream}",
+    slots: ["restaurant", "shop", "activity", "ice_cream"],
   },
   {
-    template: "Visit {park}, then {museum}, then {activity}, then {amusement_arcade}",
-    slots: ["park", "museum", "activity", "amusement_arcade"],
+    template: "Visit {leisure}, then {tourism}, then {activity}, then {leisure}",
+    slots: ["leisure", "tourism", "activity", "leisure"],
   },
   {
-    template: "Make {recipe}, {activity}, walk at {park}, and finish at {restaurant}",
-    slots: ["recipe", "activity", "park", "restaurant"],
+    template: "Make {recipe}, {activity}, walk at {leisure}, and finish at {restaurant}",
+    slots: ["recipe", "activity", "leisure", "restaurant"],
   },
   {
-    template: "Try {amusement_arcade}, then {activity}, then {mall}, then {ice_cream}",
-    slots: ["amusement_arcade", "activity", "mall", "ice_cream"],
+    template: "Try {leisure}, then {activity}, then {shop}, then {ice_cream}",
+    slots: ["leisure", "activity", "shop", "ice_cream"],
   },
   {
-    template: "Start at {restaurant}, then {museum}, then {park}, then {activity}, and dessert at {ice_cream}",
-    slots: ["restaurant", "museum", "park", "activity", "ice_cream"],
+    template: "Start at {restaurant}, then {tourism}, then {leisure}, then {activity}, and dessert at {ice_cream}",
+    slots: ["restaurant", "tourism", "leisure", "activity", "ice_cream"],
   },
   {
-    template: "{activity}, then {amusement_arcade}, then {activity}, then eat at {restaurant}",
-    slots: ["activity", "amusement_arcade", "activity", "restaurant"],
+    template: "{activity}, then {leisure}, then {activity}, then eat at {restaurant}",
+    slots: ["activity", "leisure", "activity", "restaurant"],
   },
   {
-    template: "Walk at {park}, make {recipe}, then visit {museum}, then dessert at {ice_cream}",
-    slots: ["park", "recipe", "museum", "ice_cream"],
+    template: "Walk at {leisure}, make {recipe}, then visit {tourism}, then dessert at {ice_cream}",
+    slots: ["leisure", "recipe", "tourism", "ice_cream"],
   },
   {
-    template: "Explore {mall}, then have {restaurant}, then {amusement_arcade}, and {activity}",
-    slots: ["mall", "restaurant", "amusement_arcade", "activity"],
+    template: "Explore {shop}, then have {restaurant}, then {leisure}, and {activity}",
+    slots: ["shop", "restaurant", "leisure", "activity"],
   },
   {
-    template: "Visit {museum}, then {mall}, then {park}, then {activity}, then {ice_cream}",
-    slots: ["museum", "mall", "park", "activity", "ice_cream"],
+    template: "Visit {tourism}, then {shop}, then {leisure}, then {activity}, then {ice_cream}",
+    slots: ["tourism", "shop", "leisure", "activity", "ice_cream"],
   },
 ];

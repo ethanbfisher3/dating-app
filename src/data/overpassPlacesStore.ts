@@ -4,6 +4,7 @@ import type { DateCategory } from "src/utils/utils";
 export type StoredOverpassPlace = {
   id: string;
   type: string;
+  types?: string[];
   address: string;
   location: { latitude?: number; longitude?: number };
   name: string;
@@ -92,9 +93,7 @@ export function saveOverpassPlacesSnapshot(snapshot: {
 
   snapshots = [
     nextSnapshot,
-    ...snapshots.filter(
-      (entry) => entry.category !== nextSnapshot.category || entry.userLocationKey !== nextSnapshot.userLocationKey,
-    ),
+    ...snapshots.filter((entry) => entry.category !== nextSnapshot.category || entry.userLocationKey !== nextSnapshot.userLocationKey),
   ];
 
   void persistSnapshots(snapshots);

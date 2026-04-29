@@ -14,14 +14,7 @@ const dateCategoryToNodes: Record<DateCategory, string[]> = {
     'nwr["tourism"="museum"]["subject"="science"]',
     'nwr["historic"]',
   ],
-  Shopping: [
-    'nwr["shop"="mall"]',
-    'nwr["shop"="clothes"]',
-    'nwr["shop"="gift"]',
-    'nwr["shop"="toys"]',
-    'nwr["shop"="books"]',
-    'nwr["shop"="electronics"]',
-  ],
+  Shopping: ['nwr["shop"]'],
   Entertainment: [
     'nwr["amenity"="cinema"]',
     'nwr["leisure"="amusement_arcade"]',
