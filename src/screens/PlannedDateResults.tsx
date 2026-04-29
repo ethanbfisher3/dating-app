@@ -35,6 +35,47 @@ const IMAGES = [
   require("../assets/images/date_images/origami.jpg"),
 ];
 
+function toRadians(value: number): number {
+  return (value * Math.PI) / 180;
+}
+
+function getDistanceMilesFromUserLocation(
+  userLocation: { latitude: number; longitude: number } | null | undefined,
+  placeLocation: { latitude?: number; longitude?: number } | null | undefined,
+): number | null {
+  if (
+    !userLocation ||
+    typeof userLocation.latitude !== "number" ||
+    typeof userLocation.longitude !== "number" ||
+    typeof placeLocation?.latitude !== "number" ||
+    typeof placeLocation?.longitude !== "number"
+  ) {
+    return null;
+  }
+
+  const earthRadiusMiles = 3958.8;
+  const dLat = toRadians(placeLocation.latitude - userLocation.latitude);
+  const dLon = toRadians(placeLocation.longitude - userLocation.longitude);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRadians(userLocation.latitude)) * Math.cos(toRadians(placeLocation.latitude)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return earthRadiusMiles * c;
+}
+
+function formatDistanceMiles(distanceMiles: number | null): string {
+  if (distanceMiles === null) {
+    return "Distance unavailable";
+  }
+
+  if (distanceMiles < 0.1) {
+    return "< 0.1 mi away";
+  }
+
+  return `${distanceMiles.toFixed(1)} mi away`;
+}
+
 export default function PlannedDateResults({ route, navigation }: AppScreenProps<"PlannedDateResults">) {
   const { isUnlocked } = usePremium();
   const [paywallVisible, setPaywallVisible] = useState(false);
@@ -42,6 +83,7 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
   const [image, setImage] = useState(IMAGES[Math.floor(Math.random() * IMAGES.length)]);
   const [nativeAdDisplayComplete, setNativeAdDisplayComplete] = useState(false);
   const nativeAdHoldTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingRegenerateRef = useRef<(() => void) | null>(null);
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -77,6 +119,7 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
   );
   const [showDevMatches, setShowDevMatches] = useState(false);
   const [showDevPlaces, setShowDevPlaces] = useState(false);
+  const [showDevCachedPlaces, setShowDevCachedPlaces] = useState(false);
   const [showDevActivities, setShowDevActivities] = useState(false);
   const [showDevRecipes, setShowDevRecipes] = useState(false);
   const [regeneratingSteps, setRegeneratingSteps] = useState<Set<string>>(new Set());
@@ -177,7 +220,9 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
     }
   };
 
-  const { places, recipes, activities, sourceFile, isLoading, error, refetch } = useDatePlannerIdeas(plannerParams);
+  const { places, cachedPlaces, allCachedPlaces, recipes, activities, sourceFile, isLoading, error, refetch } = useDatePlannerIdeas(
+    plannerParams,
+  );
 
   const startNativeAdHoldTimer = () => {
     setNativeAdDisplayComplete(false);
@@ -203,6 +248,16 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
     }
   }, [isLoading]);
 
+  useEffect(() => {
+    if (!nativeAdDisplayComplete || !pendingRegenerateRef.current) {
+      return;
+    }
+
+    const pendingAction = pendingRegenerateRef.current;
+    pendingRegenerateRef.current = null;
+    pendingAction();
+  }, [nativeAdDisplayComplete]);
+
   const resetNativeAdGate = () => {
     setNativeAdDisplayComplete(false);
 
@@ -210,6 +265,22 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
       clearTimeout(nativeAdHoldTimerRef.current);
       nativeAdHoldTimerRef.current = null;
     }
+  };
+
+  const startRegenerate = () => {
+    setImage(IMAGES[Math.floor(Math.random() * IMAGES.length)]);
+
+    const runRefresh = () => {
+      refetch({ bypassCache: true });
+    };
+
+    if (isUnlocked) {
+      runRefresh();
+      return;
+    }
+
+    pendingRegenerateRef.current = runRefresh;
+    resetNativeAdGate();
   };
 
   const filledIdeas = useFilledIdeas({
@@ -1001,6 +1072,44 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
               ) : null}
 
               <TouchableOpacity
+                onPress={() => setShowDevCachedPlaces((prev) => !prev)}
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  paddingHorizontal: 14,
+                  paddingVertical: 10,
+                  borderTopWidth: 1,
+                  borderTopColor: "#eef2f7",
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontWeight: "700",
+                    color: "#2c3e50",
+                  }}
+                >
+                  Cached Places ({allCachedPlaces.length})
+                </Text>
+                <Text style={{ color: "#1e90ff", fontWeight: "700" }}>{showDevCachedPlaces ? "Hide" : "Show"}</Text>
+              </TouchableOpacity>
+
+              {showDevCachedPlaces ? (
+                <View style={{ paddingHorizontal: 14, paddingBottom: 10, gap: 6 }}>
+                  {allCachedPlaces.length ? (
+                    allCachedPlaces.map((place) => (
+                      <Text key={place.id} style={{ fontSize: 14, color: "#2c3e50" }}>
+                        • {place.name}: {place.type} ({formatDistanceMiles(getDistanceMilesFromUserLocation(plannerParams.userLocation, place.location))})
+                      </Text>
+                    ))
+                  ) : (
+                    <Text style={{ fontSize: 14, color: "#667788" }}>No cached places on this phone.</Text>
+                  )}
+                </View>
+              ) : null}
+
+              <TouchableOpacity
                 onPress={() => setShowDevActivities((prev) => !prev)}
                 style={{
                   flexDirection: "row",
@@ -1142,8 +1251,10 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
                 key={`${idea.filledTemplate}-${index}`}
                 index={index}
                 filledTemplate={filledTemplate}
+                template={idea.template}
                 schedule={schedule}
                 places={ideaPlaces as PlaceSummary[]}
+                userLocation={plannerParams.userLocation ?? null}
                 commuteToFirstMinutes={idea.commuteToFirstMinutes}
                 commuteFromLastMinutes={idea.commuteFromLastMinutes}
                 navigation={navigation}

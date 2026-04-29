@@ -25,13 +25,11 @@ const dateCategoryToNodes: Record<DateCategory, string[]> = {
   ],
 };
 
-const DEFAULT_OVERPASS_RESULT_LIMIT = 50;
-
 const createQuery = (
   categories: DateCategory[],
   userLocation: { lat: number; lon: number },
   distanceMeters: number,
-  resultLimit: number = DEFAULT_OVERPASS_RESULT_LIMIT,
+  resultLimit?: number,
 ) => {
   const nodesString = categories
     .map((cat) => {
@@ -44,7 +42,7 @@ const createQuery = (
   const query = `
 [out:json];(
 ${nodesString}
-  );out center ${Math.max(1, Math.floor(resultLimit))};`;
+  );out center${typeof resultLimit === "number" && Number.isFinite(resultLimit) ? ` ${Math.max(1, Math.floor(resultLimit))}` : ""};`;
 
   return query;
 };

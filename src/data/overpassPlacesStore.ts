@@ -168,3 +168,8 @@ export function getCachedOverpassPlaces(params: {
 
   return dedupePlacesById(places).map(clonePlace);
 }
+
+export function getAllCachedOverpassPlaces(): StoredOverpassPlace[] {
+  const places = snapshots.flatMap((snapshot) => snapshot.places);
+  return dedupePlacesById(places).map(clonePlace);
+}

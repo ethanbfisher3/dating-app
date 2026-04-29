@@ -56,7 +56,7 @@ export const SLOT_TO_PLACE_TYPES: Record<string, string[]> = {
   fast_food: ["restaurant", "fast_food", "cafe", "food_court", "ice_cream"],
   cafe: ["restaurant", "fast_food", "cafe", "food_court", "ice_cream"],
   food_court: ["restaurant", "fast_food", "cafe", "food_court", "ice_cream"],
-  ice_cream: ["restaurant", "fast_food", "cafe", "food_court", "ice_cream"],
+  ice_cream: ["ice_cream"],
   leisure: [
     "leisure",
     "park",

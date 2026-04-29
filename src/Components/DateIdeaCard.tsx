@@ -18,8 +18,10 @@ type DateIdeaCardProps = {
   index: number;
   titlePrefix?: string;
   filledTemplate: string;
+  template?: string;
   schedule: DateIdeaStep[];
   places: PlaceSummary[];
+  userLocation?: { latitude: number; longitude: number } | null;
   commuteToFirstMinutes?: number | null;
   commuteFromLastMinutes?: number | null;
   navigation: AppNavigation;
@@ -36,8 +38,10 @@ export default function DateIdeaCard({
   index,
   titlePrefix = "Idea",
   filledTemplate,
+  template,
   schedule,
   places,
+  userLocation,
   commuteToFirstMinutes,
   commuteFromLastMinutes,
   navigation,
@@ -50,6 +54,44 @@ export default function DateIdeaCard({
   isRegeneratingStep,
 }: DateIdeaCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+
+  const toRadians = (value: number): number => (value * Math.PI) / 180;
+
+  const getDistanceMilesFromUserLocation = (
+    placeLocation: { latitude?: number; longitude?: number } | null | undefined,
+  ): number | null => {
+    if (
+      !userLocation ||
+      typeof userLocation.latitude !== "number" ||
+      typeof userLocation.longitude !== "number" ||
+      typeof placeLocation?.latitude !== "number" ||
+      typeof placeLocation?.longitude !== "number"
+    ) {
+      return null;
+    }
+
+    const earthRadiusMiles = 3958.8;
+    const dLat = toRadians(placeLocation.latitude - userLocation.latitude);
+    const dLon = toRadians(placeLocation.longitude - userLocation.longitude);
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(toRadians(userLocation.latitude)) * Math.cos(toRadians(placeLocation.latitude)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return earthRadiusMiles * c;
+  };
+
+  const formatDistanceMiles = (distanceMiles: number | null): string => {
+    if (distanceMiles === null) {
+      return "Distance unavailable";
+    }
+
+    if (distanceMiles < 0.1) {
+      return "< 0.1 mi away";
+    }
+
+    return `${distanceMiles.toFixed(1)} mi away`;
+  };
 
   return (
     <View
@@ -115,6 +157,20 @@ export default function DateIdeaCard({
       >
         {filledTemplate}
       </Text>
+
+      {__DEV__ && template ? (
+        <Text
+          style={{
+            marginTop: 6,
+            fontSize: 12,
+            lineHeight: 18,
+            color: "#667788",
+            fontWeight: "600",
+          }}
+        >
+          (DEV) Template: {template}
+        </Text>
+      ) : null}
 
       <TouchableOpacity onPress={() => setIsExpanded((prev) => !prev)} style={{ marginTop: 10, alignSelf: "flex-start" }}>
         <Text
@@ -191,6 +247,11 @@ export default function DateIdeaCard({
                       {step.startTime} - {step.endTime} ({step.durationMinutes} min)
                     </Text>
                     <Text style={{ fontSize: 14, color: "#2c3e50" }}>{step.title}</Text>
+                    {__DEV__ && step.place ? (
+                      <Text style={{ marginTop: 4, fontSize: 12, color: "#667788", fontWeight: "600" }}>
+                        (DEV) {step.place.type} • {formatDistanceMiles(getDistanceMilesFromUserLocation(step.place.location))}
+                      </Text>
+                    ) : null}
 
                     {step.travelToNextMinutes !== null && step.travelToNextMinutes !== 0 ? (
                       <Text

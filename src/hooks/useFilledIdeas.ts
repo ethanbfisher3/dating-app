@@ -77,8 +77,34 @@ function formatTimeLabel(totalMinutes: number): string {
   return `${hour12}:${minuteText} ${suffix}`;
 }
 
-function requiresPlaces(template: IdeaTemplate): boolean {
-  return template.slots.some((slot) => Boolean(SLOT_TO_PLACE_TYPES[slot]));
+function requiresPlaces(template: IdeaTemplate | undefined | null): boolean {
+  if (!template || !Array.isArray(template.slots)) {
+    return false;
+  }
+
+  return template.slots.some((slot) => getAllowedTypesForSlot(slot).length > 0);
+}
+
+function getAllowedTypesForSlot(slot: string): string[] {
+  const slotOptions = slot
+    .split("|")
+    .map((value) => value.trim())
+    .filter(Boolean);
+
+  const allowedTypes = new Set<string>();
+
+  for (const option of slotOptions) {
+    const optionAllowedTypes = SLOT_TO_PLACE_TYPES[option];
+    if (!optionAllowedTypes) {
+      continue;
+    }
+
+    for (const type of optionAllowedTypes) {
+      allowedTypes.add(type.toLowerCase());
+    }
+  }
+
+  return [...allowedTypes];
 }
 
 function chooseTemplates(params: PlannedDateResultsParams, places: PlaceSummary[], activities: Activity[]): IdeaTemplate[] {
@@ -96,8 +122,9 @@ function chooseTemplates(params: PlannedDateResultsParams, places: PlaceSummary[
   if (!places.length) {
     const stayInTemplates = getFreeStayInTemplates(duration, activities, params.maxPrice, params.maxDistance);
 
-    const noPlaceTemplates = [...base, ...SHORT_TEMPLATES, ...STANDARD_TEMPLATES, ...LONG_TEMPLATES].filter(
-      (template, index, templates) => {
+    const noPlaceTemplates = [...base, ...SHORT_TEMPLATES, ...STANDARD_TEMPLATES, ...LONG_TEMPLATES]
+      .filter((template): template is IdeaTemplate => Boolean(template))
+      .filter((template, index, templates) => {
         if (requiresPlaces(template)) {
           return false;
         }
@@ -107,8 +134,7 @@ function chooseTemplates(params: PlannedDateResultsParams, places: PlaceSummary[
             (candidate) => candidate.template === template.template && candidate.slots.join(",") === template.slots.join(","),
           ) === index
         );
-      },
-    );
+      });
 
     if (stayInTemplates.length || noPlaceTemplates.length) {
       return [...stayInTemplates, ...noPlaceTemplates];
@@ -128,11 +154,11 @@ function getPlaceCandidatesBySlotType(slot: string, places: PlaceSummary[]): Pla
 
   if (!slot) return places;
 
-  const allowedTypes = SLOT_TO_PLACE_TYPES[slot];
-  if (!allowedTypes) {
+  const allowedTypes = getAllowedTypesForSlot(slot);
+  if (!allowedTypes.length) {
     return [];
   }
-  const allowedTypeSet = new Set(allowedTypes.map((value) => value.toLowerCase()));
+  const allowedTypeSet = new Set(allowedTypes);
 
   const matchedPlaces = places.filter((place) => {
     const placeAny = place as any;
@@ -376,6 +402,10 @@ function buildFilledIdea(
   activities: Activity[],
   placeUsageById: Map<string, number>,
 ): FilledIdea | null {
+  if (!template || !Array.isArray(template.slots)) {
+    return null;
+  }
+
   const avoidFoodActivities = template.slots.includes("recipe");
   const slotCandidates = template.slots.map((slot) =>
     getCandidatesForSlot(slot, places, recipes, activities, {
