@@ -1,10 +1,8 @@
 import type { Activity } from "./activities";
-import { LONG_DATE_TEMPLATES, SHORT_DATE_TEMPLATES, STANDARD_DATE_TEMPLATES } from "./dateTemplatesCatalog";
+import { LONG_DATE_TEMPLATES, SHORT_DATE_TEMPLATES, STANDARD_DATE_TEMPLATES, type TemplateLike } from "./dateTemplatesCatalog";
+import { DATE_CATEGORIES } from "src/utils/utils";
 
-export type IdeaTemplate = {
-  template: string;
-  slots: string[];
-};
+export type IdeaTemplate = TemplateLike;
 
 export const SHORT_TEMPLATES: IdeaTemplate[] = SHORT_DATE_TEMPLATES;
 
@@ -69,5 +67,6 @@ export function getFreeStayInTemplates(
   return slotCounts.map((count) => ({
     template: joinActivityPlaceholders(count),
     slots: createRepeatedSlots("activity", count),
+    categories: [...DATE_CATEGORIES],
   }));
 }

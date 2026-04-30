@@ -1,6 +1,12 @@
-type TemplateLike = {
+import type { DateCategory } from "../utils/utils";
+
+type TemplateDefinition = {
   template: string;
   slots: string[];
+};
+
+export type TemplateLike = TemplateDefinition & {
+  categories: DateCategory[];
 };
 
 const FOOD_PLACE_SLOT = "restaurant|fast_food|cafe|food_court|ice_cream";
@@ -9,7 +15,125 @@ const OUTDOOR_PLACE_SLOT = "viewpoint|picnic_site|camp_site";
 const LEISURE_PLACE_SLOT = "leisure|park|garden|nature_reserve|recreation_ground|dog_park|viewpoint|picnic_site|camp_site|pitch|amusement_arcade|playground|bowling_alley|miniature_golf";
 const SHOP_PLACE_SLOT = "shop|mall|clothes|gift|toys|books|electronics";
 
-export const SHORT_DATE_TEMPLATES: TemplateLike[] = [
+const DATE_CATEGORIES: DateCategory[] = ["Food", "Sports", "Outdoors", "Education", "Shopping", "Entertainment"];
+
+const SLOT_CATEGORY_OPTIONS: Record<string, DateCategory[]> = {
+  activity: DATE_CATEGORIES,
+  camp_site: ["Outdoors"],
+  clothes: ["Shopping"],
+  cafe: ["Food"],
+  dessert: ["Food"],
+  dog_park: ["Outdoors"],
+  electronics: ["Shopping"],
+  fast_food: ["Food"],
+  food_court: ["Food"],
+  garden: ["Outdoors"],
+  gift: ["Shopping"],
+  historic: ["Education"],
+  ice_cream: ["Food"],
+  joy: [],
+  leisure: ["Outdoors", "Entertainment"],
+  mall: ["Shopping"],
+  miniature_golf: ["Entertainment"],
+  nature_reserve: ["Outdoors"],
+  picnic_site: ["Outdoors"],
+  playground: ["Entertainment"],
+  pitch: ["Outdoors"],
+  park: ["Outdoors"],
+  recreation_ground: ["Outdoors"],
+  recipe: ["Food"],
+  restaurant: ["Food"],
+  shop: ["Shopping"],
+  toys: ["Shopping"],
+  viewpoint: ["Outdoors"],
+  books: ["Shopping"],
+  bowling_alley: ["Entertainment"],
+  amusement_arcade: ["Entertainment"],
+  tourism: ["Outdoors", "Education", "Entertainment"],
+};
+
+function getCategoriesForSlots(slots: string[]): DateCategory[] {
+  const categories = new Set<DateCategory>();
+
+  for (const slot of slots) {
+    const slotOptions = slot
+      .split("|")
+      .map((value) => value.trim())
+      .filter(Boolean);
+
+    for (const option of slotOptions) {
+      const optionCategories = SLOT_CATEGORY_OPTIONS[option];
+      if (!optionCategories) {
+        continue;
+      }
+
+      for (const category of optionCategories) {
+        categories.add(category);
+      }
+    }
+  }
+
+  if (!categories.size) {
+    return [...DATE_CATEGORIES];
+  }
+
+  return [...categories];
+}
+
+function withCategories(template: TemplateDefinition): TemplateLike {
+  return {
+    ...template,
+    categories: getCategoriesForSlots(template.slots),
+  };
+}
+
+function getAllowedCategoriesForSlot(slot: string): DateCategory[] {
+  const slotOptions = slot
+    .split("|")
+    .map((value) => value.trim())
+    .filter(Boolean);
+
+  const categories = new Set<DateCategory>();
+
+  for (const option of slotOptions) {
+    const optionCategories = SLOT_CATEGORY_OPTIONS[option];
+    if (!optionCategories) {
+      continue;
+    }
+
+    for (const category of optionCategories) {
+      categories.add(category);
+    }
+  }
+
+  return [...categories];
+}
+
+export function templateMatchesSelectedCategories(
+  template: Pick<TemplateLike, "slots">,
+  selectedCategories: string[],
+): boolean {
+  if (!selectedCategories.length) {
+    return true;
+  }
+
+  const selectedCategorySet = new Set(selectedCategories);
+
+  return template.slots.every((slot) => {
+    if (slot === "activity") {
+      return true;
+    }
+
+    const allowedCategories = getAllowedCategoriesForSlot(slot);
+    if (!allowedCategories.length) {
+      return true;
+    }
+
+    return allowedCategories.some((category) => selectedCategorySet.has(category));
+  });
+}
+
+const SHORT_DATE_TEMPLATE_DEFINITIONS: TemplateDefinition[] = [
   { template: `Grab a bite at {${FOOD_PLACE_SLOT}}`, slots: [FOOD_PLACE_SLOT] },
   { template: `Take a walk at {${LEISURE_PLACE_SLOT}}`, slots: [LEISURE_PLACE_SLOT] },
   { template: "{activity}", slots: ["activity"] },
@@ -48,7 +172,9 @@ export const SHORT_DATE_TEMPLATES: TemplateLike[] = [
   },
 ];
 
-export const STANDARD_DATE_TEMPLATES: TemplateLike[] = [
+export const SHORT_DATE_TEMPLATES: TemplateLike[] = SHORT_DATE_TEMPLATE_DEFINITIONS.map(withCategories);
+
+const STANDARD_DATE_TEMPLATE_DEFINITIONS: TemplateDefinition[] = [
   { template: `Start at {${FOOD_PLACE_SLOT}}, then walk at {${LEISURE_PLACE_SLOT}}`, slots: [FOOD_PLACE_SLOT, LEISURE_PLACE_SLOT] },
   {
     template: `{activity}, then grab dessert at {${DESSERT_PLACE_SLOT}}`,
@@ -145,7 +271,9 @@ export const STANDARD_DATE_TEMPLATES: TemplateLike[] = [
   },
 ];
 
-export const LONG_DATE_TEMPLATES: TemplateLike[] = [
+export const STANDARD_DATE_TEMPLATES: TemplateLike[] = STANDARD_DATE_TEMPLATE_DEFINITIONS.map(withCategories);
+
+const LONG_DATE_TEMPLATE_DEFINITIONS: TemplateDefinition[] = [
   {
     template: `Start at {${LEISURE_PLACE_SLOT}}, eat at {${FOOD_PLACE_SLOT}}, {activity}, and finish with {${DESSERT_PLACE_SLOT}}`,
     slots: [LEISURE_PLACE_SLOT, FOOD_PLACE_SLOT, "activity", DESSERT_PLACE_SLOT],
@@ -247,3 +375,5 @@ export const LONG_DATE_TEMPLATES: TemplateLike[] = [
     slots: [OUTDOOR_PLACE_SLOT, SHOP_PLACE_SLOT, LEISURE_PLACE_SLOT, "activity", DESSERT_PLACE_SLOT],
   },
 ];
+
+export const LONG_DATE_TEMPLATES: TemplateLike[] = LONG_DATE_TEMPLATE_DEFINITIONS.map(withCategories);

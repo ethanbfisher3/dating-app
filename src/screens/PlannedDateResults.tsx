@@ -408,6 +408,7 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
       return;
     }
 
+    resetNativeAdGate();
     setImage(IMAGES[Math.floor(Math.random() * IMAGES.length)]);
 
     setPlannerParams({
@@ -823,38 +824,42 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
                 <View style={{ flex: 1 }}>
                   <Text style={{ color: "#4b5b6b", marginBottom: 6 }}>Date Length</Text>
                   <View style={{ flexDirection: "row", gap: 8 }}>
-                    <TextInput
-                      value={draftDateLengthHours}
-                      onChangeText={(text) => setDraftDateLengthHours(sanitizeHourOrMinute(text, 23))}
-                      keyboardType="number-pad"
-                      placeholder="Hours"
-                      onFocus={handleEditInputFocus}
-                      style={{
-                        flex: 1,
-                        borderWidth: 1,
-                        borderColor: "#dce6ef",
-                        borderRadius: 10,
-                        paddingHorizontal: 12,
-                        paddingVertical: 10,
-                        fontSize: 16,
-                      }}
-                    />
-                    <TextInput
-                      value={draftDateLengthMinutes}
-                      onChangeText={(text) => setDraftDateLengthMinutes(sanitizeHourOrMinute(text, 59))}
-                      keyboardType="number-pad"
-                      placeholder="Minutes"
-                      onFocus={handleEditInputFocus}
-                      style={{
-                        flex: 1,
-                        borderWidth: 1,
-                        borderColor: "#dce6ef",
-                        borderRadius: 10,
-                        paddingHorizontal: 12,
-                        paddingVertical: 10,
-                        fontSize: 16,
-                      }}
-                    />
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontSize: 12, fontWeight: "700", color: "#667788", marginBottom: 4 }}>Hours</Text>
+                      <TextInput
+                        value={draftDateLengthHours}
+                        onChangeText={(text) => setDraftDateLengthHours(sanitizeHourOrMinute(text, 23))}
+                        keyboardType="number-pad"
+                        placeholder="0"
+                        onFocus={handleEditInputFocus}
+                        style={{
+                          borderWidth: 1,
+                          borderColor: "#dce6ef",
+                          borderRadius: 10,
+                          paddingHorizontal: 12,
+                          paddingVertical: 10,
+                          fontSize: 16,
+                        }}
+                      />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontSize: 12, fontWeight: "700", color: "#667788", marginBottom: 4 }}>Minutes</Text>
+                      <TextInput
+                        value={draftDateLengthMinutes}
+                        onChangeText={(text) => setDraftDateLengthMinutes(sanitizeHourOrMinute(text, 59))}
+                        keyboardType="number-pad"
+                        placeholder="0"
+                        onFocus={handleEditInputFocus}
+                        style={{
+                          borderWidth: 1,
+                          borderColor: "#dce6ef",
+                          borderRadius: 10,
+                          paddingHorizontal: 12,
+                          paddingVertical: 10,
+                          fontSize: 16,
+                        }}
+                      />
+                    </View>
                   </View>
                 </View>
               </View>
@@ -1223,7 +1228,7 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
           <Text style={{ color: "#9b2226", fontSize: 15, marginBottom: 10 }}>(DEV) Could not load date ideas.</Text>
           {<Text style={{ color: "#9b2226", fontSize: 13, marginBottom: 12 }}>{error}</Text>}
           <TouchableOpacity
-            onPress={refetch}
+            onPress={() => refetch()}
             style={{
               backgroundColor: "#1e90ff",
               borderRadius: 10,

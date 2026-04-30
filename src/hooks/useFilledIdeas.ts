@@ -3,6 +3,7 @@ import type { PlannedDateResultsParams } from "../types/navigation";
 import allRecipes, { Recipe } from "../data/Recipes";
 import type { Activity } from "../data/activities";
 import { getFreeStayInTemplates, IdeaTemplate, LONG_TEMPLATES, SHORT_TEMPLATES, STANDARD_TEMPLATES } from "../data/datePlannerTemplates";
+import { templateMatchesSelectedCategories } from "../data/dateTemplatesCatalog";
 import type { PlaceSummary } from "./usePlacesActivitiesRecipes";
 import { SLOT_TO_PLACE_TYPES } from "src/utils/utils";
 import { usePremium } from "./usePremium";
@@ -109,6 +110,7 @@ function getAllowedTypesForSlot(slot: string): string[] {
 
 function chooseTemplates(params: PlannedDateResultsParams, places: PlaceSummary[], activities: Activity[]): IdeaTemplate[] {
   const duration = getEffectiveDateDurationMinutes(params);
+  const selectedCategories = params.categories || [];
 
   let base: IdeaTemplate[];
   if (duration <= 90) {
@@ -119,11 +121,14 @@ function chooseTemplates(params: PlannedDateResultsParams, places: PlaceSummary[
     base = LONG_TEMPLATES;
   }
 
+  const matchesSelectedCategories = (template: IdeaTemplate) => templateMatchesSelectedCategories(template, selectedCategories);
+
   if (!places.length) {
     const stayInTemplates = getFreeStayInTemplates(duration, activities, params.maxPrice, params.maxDistance);
 
     const noPlaceTemplates = [...base, ...SHORT_TEMPLATES, ...STANDARD_TEMPLATES, ...LONG_TEMPLATES]
       .filter((template): template is IdeaTemplate => Boolean(template))
+      .filter(matchesSelectedCategories)
       .filter((template, index, templates) => {
         if (requiresPlaces(template)) {
           return false;
@@ -136,15 +141,17 @@ function chooseTemplates(params: PlannedDateResultsParams, places: PlaceSummary[
         );
       });
 
-    if (stayInTemplates.length || noPlaceTemplates.length) {
-      return [...stayInTemplates, ...noPlaceTemplates];
+      const filteredStayInTemplates = stayInTemplates.filter(matchesSelectedCategories);
+
+      if (filteredStayInTemplates.length || noPlaceTemplates.length) {
+        return [...filteredStayInTemplates, ...noPlaceTemplates];
     }
 
     // Fall back to the activity/recipe-only templates from SHORT_TEMPLATES
-    return SHORT_TEMPLATES.filter((t) => !requiresPlaces(t));
+      return SHORT_TEMPLATES.filter((t) => !requiresPlaces(t) && matchesSelectedCategories(t));
   }
 
-  return base;
+    return base.filter(matchesSelectedCategories);
 }
 
 function getPlaceCandidatesBySlotType(slot: string, places: PlaceSummary[]): PlaceSummary[] {

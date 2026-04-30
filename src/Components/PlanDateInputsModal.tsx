@@ -113,7 +113,7 @@ export default function PlanDateInputsModal({
                 marginBottom: 12,
               }}
             >
-              Plan Date
+              Generate Date Ideas
             </Text>
 
             <Text style={{ color: "#4b5b6b", marginBottom: 4 }}>Date</Text>
@@ -356,36 +356,40 @@ export default function PlanDateInputsModal({
                     gap: 8,
                   }}
                 >
-                  <TextInput
-                    value={dateLengthHours}
-                    onChangeText={onChangeDateLengthHours}
-                    keyboardType="number-pad"
-                    placeholder="Hours"
-                    style={{
-                      flex: 1,
-                      borderWidth: 1,
-                      borderColor: "#dce6ef",
-                      borderRadius: 10,
-                      paddingHorizontal: 12,
-                      paddingVertical: 10,
-                      fontSize: 16,
-                    }}
-                  />
-                  <TextInput
-                    value={dateLengthMinutes}
-                    onChangeText={onChangeDateLengthMinutes}
-                    keyboardType="number-pad"
-                    placeholder="Minutes"
-                    style={{
-                      flex: 1,
-                      borderWidth: 1,
-                      borderColor: "#dce6ef",
-                      borderRadius: 10,
-                      paddingHorizontal: 12,
-                      paddingVertical: 10,
-                      fontSize: 16,
-                    }}
-                  />
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontSize: 12, fontWeight: "700", color: "#667788", marginBottom: 4 }}>Hours</Text>
+                    <TextInput
+                      value={dateLengthHours}
+                      onChangeText={onChangeDateLengthHours}
+                      keyboardType="number-pad"
+                      placeholder="0"
+                      style={{
+                        borderWidth: 1,
+                        borderColor: "#dce6ef",
+                        borderRadius: 10,
+                        paddingHorizontal: 12,
+                        paddingVertical: 10,
+                        fontSize: 16,
+                      }}
+                    />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontSize: 12, fontWeight: "700", color: "#667788", marginBottom: 4 }}>Minutes</Text>
+                    <TextInput
+                      value={dateLengthMinutes}
+                      onChangeText={onChangeDateLengthMinutes}
+                      keyboardType="number-pad"
+                      placeholder="0"
+                      style={{
+                        borderWidth: 1,
+                        borderColor: "#dce6ef",
+                        borderRadius: 10,
+                        paddingHorizontal: 12,
+                        paddingVertical: 10,
+                        fontSize: 16,
+                      }}
+                    />
+                  </View>
                 </View>
               </View>
             </View>
