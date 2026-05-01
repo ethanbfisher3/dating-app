@@ -1,10 +1,9 @@
 Add Revenuecat api keys for apple
 
-Have the app remember areas that are local, maybe have the app query overpass the moment it's opened and the location is available just to have the information
-
 Next update:
 More recipes
 More activities
+Let the user drop a location to plan the dates from instead of using their location
 Incorporate pictures on the date results page / Restyle that page
 More date templates/Fix current date templates, add more activities, and recipes, more categories/more specific categories (like dropdowns from food > dessert, lunch, etc)
 
