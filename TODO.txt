@@ -14,6 +14,7 @@ Test for if products don't load (test if the user has premium and they aren't co
 Maybe:
 Search button in the saved ideas
 Add a spot for the user to add comments?
+Text box for specific ideas ('i want to do something outdoorsy, but not a hike' or 'i want something that we can talk while doing something')
 
 
 Eventually:
