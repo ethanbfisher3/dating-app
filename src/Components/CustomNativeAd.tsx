@@ -29,6 +29,7 @@ export default function CustomNativeAd({ onLoaded, onError }: CustomNativeAdProp
   const [connectionChecked, setConnectionChecked] = useState(false);
   const readyReportedRef = useRef(false);
   const loadTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const supportsNativeAds = Platform.OS === "android";
 
   const clearLoadTimeout = () => {
     if (loadTimeoutRef.current) {
@@ -44,6 +45,12 @@ export default function CustomNativeAd({ onLoaded, onError }: CustomNativeAdProp
   };
 
   useEffect(() => {
+    if (!supportsNativeAds) {
+      setConnectionChecked(true);
+      setShowFallback(true);
+      return;
+    }
+
     let isMounted = true;
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 1600);
@@ -77,7 +84,7 @@ export default function CustomNativeAd({ onLoaded, onError }: CustomNativeAdProp
       controller.abort();
       clearTimeout(timeoutId);
     };
-  }, []);
+  }, [supportsNativeAds]);
 
   useEffect(() => {
     if (readyReportedRef.current) {
@@ -112,6 +119,10 @@ export default function CustomNativeAd({ onLoaded, onError }: CustomNativeAdProp
   }, [connectionChecked, nativeAd, showFallback]);
 
   useEffect(() => {
+    if (!supportsNativeAds) {
+      return;
+    }
+
     let isMounted = true;
 
     if (!AD_UNIT_ID) {
@@ -158,24 +169,28 @@ export default function CustomNativeAd({ onLoaded, onError }: CustomNativeAdProp
         return null;
       });
     };
-  }, [connectionChecked, showFallback]);
+  }, [connectionChecked, showFallback, supportsNativeAds]);
 
-  if (showFallback) {
+  if (showFallback || !supportsNativeAds) {
     return (
       <Pressable
-        accessibilityRole="link"
-        onPress={() =>
+        accessibilityRole={supportsNativeAds ? "link" : undefined}
+        onPress={() => {
+          if (!supportsNativeAds) {
+            return;
+          }
+
           Linking.openURL(PLAY_STORE_URL).catch((error) => {
             console.warn("[CustomNativeAd] Failed to open Play Store.", error);
-          })
-        }
+          });
+        }}
         style={styles.fallbackContainer}
       >
         <View style={styles.fallbackHeaderRow}>
           <View style={styles.adBadge}>
             <Text style={styles.adBadgeText}>Ad</Text>
           </View>
-          <Text style={styles.fallbackLabel}>Sponsored</Text>
+          <Text style={styles.fallbackLabel}>{supportsNativeAds ? "Sponsored" : "Unavailable on iOS"}</Text>
         </View>
 
         <View style={styles.fallbackContentRow}>
@@ -185,14 +200,17 @@ export default function CustomNativeAd({ onLoaded, onError }: CustomNativeAdProp
               Uncrossed: Untangle Puzzle
             </Text>
             <Text style={styles.fallbackBody} numberOfLines={3}>
-              Try a relaxing puzzle challenge from the same creator. Tap to open the Google Play Store.
+              Try a relaxing puzzle challenge from the same creator.
+              {supportsNativeAds ? " Tap to open the Google Play Store." : " Ads are disabled on iOS to keep the screen stable."}
             </Text>
           </View>
         </View>
 
-        <View style={styles.ctaButton}>
-          <Text style={styles.ctaText}>Open in Google Play</Text>
-        </View>
+        {supportsNativeAds ? (
+          <View style={styles.ctaButton}>
+            <Text style={styles.ctaText}>Open in Google Play</Text>
+          </View>
+        ) : null}
       </Pressable>
     );
   }
