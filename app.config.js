@@ -22,6 +22,7 @@ export default {
         },
         NSLocalNetworkUsageDescription: "Allow local network access to connect to your nearby date planning server during development.",
       },
+      "bundleIdentifier": "com.ethanbfisher3.datingapp",
     },
 
     extra: {
@@ -42,6 +43,7 @@ export default {
         {
           androidAppId: "ca-app-pub-9592701510571371~4266549309",
           iosAppId: "ca-app-pub-9592701510571371~1448814278",
+          ios_app_id: "ca-app-pub-9592701510571371~1448814278",
           userTrackingUsageDescription: "This identifier will be used to deliver personalized ads to you.",
         },
       ],
