@@ -23,6 +23,7 @@ export default {
         NSLocalNetworkUsageDescription: "Allow local network access to connect to your nearby date planning server during development.",
       },
       "bundleIdentifier": "com.ethanbfisher3.datingapp",
+      "buildNumber": "1",
     },
 
     extra: {
