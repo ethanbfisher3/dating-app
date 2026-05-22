@@ -7,6 +7,8 @@ More recipes
 More activities
 Incorporate pictures on the date results page / Restyle that page
 More date templates/Fix current date templates, add more activities, and recipes, more categories/more specific categories (like dropdowns from food > dessert, lunch, etc)
+Info bubbles under the things in the date idea generator modal
+Let the user enter a zip code if they don't want their location
 
 Test:
 Test for if products don't load (test if the user has premium and they aren't connected to the internet)
