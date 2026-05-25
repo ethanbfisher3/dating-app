@@ -141,17 +141,17 @@ function chooseTemplates(params: PlannedDateResultsParams, places: PlaceSummary[
         );
       });
 
-      const filteredStayInTemplates = stayInTemplates.filter(matchesSelectedCategories);
+    const filteredStayInTemplates = stayInTemplates.filter(matchesSelectedCategories);
 
-      if (filteredStayInTemplates.length || noPlaceTemplates.length) {
-        return [...filteredStayInTemplates, ...noPlaceTemplates];
+    if (filteredStayInTemplates.length || noPlaceTemplates.length) {
+      return [...filteredStayInTemplates, ...noPlaceTemplates];
     }
 
     // Fall back to the activity/recipe-only templates from SHORT_TEMPLATES
-      return SHORT_TEMPLATES.filter((t) => !requiresPlaces(t) && matchesSelectedCategories(t));
+    return SHORT_TEMPLATES.filter((t) => !requiresPlaces(t) && matchesSelectedCategories(t));
   }
 
-    return base.filter(matchesSelectedCategories);
+  return base.filter(matchesSelectedCategories);
 }
 
 function getPlaceCandidatesBySlotType(slot: string, places: PlaceSummary[]): PlaceSummary[] {
@@ -361,7 +361,7 @@ function estimateTravelMinutesBetween(from: PlaceSummary | null, to: PlaceSummar
   return Math.max(5, Math.min(90, Math.round(minutes)));
 }
 
-function estimateTravelMinutesFromUserLocation(
+export function estimateTravelMinutesFromUserLocation(
   userLocation: PlannedDateResultsParams["userLocation"],
   place: PlaceSummary | null,
 ): number | null {

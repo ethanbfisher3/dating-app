@@ -53,7 +53,7 @@ export default function SavedIdeas({ navigation }: { navigation: AppNavigation }
       contentContainerStyle={{
         padding: 24,
         paddingTop: insets.top,
-        backgroundColor: "#fafbfc",
+        backgroundColor: "transparent",
       }}
     >
       <View

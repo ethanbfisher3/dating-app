@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import { Alert, Image, KeyboardAvoidingView, Platform, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import * as Location from "expo-location";
 import { Ionicons } from "@expo/vector-icons";
@@ -9,7 +9,7 @@ import { usePremium } from "../hooks/usePremium";
 import { addPlannedDate } from "../data/plannedDatesStore";
 import { fetchPlacesFromOverpassWithCache } from "../hooks/usePlacesActivitiesRecipes";
 import PaywallModal from "../Components/PaywallModal";
-import PlanDateInputsModal from "../Components/PlanDateInputsModal";
+import EditInputsModal from "../Components/EditInputsModal";
 import usePurchases from "src/hooks/usePurchases";
 import PageInfoModal from "../Components/PageInfoModal";
 
@@ -19,6 +19,7 @@ export default function PlanADate({ navigation }: { navigation: AppNavigation })
   const insets = useSafeAreaInsets();
 
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const editModalScrollRef = useRef<ScrollView>(null);
   const [maxPrice, setMaxPrice] = useState<string>("20");
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -214,7 +215,7 @@ export default function PlanADate({ navigation }: { navigation: AppNavigation })
           padding: 24,
           paddingTop: insets.top,
           paddingBottom: 48,
-          backgroundColor: "#fafbfc",
+          backgroundColor: "transparent",
           flexGrow: 1,
         }}
       >
@@ -363,31 +364,24 @@ export default function PlanADate({ navigation }: { navigation: AppNavigation })
           )
         ) : null}
 
-        <PlanDateInputsModal
+        <EditInputsModal
           visible={isModalVisible}
-          showDatePicker={showDatePicker}
-          selectedDate={selectedDate}
-          maxPrice={maxPrice}
-          startHour12={startHour12}
-          startPeriod={startPeriod}
-          endHour12={endHour12}
-          endPeriod={endPeriod}
-          dateLengthHours={dateLengthHours}
-          dateLengthMinutes={dateLengthMinutes}
-          maxDistance={maxDistance}
-          categoriesChecked={categoriesChecked}
-          selectedCategoriesCount={selectedCategoriesCount}
-          isGeneratingIdeas={isGeneratingIdeas}
-          serverTarget={serverTarget}
-          onClose={() => {
+          onRequestClose={() => {
             setShowDatePicker(false);
             setIsModalVisible(false);
           }}
-          onShowDatePicker={() => setShowDatePicker(true)}
-          onHideDatePicker={() => setShowDatePicker(false)}
-          onDateChange={(value) => setSelectedDate(value)}
-          onChangeMaxPrice={setMaxPrice}
-          onChangeStartHour12={(text) => {
+          editModalScrollRef={editModalScrollRef}
+          showEditDatePicker={showDatePicker}
+          setShowEditDatePicker={(v: boolean) => (v ? setShowDatePicker(true) : setShowDatePicker(false))}
+          draftSelectedDate={selectedDate ? selectedDate.toISOString().slice(0, 10) : ""}
+          setDraftSelectedDate={(iso) => {
+            if (!iso) return;
+            const parsed = new Date(`${iso}T12:00:00`);
+            setSelectedDate(parsed);
+          }}
+          draftDateValue={selectedDate || new Date()}
+          draftStartHour12={startHour12}
+          setDraftStartHour12={(text: string) => {
             if (text.trim() === "") {
               setStartHour12("");
               return;
@@ -399,7 +393,10 @@ export default function PlanADate({ navigation }: { navigation: AppNavigation })
             }
             setStartHour12(String(clampHour12(parsed)));
           }}
-          onChangeEndHour12={(text) => {
+          draftStartPeriod={startPeriod}
+          setDraftStartPeriod={setStartPeriod}
+          draftEndHour12={endHour12}
+          setDraftEndHour12={(text: string) => {
             if (text.trim() === "") {
               setEndHour12("");
               return;
@@ -411,13 +408,21 @@ export default function PlanADate({ navigation }: { navigation: AppNavigation })
             }
             setEndHour12(String(clampHour12(parsed)));
           }}
-          onSetStartPeriod={setStartPeriod}
-          onSetEndPeriod={setEndPeriod}
-          onChangeDateLengthHours={(text) => setDateLengthHours(sanitizeHourOrMinute(text, 23))}
-          onChangeDateLengthMinutes={(text) => setDateLengthMinutes(sanitizeHourOrMinute(text, 59))}
-          onChangeMaxDistance={setMaxDistance}
-          onToggleCategory={toggleCategory}
-          onSubmit={handleGenerateIdeas}
+          draftEndPeriod={endPeriod}
+          setDraftEndPeriod={setEndPeriod}
+          draftDateLengthHours={dateLengthHours}
+          setDraftDateLengthHours={(text: string) => setDateLengthHours(sanitizeHourOrMinute(text, 23))}
+          draftDateLengthMinutes={dateLengthMinutes}
+          setDraftDateLengthMinutes={(text: string) => setDateLengthMinutes(sanitizeHourOrMinute(text, 59))}
+          draftMaxPrice={maxPrice}
+          setDraftMaxPrice={setMaxPrice}
+          draftMaxDistance={maxDistance}
+          setDraftMaxDistance={setMaxDistance}
+          draftCategoriesChecked={categoriesChecked}
+          toggleDraftCategory={toggleCategory}
+          editError={null}
+          applyEditsAndRegenerate={handleGenerateIdeas}
+          handleEditInputFocus={() => {}}
         />
 
         <PaywallModal visible={paywallVisible} onClose={() => setPaywallVisible(false)} reason="general" />

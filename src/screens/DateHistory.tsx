@@ -173,14 +173,9 @@ export default function DateHistoryScreen({ navigation }: { navigation: AppNavig
       return;
     }
 
-    if (!moneySpent.trim()) {
-      Alert.alert("Error", "Please enter the amount spent");
-      return;
-    }
-
     const moneyValue = parseFloat(moneySpent);
-    if (isNaN(moneyValue)) {
-      Alert.alert("Error", "Please enter a valid number for money spent");
+    if (moneyValue < 0 && moneySpent.trim() !== "") {
+      Alert.alert("Error", "Money spent cannot be negative");
       return;
     }
 
@@ -200,7 +195,7 @@ export default function DateHistoryScreen({ navigation }: { navigation: AppNavig
       imageUri: dateImageUri,
       whoWentWith: whoWentWith.trim(),
       whatYouDid: whatYouDid.trim(),
-      moneySpent: moneyValue,
+      moneySpent: Number.isNaN(moneyValue) ? -1 : moneyValue,
       rating,
       whatYouLiked: whatYouLiked.trim(),
       whatYouLearned: whatYouLearned.trim(),
@@ -334,10 +329,12 @@ export default function DateHistoryScreen({ navigation }: { navigation: AppNavig
                       </View>
                     ) : null}
 
-                    <View style={styles.section}>
-                      <Text style={styles.sectionLabel}>Money Spent</Text>
-                      <Text style={styles.sectionText}>${date.moneySpent.toFixed(2)}</Text>
-                    </View>
+                    {date.moneySpent !== -1 && (
+                      <View style={styles.section}>
+                        <Text style={styles.sectionLabel}>Money Spent</Text>
+                        <Text style={styles.sectionText}>${date.moneySpent.toFixed(2)}</Text>
+                      </View>
+                    )}
 
                     {date.rating != null && (
                       <View style={styles.section}>
@@ -500,7 +497,7 @@ export default function DateHistoryScreen({ navigation }: { navigation: AppNavig
               </View>
 
               <View style={styles.formSection}>
-                <Text style={styles.formLabel}>How much did you spend? *</Text>
+                <Text style={styles.formLabel}>How much did you spend?</Text>
                 <View style={styles.inputWithPrefix}>
                   <Text style={styles.currencyPrefix}>$</Text>
                   <TextInput
@@ -593,7 +590,7 @@ export default function DateHistoryScreen({ navigation }: { navigation: AppNavig
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fafbfc",
+    backgroundColor: "transparent",
   },
   scrollContent: {
     paddingBottom: 24,
