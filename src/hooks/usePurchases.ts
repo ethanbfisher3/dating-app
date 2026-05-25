@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import Purchases, { PurchasesPackage } from "react-native-purchases";
-import { initializeRevenueCat, PREMIUM_PRODUCT_ID } from "src/data/iapConfig";
+import { initializeRevenueCat, PREMIUM_PRODUCT_IDS } from "src/data/iapConfig";
 
 let cachedLifetimePremium: PurchasesPackage["product"] | null = null;
 let hasLoadedOfferings = false;
@@ -40,10 +40,8 @@ const loadLifetimePremiumProduct = async (): Promise<PurchasesPackage["product"]
         const allPackages = allOfferings.flatMap((offering) => offering.availablePackages || []);
 
         const matchingPackage =
-          allPackages.find((pkg) => pkg.product.identifier === PREMIUM_PRODUCT_ID) ||
-          allPackages.find((pkg) => pkg.identifier === PREMIUM_PRODUCT_ID) ||
-          offerings.current?.availablePackages?.[0] ||
-          allPackages[0] ||
+          allPackages.find((pkg) => PREMIUM_PRODUCT_IDS.includes(pkg.product.identifier as (typeof PREMIUM_PRODUCT_IDS)[number])) ||
+          allPackages.find((pkg) => PREMIUM_PRODUCT_IDS.includes(pkg.identifier as (typeof PREMIUM_PRODUCT_IDS)[number])) ||
           null;
 
         cachedLifetimePremium = (matchingPackage?.product as PurchasesPackage["product"]) || null;

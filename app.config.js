@@ -3,12 +3,12 @@ export default {
     name: "DateCraft: Date Planner",
     slug: "byu-dating-native",
     version: "1.0.0",
-    icon: "./src/assets/images/date_planner_icon.png",
+    icon: "./src/assets/images/girl_icon.png",
     backgroundColor: "#FFFFFF",
 
     splash: {
       backgroundColor: "#FFFFFF",
-      image: "./src/assets/images/date_planner_icon.png",
+      image: "./src/assets/images/girl_icon.png",
     },
 
     android: {
@@ -22,8 +22,8 @@ export default {
         },
         NSLocalNetworkUsageDescription: "Allow local network access to connect to your nearby date planning server during development.",
       },
-      "bundleIdentifier": "com.ethanbfisher3.datingapp",
-      "buildNumber": "1",
+      bundleIdentifier: "com.ethanbfisher3.datingapp",
+      buildNumber: "1",
     },
 
     extra: {

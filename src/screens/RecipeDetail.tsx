@@ -85,7 +85,7 @@ export default function RecipeDetail({ route, navigation }: AppScreenProps<"Reci
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fafbfc",
+    backgroundColor: "transparent",
   },
   content: {
     paddingBottom: 24,

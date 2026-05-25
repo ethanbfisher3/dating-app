@@ -161,7 +161,7 @@ export default function DateCalendar({ navigation }: { navigation?: AppNavigatio
         paddingTop: 12,
         paddingHorizontal: 24,
         paddingBottom: 48,
-        backgroundColor: "#fafbfc",
+        backgroundColor: "transparent",
       }}
     >
       <View
