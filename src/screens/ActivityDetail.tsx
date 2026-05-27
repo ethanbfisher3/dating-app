@@ -95,7 +95,7 @@ export default function ActivityDetail({ route, navigation }: AppScreenProps<"Ac
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fafbfc",
+    backgroundColor: "transparent",
   },
   content: {
     padding: 24,
@@ -104,7 +104,7 @@ const styles = StyleSheet.create({
   missingContainer: {
     flex: 1,
     padding: 24,
-    backgroundColor: "#fafbfc",
+    backgroundColor: "transparent",
   },
   title: {
     fontWeight: "900",

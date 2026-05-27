@@ -1,21 +1,25 @@
 Add Revenuecat api keys for apple
 
-Have the app remember areas that are local, maybe have the app query overpass the moment it's opened and the location is available just to have the information
-
 Next update:
 More recipes
 More activities
-Incorporate pictures on the date results page / Restyle that page
+Fix BottomBackgroundArt file
 More date templates/Fix current date templates, add more activities, and recipes, more categories/more specific categories (like dropdowns from food > dessert, lunch, etc)
+Fix locations sending the user's map to a place far away
+Build the date calendar page a little more. Include summaries (you've spent x amount of money this month, you've been on x dates with sarah, etc.). Fix the dates showing up wrong on the calendar (they showed up as the 23rd for Jacob when they should have been the 22nd)
+Profile for girls or guys (information about the dates you've been on with a girl, how much money you've spent on a girl, how well the dates went with the girl, etc.)
+
 
 Test:
 Test for if products don't load (test if the user has premium and they aren't connected to the internet)
 
-
 Maybe:
+Let the user enter a zip code if they don't want their location
 Search button in the saved ideas
 Add a spot for the user to add comments?
 Text box for specific ideas ('i want to do something outdoorsy, but not a hike' or 'i want something that we can talk while doing something')
+Let the user drop a location to plan the dates from instead of using their location
+Incorporate pictures on the date results page / Restyle that page
 
 
 Eventually:

@@ -3,8 +3,9 @@ import { Platform } from "react-native";
 import Constants from "expo-constants";
 import { premiumStore } from "./premiumStore";
 
-// Product ID for your one-time purchase (set up in RevenueCat dashboard)
-export const PREMIUM_PRODUCT_ID = "lifetime_premium";
+// Product IDs for the lifetime purchase in RevenueCat. The test store and Play Store use different ids.
+export const PREMIUM_PRODUCT_IDS = ["unlimited_premium_lifetime_date_planner", "lifetime_premium"] as const;
+export const PREMIUM_PRODUCT_ID = PREMIUM_PRODUCT_IDS[0];
 
 // Entitlement ID to check (set up in RevenueCat dashboard)
 export const PREMIUM_ENTITLEMENT_ID = "EthDog GameDev Pro";
@@ -22,7 +23,7 @@ export type PurchasePremiumResult =
 function isExpoGoRuntime(): boolean {
   const appOwnership = (Constants as any)?.appOwnership;
   const executionEnvironment = (Constants as any)?.executionEnvironment;
-  return appOwnership === "expo" || executionEnvironment === "storeClient";
+  return __DEV__ || appOwnership === "expo" || executionEnvironment === "storeClient";
 }
 
 function isTestStoreApiKey(apiKey: string): boolean {
@@ -43,10 +44,8 @@ async function findPremiumPackage() {
   const allPackages = allOfferings.flatMap((offering) => offering.availablePackages || []);
 
   const matchingPackage =
-    allPackages.find((pkg) => pkg.product.identifier === PREMIUM_PRODUCT_ID) ||
-    allPackages.find((pkg) => pkg.identifier === PREMIUM_PRODUCT_ID) ||
-    offerings.current?.availablePackages?.[0] ||
-    allPackages[0] ||
+    allPackages.find((pkg) => PREMIUM_PRODUCT_IDS.includes(pkg.product.identifier as (typeof PREMIUM_PRODUCT_IDS)[number])) ||
+    allPackages.find((pkg) => PREMIUM_PRODUCT_IDS.includes(pkg.identifier as (typeof PREMIUM_PRODUCT_IDS)[number])) ||
     null;
 
   return matchingPackage;
@@ -176,7 +175,10 @@ export async function purchasePremium(): Promise<PurchasePremiumResult> {
       ...(result.customerInfo.allPurchasedProductIdentifiers || []),
     ].filter(Boolean);
 
-    if (purchasedProductIds.includes(PREMIUM_PRODUCT_ID) || purchasedProductIds.includes(premiumPackage.product.identifier)) {
+    if (
+      purchasedProductIds.some((productId) => PREMIUM_PRODUCT_IDS.includes(productId as (typeof PREMIUM_PRODUCT_IDS)[number])) ||
+      PREMIUM_PRODUCT_IDS.includes(premiumPackage.product.identifier as (typeof PREMIUM_PRODUCT_IDS)[number])
+    ) {
       await premiumStore.unlockPremium();
       return { status: "success" };
     }

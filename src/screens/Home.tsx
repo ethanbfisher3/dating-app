@@ -39,7 +39,7 @@ export default function Info({ goToTab }) {
       contentContainerStyle={{
         padding: 24,
         paddingTop: insets.top,
-        backgroundColor: "#fafbfc",
+        backgroundColor: "transparent",
       }}
     >
       <Text

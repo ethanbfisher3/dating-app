@@ -13,9 +13,14 @@ import {
   View,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import EditInputsModal from "../Components/EditInputsModal";
 import type { AppScreenProps, PlannedDateResultsParams } from "../types/navigation";
 import useDatePlannerIdeas, { PlaceSummary } from "../hooks/useDatePlannerIdeas";
-import useFilledIdeas, { estimateTravelMinutesBetween, getCandidatesForSlot } from "../hooks/useFilledIdeas";
+import useFilledIdeas, {
+  estimateTravelMinutesBetween,
+  estimateTravelMinutesFromUserLocation,
+  getCandidatesForSlot,
+} from "../hooks/useFilledIdeas";
 import { saveDateIdea, canSaveIdea } from "../data/savedIdeasStore";
 import { usePremium } from "../hooks/usePremium";
 import PaywallModal from "../Components/PaywallModal";
@@ -203,11 +208,21 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
       setModifiedIdeas((prev) => {
         const newMap = new Map(prev);
         const ideaMods = newMap.get(ideaIndex) || {};
+        const updatedFirstPlace = updatedSchedule[0]?.place ?? null;
+        const updatedLastPlace = updatedSchedule[updatedSchedule.length - 1]?.place ?? null;
+        const updatedCommuteToFirstMinutes =
+          estimateTravelMinutesFromUserLocation(plannerParams.userLocation, updatedFirstPlace) ??
+          (updatedFirstPlace?.sourceKind === "place" ? 10 : 0);
+        const updatedCommuteFromLastMinutes =
+          estimateTravelMinutesFromUserLocation(plannerParams.userLocation, updatedLastPlace) ??
+          (updatedLastPlace?.sourceKind === "place" ? 10 : 0);
         newMap.set(ideaIndex, {
           ...ideaMods,
           schedule: updatedSchedule,
           filledTemplate: updatedFilledTemplate,
           places: updatedPlaces,
+          commuteToFirstMinutes: updatedCommuteToFirstMinutes || null,
+          commuteFromLastMinutes: updatedCommuteFromLastMinutes || null,
         });
         return newMap;
       });
@@ -220,9 +235,8 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
     }
   };
 
-  const { places, cachedPlaces, allCachedPlaces, recipes, activities, sourceFile, isLoading, error, refetch } = useDatePlannerIdeas(
-    plannerParams,
-  );
+  const { places, cachedPlaces, allCachedPlaces, recipes, activities, sourceFile, isLoading, error, refetch } =
+    useDatePlannerIdeas(plannerParams);
 
   const startNativeAdHoldTimer = () => {
     setNativeAdDisplayComplete(false);
@@ -509,7 +523,7 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
       contentContainerStyle={{
         padding: 24,
         paddingTop: 0,
-        backgroundColor: "#fafbfc",
+        backgroundColor: "transparent",
       }}
     >
       <Text
@@ -543,7 +557,8 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
             color: "darkorange",
           }}
         >
-          No places found nearby. Date ideas won't include any travel
+          No places found nearby. Date ideas won't include any travel. You may need to try generating again or increasing the distance
+          filter in edit inputs.
         </Text>
       )}
 
@@ -579,415 +594,40 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
         <Text style={{ color: "#fff", fontWeight: "700", fontSize: 16 }}>Regenerate</Text>
       </TouchableOpacity>
 
-      <Modal
+      <EditInputsModal
         visible={isEditModalVisible}
-        transparent
-        animationType="fade"
         onRequestClose={() => {
           setShowEditDatePicker(false);
           setIsEditModalVisible(false);
         }}
-      >
-        <KeyboardAvoidingView
-          style={{
-            flex: 1,
-            backgroundColor: "rgba(0,0,0,0.35)",
-            justifyContent: "center",
-            padding: 20,
-          }}
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          keyboardVerticalOffset={Platform.OS === "ios" ? 24 : 0}
-        >
-          <View
-            style={{
-              backgroundColor: "#fff",
-              borderRadius: 12,
-              borderWidth: 1,
-              borderColor: "#dce6ef",
-              maxHeight: "88%",
-              overflow: "hidden",
-            }}
-          >
-            <ScrollView
-              ref={editModalScrollRef}
-              showsVerticalScrollIndicator
-              contentContainerStyle={{ padding: 16 }}
-              keyboardShouldPersistTaps="handled"
-              keyboardDismissMode="interactive"
-            >
-              <Text
-                style={{
-                  fontSize: 18,
-                  fontWeight: "800",
-                  color: "#1f2d3d",
-                  marginBottom: 12,
-                }}
-              >
-                Edit Inputs
-              </Text>
-
-              <Text style={{ color: "#4b5b6b", marginBottom: 4 }}>Date</Text>
-              <TouchableOpacity
-                onPress={() => setShowEditDatePicker(true)}
-                style={{
-                  padding: 12,
-                  borderWidth: 2,
-                  borderColor: "#1e90ff",
-                  borderRadius: 10,
-                  marginBottom: 12,
-                  backgroundColor: "#fff",
-                }}
-              >
-                <Text style={{ fontSize: 16, color: "#1a1a1a" }}>{draftSelectedDate}</Text>
-              </TouchableOpacity>
-
-              {showEditDatePicker ? (
-                <DateTimePicker
-                  value={draftDateValue}
-                  mode="date"
-                  display={Platform.OS === "ios" ? "spinner" : "default"}
-                  onChange={(event, value) => {
-                    if (Platform.OS !== "ios") {
-                      setShowEditDatePicker(false);
-                    }
-
-                    if (!value) {
-                      return;
-                    }
-
-                    const year = value.getFullYear();
-                    const month = String(value.getMonth() + 1).padStart(2, "0");
-                    const day = String(value.getDate()).padStart(2, "0");
-                    setDraftSelectedDate(`${year}-${month}-${day}`);
-                  }}
-                />
-              ) : null}
-
-              <Text
-                style={{
-                  marginBottom: 10,
-                  fontSize: 16,
-                  fontWeight: "600",
-                  color: "#2c3e50",
-                }}
-              >
-                Time Window
-              </Text>
-
-              <View style={{ flexDirection: "row", gap: 12, marginBottom: 12 }}>
-                <View style={{ flex: 1 }}>
-                  <Text
-                    style={{
-                      fontSize: 14,
-                      fontWeight: "600",
-                      color: "#555",
-                      marginBottom: 6,
-                    }}
-                  >
-                    Start Hour
-                  </Text>
-                  <TextInput
-                    value={draftStartHour12}
-                    onChangeText={setDraftStartHour12}
-                    keyboardType="number-pad"
-                    onFocus={handleEditInputFocus}
-                    style={{
-                      borderWidth: 1,
-                      borderColor: "#dce6ef",
-                      borderRadius: 10,
-                      paddingHorizontal: 12,
-                      paddingVertical: 10,
-                      fontSize: 16,
-                    }}
-                  />
-                </View>
-
-                <View style={{ width: 96 }}>
-                  <Text
-                    style={{
-                      fontSize: 14,
-                      fontWeight: "600",
-                      color: "#555",
-                      marginBottom: 6,
-                    }}
-                  >
-                    AM/PM
-                  </Text>
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      borderWidth: 1,
-                      borderColor: "#dce6ef",
-                      borderRadius: 10,
-                      overflow: "hidden",
-                    }}
-                  >
-                    {(["AM", "PM"] as const).map((period) => (
-                      <TouchableOpacity
-                        key={`start-${period}`}
-                        onPress={() => setDraftStartPeriod(period)}
-                        style={{
-                          flex: 1,
-                          paddingVertical: 10,
-                          alignItems: "center",
-                          backgroundColor: draftStartPeriod === period ? "#1e90ff" : "#fff",
-                        }}
-                      >
-                        <Text
-                          style={{
-                            fontWeight: "700",
-                            color: draftStartPeriod === period ? "#fff" : "#1f2d3d",
-                          }}
-                        >
-                          {period}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                </View>
-              </View>
-
-              <View style={{ flexDirection: "row", gap: 12, marginBottom: 12 }}>
-                <View style={{ flex: 1 }}>
-                  <Text
-                    style={{
-                      fontSize: 14,
-                      fontWeight: "600",
-                      color: "#555",
-                      marginBottom: 6,
-                    }}
-                  >
-                    End Hour
-                  </Text>
-                  <TextInput
-                    value={draftEndHour12}
-                    onChangeText={setDraftEndHour12}
-                    keyboardType="number-pad"
-                    onFocus={handleEditInputFocus}
-                    style={{
-                      borderWidth: 1,
-                      borderColor: "#dce6ef",
-                      borderRadius: 10,
-                      paddingHorizontal: 12,
-                      paddingVertical: 10,
-                      fontSize: 16,
-                    }}
-                  />
-                </View>
-
-                <View style={{ width: 96 }}>
-                  <Text
-                    style={{
-                      fontSize: 14,
-                      fontWeight: "600",
-                      color: "#555",
-                      marginBottom: 6,
-                    }}
-                  >
-                    AM/PM
-                  </Text>
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      borderWidth: 1,
-                      borderColor: "#dce6ef",
-                      borderRadius: 10,
-                      overflow: "hidden",
-                    }}
-                  >
-                    {(["AM", "PM"] as const).map((period) => (
-                      <TouchableOpacity
-                        key={`end-${period}`}
-                        onPress={() => setDraftEndPeriod(period)}
-                        style={{
-                          flex: 1,
-                          paddingVertical: 10,
-                          alignItems: "center",
-                          backgroundColor: draftEndPeriod === period ? "#1e90ff" : "#fff",
-                        }}
-                      >
-                        <Text
-                          style={{
-                            fontWeight: "700",
-                            color: draftEndPeriod === period ? "#fff" : "#1f2d3d",
-                          }}
-                        >
-                          {period}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                </View>
-              </View>
-
-              <View style={{ flexDirection: "row", gap: 12, marginBottom: 12 }}>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ color: "#4b5b6b", marginBottom: 6 }}>Date Length</Text>
-                  <View style={{ flexDirection: "row", gap: 8 }}>
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ fontSize: 12, fontWeight: "700", color: "#667788", marginBottom: 4 }}>Hours</Text>
-                      <TextInput
-                        value={draftDateLengthHours}
-                        onChangeText={(text) => setDraftDateLengthHours(sanitizeHourOrMinute(text, 23))}
-                        keyboardType="number-pad"
-                        placeholder="0"
-                        onFocus={handleEditInputFocus}
-                        style={{
-                          borderWidth: 1,
-                          borderColor: "#dce6ef",
-                          borderRadius: 10,
-                          paddingHorizontal: 12,
-                          paddingVertical: 10,
-                          fontSize: 16,
-                        }}
-                      />
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ fontSize: 12, fontWeight: "700", color: "#667788", marginBottom: 4 }}>Minutes</Text>
-                      <TextInput
-                        value={draftDateLengthMinutes}
-                        onChangeText={(text) => setDraftDateLengthMinutes(sanitizeHourOrMinute(text, 59))}
-                        keyboardType="number-pad"
-                        placeholder="0"
-                        onFocus={handleEditInputFocus}
-                        style={{
-                          borderWidth: 1,
-                          borderColor: "#dce6ef",
-                          borderRadius: 10,
-                          paddingHorizontal: 12,
-                          paddingVertical: 10,
-                          fontSize: 16,
-                        }}
-                      />
-                    </View>
-                  </View>
-                </View>
-              </View>
-
-              <View style={{ flexDirection: "row", gap: 12, marginBottom: 12 }}>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ color: "#4b5b6b", marginBottom: 6 }}>Max Budget ($)</Text>
-                  <TextInput
-                    value={draftMaxPrice}
-                    onChangeText={setDraftMaxPrice}
-                    keyboardType="number-pad"
-                    onFocus={handleEditInputFocus}
-                    style={{
-                      borderWidth: 1,
-                      borderColor: "#dce6ef",
-                      borderRadius: 10,
-                      paddingHorizontal: 12,
-                      paddingVertical: 10,
-                      fontSize: 16,
-                    }}
-                  />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ color: "#4b5b6b", marginBottom: 6 }}>Max Distance (miles)</Text>
-                  <TextInput
-                    value={draftMaxDistance}
-                    onChangeText={setDraftMaxDistance}
-                    keyboardType="number-pad"
-                    onFocus={handleEditInputFocus}
-                    style={{
-                      borderWidth: 1,
-                      borderColor: "#dce6ef",
-                      borderRadius: 10,
-                      paddingHorizontal: 12,
-                      paddingVertical: 10,
-                      fontSize: 16,
-                    }}
-                  />
-                </View>
-              </View>
-
-              <Text
-                style={{
-                  color: "#4b5b6b",
-                  marginBottom: 8,
-                  fontWeight: "700",
-                }}
-              >
-                Categories
-              </Text>
-              <View
-                style={{
-                  flexDirection: "row",
-                  flexWrap: "wrap",
-                  gap: 8,
-                  marginBottom: 16,
-                }}
-              >
-                {DATE_CATEGORIES.map((category, index) => {
-                  const checked = draftCategoriesChecked[index];
-                  return (
-                    <TouchableOpacity
-                      key={category}
-                      onPress={() => toggleDraftCategory(index)}
-                      style={{
-                        paddingHorizontal: 10,
-                        paddingVertical: 8,
-                        borderRadius: 999,
-                        borderWidth: 1,
-                        borderColor: checked ? "#1e90ff" : "#dce6ef",
-                        backgroundColor: checked ? "#e8f3ff" : "#fff",
-                      }}
-                    >
-                      <Text
-                        style={{
-                          color: checked ? "#1e90ff" : "#4b5b6b",
-                          fontWeight: checked ? "700" : "500",
-                        }}
-                      >
-                        {category}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-
-              {editError ? <Text style={{ color: "#b42318", marginBottom: 10 }}>{editError}</Text> : null}
-
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "flex-end",
-                  gap: 10,
-                }}
-              >
-                <TouchableOpacity
-                  onPress={() => {
-                    setShowEditDatePicker(false);
-                    setIsEditModalVisible(false);
-                  }}
-                  style={{
-                    paddingHorizontal: 14,
-                    paddingVertical: 10,
-                    borderRadius: 10,
-                    borderWidth: 1,
-                    borderColor: "#dce6ef",
-                    backgroundColor: "#fff",
-                  }}
-                >
-                  <Text style={{ color: "#3b4a5a", fontWeight: "700" }}>Cancel</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  onPress={applyEditsAndRegenerate}
-                  style={{
-                    paddingHorizontal: 14,
-                    paddingVertical: 10,
-                    borderRadius: 10,
-                    backgroundColor: "#1e90ff",
-                  }}
-                >
-                  <Text style={{ color: "#fff", fontWeight: "700" }}>Apply & Regenerate</Text>
-                </TouchableOpacity>
-              </View>
-            </ScrollView>
-          </View>
-        </KeyboardAvoidingView>
-      </Modal>
+        editModalScrollRef={editModalScrollRef}
+        showEditDatePicker={showEditDatePicker}
+        setShowEditDatePicker={setShowEditDatePicker}
+        draftSelectedDate={draftSelectedDate}
+        setDraftSelectedDate={setDraftSelectedDate}
+        draftDateValue={draftDateValue}
+        draftStartHour12={draftStartHour12}
+        setDraftStartHour12={setDraftStartHour12}
+        draftStartPeriod={draftStartPeriod}
+        setDraftStartPeriod={setDraftStartPeriod}
+        draftEndHour12={draftEndHour12}
+        setDraftEndHour12={setDraftEndHour12}
+        draftEndPeriod={draftEndPeriod}
+        setDraftEndPeriod={setDraftEndPeriod}
+        draftDateLengthHours={draftDateLengthHours}
+        setDraftDateLengthHours={(s) => setDraftDateLengthHours(sanitizeHourOrMinute(s, 23))}
+        draftDateLengthMinutes={draftDateLengthMinutes}
+        setDraftDateLengthMinutes={(s) => setDraftDateLengthMinutes(sanitizeHourOrMinute(s, 59))}
+        draftMaxPrice={draftMaxPrice}
+        setDraftMaxPrice={setDraftMaxPrice}
+        draftMaxDistance={draftMaxDistance}
+        setDraftMaxDistance={setDraftMaxDistance}
+        draftCategoriesChecked={draftCategoriesChecked}
+        toggleDraftCategory={toggleDraftCategory}
+        editError={editError}
+        applyEditsAndRegenerate={applyEditsAndRegenerate}
+        handleEditInputFocus={handleEditInputFocus}
+      />
 
       {__DEV__ ? (
         <View
@@ -1105,7 +745,8 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
                   {allCachedPlaces.length ? (
                     allCachedPlaces.map((place) => (
                       <Text key={place.id} style={{ fontSize: 14, color: "#2c3e50" }}>
-                        • {place.name}: {place.type} ({formatDistanceMiles(getDistanceMilesFromUserLocation(plannerParams.userLocation, place.location))})
+                        • {place.name}: {place.type} (
+                        {formatDistanceMiles(getDistanceMilesFromUserLocation(plannerParams.userLocation, place.location))})
                       </Text>
                     ))
                   ) : (
@@ -1250,6 +891,18 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
             const schedule = modifiedSchedule || idea.schedule || [];
             const modifiedFilledTemplate = modifiedIdeas.get(index)?.filledTemplate;
             const filledTemplate = modifiedFilledTemplate || idea.filledTemplate;
+            const modifiedCommuteToFirstMinutes = modifiedIdeas.get(index)?.commuteToFirstMinutes;
+            const modifiedCommuteFromLastMinutes = modifiedIdeas.get(index)?.commuteFromLastMinutes;
+            const commuteToFirstMinutes = modifiedCommuteToFirstMinutes ?? idea.commuteToFirstMinutes;
+            const commuteFromLastMinutes = modifiedCommuteFromLastMinutes ?? idea.commuteFromLastMinutes;
+            const currentIdea = {
+              ...idea,
+              filledTemplate,
+              places: ideaPlacesRecord,
+              schedule,
+              commuteToFirstMinutes,
+              commuteFromLastMinutes,
+            };
 
             return (
               <DateIdeaCard
@@ -1260,8 +913,8 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
                 schedule={schedule}
                 places={ideaPlaces as PlaceSummary[]}
                 userLocation={plannerParams.userLocation ?? null}
-                commuteToFirstMinutes={idea.commuteToFirstMinutes}
-                commuteFromLastMinutes={idea.commuteFromLastMinutes}
+                commuteToFirstMinutes={commuteToFirstMinutes}
+                commuteFromLastMinutes={commuteFromLastMinutes}
                 navigation={navigation}
                 recipeIndex={idea.recipeIndex}
                 onPrimaryAction={() => {
@@ -1270,7 +923,7 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
                     setPaywallVisible(true);
                     return;
                   }
-                  saveDateIdea(idea, plannerParams.selectedDate);
+                  saveDateIdea(currentIdea, plannerParams.selectedDate);
                   Alert.alert("Date Idea Saved!");
                 }}
                 primaryActionLabel="Save"

@@ -63,9 +63,26 @@ export function canSaveIdea(isUnlocked: boolean): boolean {
   return savedIdeas.length < FREE_TIER_SAVED_IDEAS_LIMIT;
 }
 
+function serializePlaces(idea: FilledIdea): string {
+  return Object.entries(idea.places || {})
+    .sort(([leftKey], [rightKey]) => leftKey.localeCompare(rightKey))
+    .map(([key, place]) => `${key}:${place ? `${place.id}|${place.name}|${place.sourceKind}` : "null"}`)
+    .join(";");
+}
+
+function serializeSchedule(idea: FilledIdea): string {
+  return (idea.schedule || [])
+    .map((step) => `${step.slot}|${step.title}|${step.place?.id || "null"}|${step.travelToNextMinutes ?? "n"}`)
+    .join(";");
+}
+
+function getIdeaSignature(idea: FilledIdea): string {
+  return [idea.template, idea.filledTemplate, serializePlaces(idea), serializeSchedule(idea)].join("__");
+}
+
 export function saveDateIdea(idea: FilledIdea, selectedDate?: string): SavedDateIdea {
-  const signature = `${idea.filledTemplate}__${idea.template}`;
-  const existing = savedIdeas.find((saved) => `${saved.filledTemplate}__${saved.template}` === signature);
+  const signature = getIdeaSignature(idea);
+  const existing = savedIdeas.find((saved) => getIdeaSignature(saved) === signature);
 
   if (existing) {
     return existing;

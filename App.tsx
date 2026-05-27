@@ -23,8 +23,9 @@ import recipes from "./src/data/Recipes";
 import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
 import mobileAds from "react-native-google-mobile-ads";
 import { DATE_CATEGORIES } from "./src/utils/utils";
-import {fetchPlacesFromOverpassWithCache} from "./src/hooks/usePlacesActivitiesRecipes";
+import { fetchPlacesFromOverpassWithCache } from "./src/hooks/usePlacesActivitiesRecipes";
 import { initializeOverpassPlacesStore } from "./src/data/overpassPlacesStore";
+import BottomBackgroundArt from "./src/Components/BottomBackgroundArt";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const EDGE_SWIPE_WIDTH = 28;
@@ -90,6 +91,7 @@ function SwipeBackLayout({ navigation, children }: { navigation: AppNavigation; 
 
   return (
     <View style={{ flex: 1 }}>
+      <BottomBackgroundArt bottomOffset={0} />
       {children}
       {navigation.canGoBack() && (
         <PanGestureHandler activeOffsetX={[-10, 10]} failOffsetY={[-15, 15]} onHandlerStateChange={handleStateChange}>
@@ -126,7 +128,7 @@ export default function App() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <NavigationContainer>
-          <Stack.Navigator>
+          <Stack.Navigator screenOptions={{ contentStyle: { backgroundColor: "transparent" } }}>
             <Stack.Screen name="MainTabs" component={MainTabs} options={{ headerShown: false }} />
             <Stack.Screen name="DateCraft">
               {({ navigation }) => (
@@ -270,8 +272,7 @@ function MainTabs({ navigation }: { navigation: AppNavigation }) {
               longitude: position.coords.longitude,
             },
           });
-        } catch {
-        }
+        } catch {}
       })();
 
       warmupInFlightRef.current = warmupPromise;
@@ -324,7 +325,10 @@ function MainTabs({ navigation }: { navigation: AppNavigation }) {
             const Component = tab.component;
             return (
               <View key={index} style={styles.page}>
-                <Component navigation={navigation} goToTab={goToTab} />
+                <BottomBackgroundArt bottomOffset={0} />
+                <View style={styles.pageContent}>
+                  <Component navigation={navigation} goToTab={goToTab} />
+                </View>
               </View>
             );
           })}
@@ -381,6 +385,13 @@ const styles = StyleSheet.create({
   },
   page: {
     flex: 1,
+    position: "relative",
+    backgroundColor: "transparent",
+  },
+  pageContent: {
+    flex: 1,
+    position: "relative",
+    zIndex: 1,
   },
   tabBar: {
     flexDirection: "row",
@@ -390,6 +401,8 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
     paddingTop: 8,
     height: 72,
+    zIndex: 2,
+    elevation: 2,
   },
   tabButton: {
     flex: 1,

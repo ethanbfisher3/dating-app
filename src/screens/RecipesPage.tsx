@@ -81,6 +81,7 @@ export default function RecipesPage({ navigation }: { navigation: AppNavigation 
           padding: 24,
           paddingTop: insets.top,
           paddingBottom: 24,
+          backgroundColor: "transparent",
         }}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
@@ -278,7 +279,7 @@ export default function RecipesPage({ navigation }: { navigation: AppNavigation 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fafbfc",
+    backgroundColor: "transparent",
   },
   header: {
     paddingBottom: 16,
