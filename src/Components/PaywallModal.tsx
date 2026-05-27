@@ -6,6 +6,7 @@ import { purchasePremium } from "../data/iapConfig";
 import { FREE_TIER_RECORDED_DATES_LIMIT } from "../data/dateHistoryStore";
 import { FREE_TIER_SAVED_IDEAS_LIMIT } from "../data/savedIdeasStore";
 import usePurchases from "src/hooks/usePurchases";
+import { restorePurchases } from "../data/iapConfig";
 
 interface PaywallProps {
   visible: boolean;
@@ -17,7 +18,7 @@ interface PaywallProps {
 export default function PaywallModal({ visible, onClose, onPurchase, reason = "general" }: PaywallProps) {
   const [isProcessing, setIsProcessing] = useState(false);
   const { resetPremium } = usePremium();
-  const { lifetimePremium } = usePurchases();
+  const { lifetimePremium, loading: purchasesLoading } = usePurchases();
 
   const reasonMessages: Record<string, { title: string; description: string }> = {
     date_history_limit: {
@@ -43,6 +44,10 @@ export default function PaywallModal({ visible, onClose, onPurchase, reason = "g
   const handlePurchase = async () => {
     setIsProcessing(true);
     try {
+      if (purchasesLoading) {
+        Alert.alert("Purchases Loading", "Purchase info is still loading. Please wait a moment and try again.");
+        return;
+      }
       const result = await purchasePremium();
 
       const isTestPurchaseFailure =
@@ -71,6 +76,24 @@ export default function PaywallModal({ visible, onClose, onPurchase, reason = "g
     } catch (error) {
       console.error("Purchase error:", error);
       Alert.alert("Error", "Something went wrong during purchase.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleRestore = async () => {
+    setIsProcessing(true);
+    try {
+      const restored = await restorePurchases();
+      if (restored) {
+        Alert.alert("Restored", "Your purchases have been restored. Premium unlocked.");
+        onClose();
+      } else {
+        Alert.alert("No Purchases Found", "We couldn't find any purchases to restore for this account.");
+      }
+    } catch (error) {
+      console.error("Restore error:", error);
+      Alert.alert("Error", "Something went wrong while restoring purchases.");
     } finally {
       setIsProcessing(false);
     }
@@ -176,6 +199,12 @@ export default function PaywallModal({ visible, onClose, onPurchase, reason = "g
               ) : (
                 <Text style={styles.purchaseButtonText}>Unlock Premium</Text>
               )}
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.restoreContainer}>
+            <TouchableOpacity style={styles.restoreButton} onPress={handleRestore} disabled={isProcessing}>
+              <Text style={styles.restoreButtonText}>{isProcessing ? "Processing..." : "Restore Purchases"}</Text>
             </TouchableOpacity>
           </View>
 
@@ -368,5 +397,19 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "700",
     color: "#d93025",
+  },
+  restoreContainer: {
+    paddingHorizontal: 24,
+    paddingTop: 12,
+    alignItems: "center",
+  },
+  restoreButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+  },
+  restoreButtonText: {
+    color: "#007AFF",
+    fontSize: 15,
+    fontWeight: "700",
   },
 });
