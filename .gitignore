@@ -39,8 +39,4 @@ yarn-error.*
 app-example
 
 .env
-places_*.json
-
-src/assets/images/recipes/*.png
-scripts/
-server/
+*.aab
