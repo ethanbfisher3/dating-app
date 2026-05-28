@@ -51,11 +51,11 @@
     <key>NSLocalNetworkUsageDescription</key>
     <string>Allow local network access to connect to your nearby date planning server during development.</string>
     <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-    <string>Allow $(PRODUCT_NAME) to access your location</string>
+    <string>$(PRODUCT_NAME) uses your location to find nearby places for your dates.</string>
     <key>NSLocationAlwaysUsageDescription</key>
-    <string>Allow $(PRODUCT_NAME) to access your location</string>
+    <string>$(PRODUCT_NAME) uses your location to find nearby places for your dates.</string>
     <key>NSLocationWhenInUseUsageDescription</key>
-    <string>Allow $(PRODUCT_NAME) to access your location</string>
+    <string>$(PRODUCT_NAME) uses your location to find nearby places for your dates.</string>
     <key>NSMicrophoneUsageDescription</key>
     <string>Allow $(PRODUCT_NAME) to access your microphone</string>
     <key>NSPhotoLibraryUsageDescription</key>

@@ -23,6 +23,8 @@ export type FilledIdea = {
     durationMinutes: number;
     place: PlaceSummary | null;
     travelToNextMinutes: number | null;
+    minDurationMinutes?: number;
+    maxDurationMinutes?: number;
   }>;
 };
 
@@ -547,6 +549,8 @@ function buildFilledIdea(
       durationMinutes,
       place: entry.place,
       travelToNextMinutes,
+      minDurationMinutes: entry.minDurationMinutes,
+      maxDurationMinutes: entry.maxDurationMinutes,
     };
   });
 
@@ -613,6 +617,58 @@ export default function useFilledIdeas({ params, places, recipes, activities }: 
     const finalIdeas = shuffleIdeas(ideas).slice(0, targetCount);
     return finalIdeas;
   }, [activities, isUnlocked, params, places, recipes]);
+}
+
+function parseTimeLabel(label: string): number {
+  const match = /^(\d+):(\d{2})\s+(AM|PM)$/.exec(label);
+  if (!match) return 0;
+  let hours = parseInt(match[1], 10);
+  const minutes = parseInt(match[2], 10);
+  if (match[3] === "PM" && hours !== 12) hours += 12;
+  if (match[3] === "AM" && hours === 12) hours = 0;
+  return hours * 60 + minutes;
+}
+
+export function rebuildScheduleTimes(
+  schedule: NonNullable<FilledIdea["schedule"]>,
+  commuteToFirstMinutes: number,
+  commuteFromLastMinutes: number,
+  params: PlannedDateResultsParams,
+): NonNullable<FilledIdea["schedule"]> {
+  if (!schedule.length) return schedule;
+
+  const totalMinutes = getEffectiveDateDurationMinutes(params);
+  const totalTravelBetween = schedule.reduce((sum, step) => sum + (step.travelToNextMinutes || 0), 0);
+  const totalReserved = totalTravelBetween + commuteToFirstMinutes + commuteFromLastMinutes;
+  const availableActivityMinutes = Math.max(0, totalMinutes - totalReserved);
+
+  const hasDurationConstraints = schedule.some(
+    (step) => step.minDurationMinutes !== undefined || step.maxDurationMinutes !== undefined,
+  );
+
+  let slotDurations: number[];
+  if (hasDurationConstraints) {
+    const allocated = allocateSlotDurations(availableActivityMinutes, schedule);
+    slotDurations = allocated ?? chunkMinutesEvenly(availableActivityMinutes, Math.max(1, schedule.length));
+  } else {
+    slotDurations = chunkMinutesEvenly(availableActivityMinutes, Math.max(1, schedule.length));
+  }
+
+  let currentMinute = parseTimeLabel(schedule[0].startTime);
+
+  return schedule.map((step, index) => {
+    const durationMinutes = slotDurations[index] || 0;
+    const startMinute = currentMinute;
+    const endMinute = startMinute + durationMinutes;
+    currentMinute = endMinute + (step.travelToNextMinutes || 0);
+
+    return {
+      ...step,
+      durationMinutes,
+      startTime: formatTimeLabel(startMinute),
+      endTime: formatTimeLabel(endMinute),
+    };
+  });
 }
 
 export {

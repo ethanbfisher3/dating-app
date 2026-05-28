@@ -8,7 +8,7 @@ export default {
 
     splash: {
       backgroundColor: "#FFFFFF",
-      image: "./src/assets/images/girl_icon.jpg",
+      image: "./src/assets/images/splash.jpg",
     },
 
     android: {
@@ -21,6 +21,9 @@ export default {
           NSAllowsArbitraryLoads: true,
         },
         NSLocalNetworkUsageDescription: "Allow local network access to connect to your nearby date planning server during development.",
+        NSLocationWhenInUseUsageDescription: "$(PRODUCT_NAME) uses your location to find nearby places for your dates.",
+        NSLocationAlwaysUsageDescription: "$(PRODUCT_NAME) uses your location to find nearby places for your dates.",
+        NSLocationAlwaysAndWhenInUseUsageDescription: "$(PRODUCT_NAME) uses your location to find nearby places for your dates.",
       },
       bundleIdentifier: "com.ethanbfisher3.datingapp",
       buildNumber: "1",

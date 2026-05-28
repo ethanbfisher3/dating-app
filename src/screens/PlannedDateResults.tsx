@@ -20,6 +20,7 @@ import useFilledIdeas, {
   estimateTravelMinutesBetween,
   estimateTravelMinutesFromUserLocation,
   getCandidatesForSlot,
+  rebuildScheduleTimes,
 } from "../hooks/useFilledIdeas";
 import { saveDateIdea, canSaveIdea } from "../data/savedIdeasStore";
 import { usePremium } from "../hooks/usePremium";
@@ -176,6 +177,8 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
         title: newCandidate.value,
         place: newCandidate.place,
         travelToNextMinutes: newTravelToNextMinutes,
+        minDurationMinutes: newCandidate.minDurationMinutes,
+        maxDurationMinutes: newCandidate.maxDurationMinutes,
       };
 
       // If there's a previous step, update its travelToNextMinutes
@@ -216,9 +219,15 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
         const updatedCommuteFromLastMinutes =
           estimateTravelMinutesFromUserLocation(plannerParams.userLocation, updatedLastPlace) ??
           (updatedLastPlace?.sourceKind === "place" ? 10 : 0);
+        const rebuiltSchedule = rebuildScheduleTimes(
+          updatedSchedule,
+          updatedCommuteToFirstMinutes || 0,
+          updatedCommuteFromLastMinutes || 0,
+          plannerParams,
+        );
         newMap.set(ideaIndex, {
           ...ideaMods,
-          schedule: updatedSchedule,
+          schedule: rebuiltSchedule,
           filledTemplate: updatedFilledTemplate,
           places: updatedPlaces,
           commuteToFirstMinutes: updatedCommuteToFirstMinutes || null,
