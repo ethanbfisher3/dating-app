@@ -1,31 +1,34 @@
 #!/bin/sh
+
 set -e
 
-echo "===== STARTING CI POST CLONE ====="
+echo "===== STARTING CI ====="
 
-# Move to repository root
+export HOMEBREW_NO_AUTO_UPDATE=1
 
-cd "$CI_PRIMARY_REPOSITORY_PATH"
+if ! command -v node >/dev/null 2>&1; then
+echo "Node not found. Installing Node 20..."
+brew install node@20
+export PATH="/opt/homebrew/opt/node@20/bin:$PATH"
+fi
 
-echo "===== NODE INFO ====="
+echo "===== NODE VERSION ====="
 node -v
 npm -v
 
-echo "===== CLEANING OLD FILES ====="
+echo "===== GOING TO REPOSITORY ====="
+cd "$CI_PRIMARY_REPOSITORY_PATH"
 
+echo "===== CLEANING ====="
 rm -rf node_modules
 rm -rf ios/Pods
-rm -rf ios/build
 
-echo "===== INSTALLING JS DEPENDENCIES ====="
-
+echo "===== INSTALLING DEPENDENCIES ====="
 npm install --legacy-peer-deps
 
-echo "===== INSTALLING COCOAPODS ====="
-
+echo "===== INSTALLING PODS ====="
 cd ios
-
 pod install --repo-update
 
-echo "===== CI POST CLONE FINISHED ====="
+echo "===== DONE ====="
 
