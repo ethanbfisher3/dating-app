@@ -21,8 +21,7 @@ import DateHistory from "./src/screens/DateHistory";
 import DateCalendar from "./src/screens/DateCalendar";
 import recipes from "./src/data/Recipes";
 import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
-import mobileAds from "react-native-google-mobile-ads";
-import { requestTrackingPermissionsAsync } from "expo-tracking-transparency";
+import mobileAds, { AdsConsent } from "react-native-google-mobile-ads";
 import { DATE_CATEGORIES } from "./src/utils/utils";
 import { fetchPlacesFromOverpassWithCache } from "./src/hooks/usePlacesActivitiesRecipes";
 import { initializeOverpassPlacesStore } from "./src/data/overpassPlacesStore";
@@ -118,7 +117,10 @@ export default function App() {
       if (Platform.OS === "android") {
         NavigationBar.setVisibilityAsync("hidden");
       } else if (Platform.OS === "ios") {
-        await requestTrackingPermissionsAsync();
+        try {
+          await AdsConsent.requestInfoUpdate();
+          await AdsConsent.loadAndShowConsentFormIfRequired();
+        } catch {}
       }
       mobileAds().initialize();
     }
