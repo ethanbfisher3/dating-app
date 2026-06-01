@@ -22,6 +22,7 @@ import DateCalendar from "./src/screens/DateCalendar";
 import recipes from "./src/data/Recipes";
 import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
 import mobileAds from "react-native-google-mobile-ads";
+import { requestTrackingPermissionsAsync } from "expo-tracking-transparency";
 import { DATE_CATEGORIES } from "./src/utils/utils";
 import { fetchPlacesFromOverpassWithCache } from "./src/hooks/usePlacesActivitiesRecipes";
 import { initializeOverpassPlacesStore } from "./src/data/overpassPlacesStore";
@@ -113,10 +114,15 @@ function SwipeBackLayout({ navigation, children }: { navigation: AppNavigation; 
 
 export default function App() {
   useEffect(() => {
-    if (Platform.OS === "android") {
-      NavigationBar.setVisibilityAsync("hidden");
+    async function init() {
+      if (Platform.OS === "android") {
+        NavigationBar.setVisibilityAsync("hidden");
+      } else if (Platform.OS === "ios") {
+        await requestTrackingPermissionsAsync();
+      }
+      mobileAds().initialize();
     }
-    mobileAds().initialize();
+    void init();
     void initializeOverpassPlacesStore();
     const recipeImages = recipes.map((recipe) => recipe.image).filter((image): image is number => typeof image === "number");
     const uniqueRecipeImages = [...new Set(recipeImages)];

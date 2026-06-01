@@ -41,11 +41,11 @@ async function ensureRevenueCatInitialized(): Promise<boolean> {
 async function findPremiumPackage() {
   const offerings = await Purchases.getOfferings();
   const allOfferings = Object.values(offerings.all || {});
-  const allPackages = allOfferings.flatMap((offering) => offering.availablePackages || []);
+  const allPackages = allOfferings.flatMap((offering: any) => offering.availablePackages || []);
 
   const matchingPackage =
-    allPackages.find((pkg) => PREMIUM_PRODUCT_IDS.includes(pkg.product.identifier as (typeof PREMIUM_PRODUCT_IDS)[number])) ||
-    allPackages.find((pkg) => PREMIUM_PRODUCT_IDS.includes(pkg.identifier as (typeof PREMIUM_PRODUCT_IDS)[number])) ||
+    allPackages.find((pkg: any) => PREMIUM_PRODUCT_IDS.includes(pkg.product.identifier as (typeof PREMIUM_PRODUCT_IDS)[number])) ||
+    allPackages.find((pkg: any) => PREMIUM_PRODUCT_IDS.includes(pkg.identifier as (typeof PREMIUM_PRODUCT_IDS)[number])) ||
     null;
 
   return matchingPackage;
@@ -101,9 +101,9 @@ export async function initializeRevenueCat(): Promise<void> {
 
         if (Object.keys(allProducts).length > 0) {
           console.log("📦 Available RevenueCat Products:");
-          Object.entries(allProducts).forEach(([offeringId, offering]) => {
+          Object.entries(allProducts).forEach(([offeringId, offering]: [string, any]) => {
             console.log(`  Offering: ${offeringId}`);
-            offering.availablePackages.forEach((pkg) => {
+            offering.availablePackages.forEach((pkg: any) => {
               console.log(
                 `    - ${pkg.product.title} | package=${pkg.identifier} | product=${pkg.product.identifier} | ${pkg.product.priceString}`,
               );
