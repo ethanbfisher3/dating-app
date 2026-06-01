@@ -51,6 +51,7 @@ export default {
           userTrackingUsageDescription: "This identifier will be used to deliver personalized ads to you.",
         },
       ],
+      "expo-tracking-transparency",
       "expo-video",
       [
         "expo-build-properties",
