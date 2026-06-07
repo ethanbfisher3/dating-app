@@ -30,6 +30,7 @@ echo "===== CLEANING ====="
 rm -rf node_modules
 rm -rf ios/Pods
 rm -rf ios/build
+rm -f ios/Podfile.lock
 
 echo "===== INSTALLING DEPENDENCIES ====="
 npm ci --legacy-peer-deps

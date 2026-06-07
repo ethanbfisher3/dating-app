@@ -26,7 +26,7 @@ export default {
         NSLocationAlwaysAndWhenInUseUsageDescription: "$(PRODUCT_NAME) uses your location to find nearby places for your dates.",
       },
       bundleIdentifier: "com.ethanbfisher3.datingapp",
-      buildNumber: "1",
+      buildNumber: "50",
     },
 
     extra: {
@@ -42,11 +42,7 @@ export default {
       [
         "expo-font",
         {
-          fonts: [
-            "./src/assets/fonts/SuperMindset.ttf",
-            "./src/assets/fonts/SuperPandora.ttf",
-            "./src/assets/fonts/MatchaCih.ttf",
-          ],
+          fonts: ["./src/assets/fonts/SuperMindset.ttf", "./src/assets/fonts/SuperPandora.ttf", "./src/assets/fonts/MatchaCih.ttf"],
         },
       ],
       "expo-asset",
