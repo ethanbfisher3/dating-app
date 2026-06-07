@@ -33,7 +33,7 @@ rm -rf node_modules || true
 rm -rf ios/Pods || true
 
 echo "===== INSTALLING DEPENDENCIES ====="
-npm install --legacy-peer-deps
+npm ci --legacy-peer-deps
 
 echo "===== INSTALLING PODS ====="
 cd ios
