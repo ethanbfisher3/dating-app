@@ -1,8 +1,95 @@
 import { useState } from "react";
-import { Text, TouchableOpacity, View } from "react-native";
+import { TouchableOpacity, View } from "react-native";
+import Text from "./AppText";
 import IdeaPlaceLinks from "./IdeaPlaceLinks";
 import type { PlaceSummary } from "../hooks/useDatePlannerIdeas";
 import type { AppNavigation } from "../types/navigation";
+import Ionicons from "@expo/vector-icons/Ionicons";
+
+type CategoryConfig = { icon: string; color: string; bg: string; label: string };
+
+const CATEGORY_CONFIG: Record<string, CategoryConfig> = {
+  Food: { icon: "restaurant", color: "#d4522a", bg: "#fef0e8", label: "Food" },
+  Sports: { icon: "barbell", color: "#16803c", bg: "#edfaf2", label: "Sports" },
+  Outdoors: { icon: "leaf", color: "#0d7560", bg: "#e6f4f0", label: "Outdoors" },
+  Education: { icon: "book", color: "#5746af", bg: "#eeebff", label: "Education" },
+  Shopping: { icon: "bag-handle", color: "#b45309", bg: "#fef8e8", label: "Shopping" },
+  Entertainment: { icon: "film", color: "#7c3aed", bg: "#f3eeff", label: "Entertainment" },
+};
+
+const DEFAULT_CONFIG: CategoryConfig = { icon: "heart", color: "#e63f67", bg: "#fff0f5", label: "Date" };
+
+const SLOT_TO_CATEGORY: Record<string, string> = {
+  restaurant: "Food",
+  fast_food: "Food",
+  cafe: "Food",
+  food_court: "Food",
+  ice_cream: "Food",
+  recipe: "Food",
+  dessert: "Food",
+  meal: "Food",
+  park: "Outdoors",
+  garden: "Outdoors",
+  nature_reserve: "Outdoors",
+  recreation_ground: "Outdoors",
+  dog_park: "Outdoors",
+  viewpoint: "Outdoors",
+  picnic_site: "Outdoors",
+  camp_site: "Outdoors",
+  pitch: "Outdoors",
+  leisure: "Outdoors",
+  sport: "Sports",
+  tennis: "Sports",
+  golf: "Sports",
+  fitness: "Sports",
+  yoga: "Sports",
+  museum: "Education",
+  art_gallery: "Education",
+  library: "Education",
+  historic: "Education",
+  tourism: "Education",
+  learningSpot: "Education",
+  mall: "Shopping",
+  shop: "Shopping",
+  clothes: "Shopping",
+  gift: "Shopping",
+  toys: "Shopping",
+  books: "Shopping",
+  electronics: "Shopping",
+  cinema: "Entertainment",
+  amusement_arcade: "Entertainment",
+  theme_park: "Entertainment",
+  playground: "Entertainment",
+  bowling_alley: "Entertainment",
+  miniature_golf: "Entertainment",
+  activityPlace: "Entertainment",
+};
+
+function getPrimaryCategory(schedule: Array<{ slot: string; place: PlaceSummary | null }>): string | null {
+  const counts: Record<string, number> = {};
+
+  for (const step of schedule) {
+    const parts = step.slot.split("|").map((s) => s.trim());
+    const sources = [...parts, step.place?.type ?? ""].filter(Boolean);
+
+    for (const part of sources) {
+      const cat = SLOT_TO_CATEGORY[part];
+      if (cat) {
+        counts[cat] = (counts[cat] ?? 0) + 1;
+      }
+    }
+  }
+
+  let best: string | null = null;
+  let bestCount = 0;
+  for (const [cat, count] of Object.entries(counts)) {
+    if (count > bestCount) {
+      best = cat;
+      bestCount = count;
+    }
+  }
+  return best;
+}
 
 type DateIdeaStep = {
   title: string;
@@ -55,11 +142,12 @@ export default function DateIdeaCard({
 }: DateIdeaCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
+  const primaryCategory = getPrimaryCategory(schedule);
+  const categoryConfig = (primaryCategory ? CATEGORY_CONFIG[primaryCategory] : null) ?? DEFAULT_CONFIG;
+
   const toRadians = (value: number): number => (value * Math.PI) / 180;
 
-  const getDistanceMilesFromUserLocation = (
-    placeLocation: { latitude?: number; longitude?: number } | null | undefined,
-  ): number | null => {
+  const getDistanceMilesFromUserLocation = (placeLocation: { latitude?: number; longitude?: number } | null | undefined): number | null => {
     if (
       !userLocation ||
       typeof userLocation.latitude !== "number" ||
@@ -111,73 +199,84 @@ export default function DateIdeaCard({
           alignItems: "center",
         }}
       >
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            flexWrap: "wrap",
-            gap: 8,
-          }}
-        >
-          <Text
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 10, flex: 1 }}>
+          <View
             style={{
-              fontSize: 20,
-              fontWeight: "800",
-              color: "#1f2d3d",
+              width: 48,
+              height: 48,
+              borderRadius: 14,
+              backgroundColor: categoryConfig.bg,
+              justifyContent: "center",
+              alignItems: "center",
             }}
           >
-            {titlePrefix} {index + 1}
-          </Text>
+            <Ionicons name={categoryConfig.icon as any} size={24} color={categoryConfig.color} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text
+              style={{
+                fontSize: 11,
+                color: categoryConfig.color,
+                textTransform: "uppercase",
+                letterSpacing: 0.6,
+                marginBottom: 1,
+              }}
+            >
+              {categoryConfig.label}
+            </Text>
+            <Text
+              style={{
+                fontSize: 18,
+                color: "#1f2d3d",
+              }}
+            >
+              {titlePrefix} {index + 1}
+            </Text>
+          </View>
         </View>
 
         {onPrimaryAction && primaryActionLabel ? (
           <TouchableOpacity
             onPress={onPrimaryAction}
             style={{
-              alignSelf: "flex-end",
               backgroundColor: primaryActionColor,
               borderRadius: 8,
               paddingHorizontal: 12,
               paddingVertical: 8,
             }}
           >
-            <Text style={{ color: "#fff", fontWeight: "700" }}>{primaryActionLabel}</Text>
+            <Text style={{ color: "#fff" }}>{primaryActionLabel}</Text>
           </TouchableOpacity>
         ) : null}
       </View>
 
-      <Text
-        style={{
-          marginTop: 8,
-          fontSize: 17,
-          lineHeight: 26,
-          color: "#2c3e50",
-          fontWeight: "600",
-        }}
-      >
-        {filledTemplate}
-      </Text>
+      <View style={{ marginTop: 12, gap: 5 }}>
+        {schedule.map((step, i) => (
+          <View key={i} style={{ flexDirection: "row", alignItems: "flex-start", gap: 8 }}>
+            <Text style={{ color: categoryConfig.color, fontSize: 15, lineHeight: 22 }}>•</Text>
+            <Text style={{ flex: 1, fontSize: 15, lineHeight: 22, color: "#2c3e50" }}>{step.title}</Text>
+          </View>
+        ))}
+      </View>
 
-      {__DEV__ && template ? (
+      {/* {__DEV__ && template ? (
         <Text
           style={{
             marginTop: 6,
             fontSize: 12,
             lineHeight: 18,
             color: "#667788",
-            fontWeight: "600",
           }}
         >
           (DEV) Template: {template}
         </Text>
-      ) : null}
+      ) : null} */}
 
       <TouchableOpacity onPress={() => setIsExpanded((prev) => !prev)} style={{ marginTop: 10, alignSelf: "flex-start" }}>
         <Text
           style={{
             fontSize: 14,
             color: "#1e90ff",
-            fontWeight: "700",
           }}
         >
           {isExpanded ? "▲ Hide details" : "▼ Show details"}
@@ -186,137 +285,62 @@ export default function DateIdeaCard({
 
       {isExpanded && schedule.length ? (
         <View style={{ marginTop: 12 }}>
-          <Text
-            style={{
-              fontSize: 15,
-              fontWeight: "700",
-              color: "#1f2d3d",
-              marginBottom: 8,
-            }}
-          >
+          <Text style={{ fontSize: 13, color: "#8899aa", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 8 }}>
             Schedule
           </Text>
-          {commuteToFirstMinutes !== null && commuteToFirstMinutes !== 0 ? (
-            <View
-              style={{
-                marginBottom: 10,
-                paddingHorizontal: 10,
-                paddingVertical: 6,
-                borderRadius: 8,
-                backgroundColor: "#f5f8fb",
-              }}
-            >
-              <Text
-                style={{
-                  // marginBottom: 4,
-                  color: "#556677",
-                  fontSize: 13,
-                  fontWeight: "600",
-                }}
-              >
-                Travel to first stop: ~{commuteToFirstMinutes} min
-              </Text>
-            </View>
-          ) : null}
-          {schedule.map((step, stepIndex) => (
-            <View key={`${step.startTime}-${step.endTime}-${stepIndex}`}>
-              <View
-                style={{
-                  marginBottom: 10,
-                  padding: 10,
-                  borderRadius: 8,
-                  backgroundColor: "#f5f8fb",
-                }}
-              >
-                <View
-                  style={{
-                    display: "flex",
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                  }}
-                >
-                  <View style={{ maxWidth: onRegenerateStep ? "70%" : "100%" }}>
-                    <Text
-                      style={{
-                        fontSize: 14,
-                        fontWeight: "700",
-                        color: "#2c3e50",
-                        marginBottom: 4,
-                      }}
-                    >
-                      {step.startTime} - {step.endTime} ({step.durationMinutes} min)
-                    </Text>
-                    <Text style={{ fontSize: 14, color: "#2c3e50" }}>{step.title}</Text>
-                    {__DEV__ && step.place ? (
-                      <Text style={{ marginTop: 4, fontSize: 12, color: "#667788", fontWeight: "600" }}>
-                        (DEV) {step.place.type} • {formatDistanceMiles(getDistanceMilesFromUserLocation(step.place.location))}
-                      </Text>
-                    ) : null}
+          {(() => {
+            type ScheduleRow =
+              | { kind: "activity"; title: string; startTime: string; endTime: string; stepIndex: number }
+              | { kind: "travel"; label: string; startTime?: string; endTime?: string; durationMinutes: number };
 
-                    {step.travelToNextMinutes !== null && step.travelToNextMinutes !== 0 ? (
-                      <Text
-                        style={{
-                          marginTop: 6,
-                          color: "#556677",
-                          fontSize: 13,
-                          fontWeight: "600",
-                        }}
-                      >
-                        Travel to next stop: ~{step.travelToNextMinutes} min
-                      </Text>
-                    ) : null}
-                  </View>
+            const rows: ScheduleRow[] = [];
 
-                  {onRegenerateStep ? (
+            if (commuteToFirstMinutes) {
+              rows.push({ kind: "travel", label: "Drive to first stop", endTime: schedule[0]?.startTime, durationMinutes: commuteToFirstMinutes });
+            }
+            schedule.forEach((step, i) => {
+              rows.push({ kind: "activity", title: step.title, startTime: step.startTime, endTime: step.endTime, stepIndex: i });
+              if (step.travelToNextMinutes && i < schedule.length - 1) {
+                rows.push({ kind: "travel", label: "Drive", startTime: step.endTime, endTime: schedule[i + 1]?.startTime, durationMinutes: step.travelToNextMinutes });
+              }
+            });
+            if (commuteFromLastMinutes) {
+              rows.push({ kind: "travel", label: "Drive home", startTime: schedule[schedule.length - 1]?.endTime, durationMinutes: commuteFromLastMinutes });
+            }
+
+            return rows.map((row, i) => {
+              const isTravel = row.kind === "travel";
+              const timeLabel = row.startTime && row.endTime
+                ? `${row.startTime} – ${row.endTime}`
+                : row.kind === "travel" ? `~${row.durationMinutes} min` : "";
+
+              return (
+                <View key={i} style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 4 }}>
+                  <Text style={{ fontSize: 14, color: isTravel ? "#b0bec5" : categoryConfig.color, width: 10 }}>•</Text>
+                  <Text
+                    numberOfLines={1}
+                    style={{ flex: 1, fontSize: 14, color: isTravel ? "#8899aa" : "#2c3e50" }}
+                  >
+                    {row.kind === "activity" ? row.title : row.label}
+                  </Text>
+                  <Text style={{ fontSize: 13, color: "#8899aa" }}>{timeLabel}</Text>
+                  {row.kind === "activity" && onRegenerateStep ? (
                     <TouchableOpacity
-                      onPress={() => onRegenerateStep(stepIndex)}
-                      disabled={isRegeneratingStep?.(stepIndex)}
-                      style={{
-                        backgroundColor: isRegeneratingStep?.(stepIndex) ? "#ccc" : "#e63f67",
-                        borderRadius: 6,
-                        paddingVertical: 6,
-                        paddingHorizontal: 10,
-                        alignSelf: "flex-start",
-                      }}
+                      onPress={() => onRegenerateStep(row.stepIndex)}
+                      disabled={isRegeneratingStep?.(row.stepIndex)}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                     >
-                      <Text
-                        style={{
-                          color: "#fff",
-                          fontWeight: "700",
-                          fontSize: 12,
-                        }}
-                      >
-                        {isRegeneratingStep?.(stepIndex) ? "Loading..." : "Regenerate"}
-                      </Text>
+                      <Ionicons
+                        name="refresh"
+                        size={16}
+                        color={isRegeneratingStep?.(row.stepIndex) ? "#ccc" : "#e63f67"}
+                      />
                     </TouchableOpacity>
                   ) : null}
                 </View>
-              </View>
-
-              {stepIndex === schedule.length - 1 && commuteFromLastMinutes !== null && commuteFromLastMinutes !== 0 ? (
-                <View
-                  style={{
-                    marginBottom: 10,
-                    paddingHorizontal: 10,
-                    paddingVertical: 6,
-                    borderRadius: 8,
-                    backgroundColor: "#f5f8fb",
-                  }}
-                >
-                  <Text
-                    style={{
-                      // marginTop: 6,
-                      color: "#556677",
-                      fontSize: 13,
-                      fontWeight: "600",
-                    }}
-                  >
-                    Travel from this place back home: ~{commuteFromLastMinutes} min
-                  </Text>
-                </View>
-              ) : null}
-            </View>
-          ))}
+              );
+            });
+          })()}
         </View>
       ) : null}
 
@@ -336,7 +360,6 @@ export default function DateIdeaCard({
               fontSize: 15,
               color: "#1e90ff",
               textDecorationLine: "underline",
-              fontWeight: "700",
             }}
           >
             View recipe details

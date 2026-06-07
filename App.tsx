@@ -3,7 +3,7 @@ import "react-native-gesture-handler";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import type { AppNavigation, RootStackParamList } from "./src/types/navigation";
-import { AppState, View, StatusBar, TouchableOpacity, StyleSheet, Platform } from "react-native";
+import { AppState, View, StatusBar, TouchableOpacity, StyleSheet, Platform, Animated, Easing } from "react-native";
 import * as NavigationBar from "expo-navigation-bar";
 import * as Location from "expo-location";
 import { Asset } from "expo-asset";
@@ -27,6 +27,11 @@ import { DATE_CATEGORIES } from "./src/utils/utils";
 import { fetchPlacesFromOverpassWithCache } from "./src/hooks/usePlacesActivitiesRecipes";
 import { initializeOverpassPlacesStore } from "./src/data/overpassPlacesStore";
 import BottomBackgroundArt from "./src/Components/BottomBackgroundArt";
+import Text from "./src/Components/AppText";
+import * as SplashScreen from "expo-splash-screen";
+import { useFonts } from "expo-font";
+
+SplashScreen.preventAutoHideAsync();
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const EDGE_SWIPE_WIDTH = 28;
@@ -51,14 +56,14 @@ const TABS = [
   },
   {
     key: "DateCraft",
-    title: "DateCraft",
+    title: "Date Ideas",
     icon: "bulb",
     iconOutline: "bulb-outline",
     component: PlanADate,
   },
   {
     key: "Recipe Ideas",
-    title: "Recipe Ideas",
+    title: "Recipes",
     icon: "restaurant",
     iconOutline: "restaurant-outline",
     component: RecipesPage,
@@ -113,6 +118,18 @@ function SwipeBackLayout({ navigation, children }: { navigation: AppNavigation; 
 }
 
 export default function App() {
+  const [loaded, error] = useFonts({
+    SuperMindset: require("./src/assets/fonts/SuperMindset.ttf"),
+    SuperPandora: require("./src/assets/fonts/SuperPandora.ttf"),
+    MatchaCih: require("./src/assets/fonts/MatchaCih.ttf"),
+  });
+
+  useEffect(() => {
+    if (loaded || error) {
+      SplashScreen.hideAsync();
+    }
+  }, [loaded, error]);
+
   useEffect(() => {
     async function init() {
       if (Platform.OS === "android") {
@@ -129,6 +146,10 @@ export default function App() {
 
     void Asset.loadAsync(uniqueRecipeImages);
   }, []);
+
+  if (!loaded && !error) {
+    return <View style={{ flex: 1, backgroundColor: "#ffffff" }} />;
+  }
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -204,18 +225,95 @@ function MainTabs({ navigation }: { navigation: AppNavigation }) {
   const androidBottomInset = Platform.OS === "android" ? insets.bottom : 0;
   const pagerRef = useRef<PagerView | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
+  const tabAnimation = useRef(new Animated.Value(0)).current;
+  const pressFade = useRef(new Animated.Value(1)).current;
+  // tab bounce removed — only keep circle indicator
+  const [isSwiping, setIsSwiping] = useState(false);
+  const [tabColors, setTabColors] = useState<string[]>(TABS.map(() => "#8e8e93"));
   const warmupInFlightRef = useRef<Promise<void> | null>(null);
   const warmupTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const appStateRef = useRef(AppState.currentState);
 
-  const handlePageSelected = useCallback((e: any) => {
-    setCurrentPage(e.nativeEvent.position);
-  }, []);
+  const handlePageSelected = useCallback(
+    (e: any) => {
+      const position = e.nativeEvent.position;
+      setCurrentPage(position);
+      tabAnimation.setValue(position);
+      setIsSwiping(false);
+    },
+    [tabAnimation],
+  );
 
-  const handleTabPress = useCallback((index: number) => {
-    setCurrentPage(index);
-    pagerRef.current?.setPage(index);
-  }, []);
+  const handlePageScroll = useCallback(
+    (e: any) => {
+      tabAnimation.setValue(e.nativeEvent.position + e.nativeEvent.offset);
+      setIsSwiping(true);
+    },
+    [tabAnimation],
+  );
+
+  const handleTabPress = useCallback(
+    (index: number) => {
+      setCurrentPage(index);
+      // Jump immediately to the target index, but fade the indicator in
+      // so it doesn't appear on intermediate tabs.
+      pressFade.setValue(0);
+      tabAnimation.setValue(index);
+      Animated.timing(pressFade, {
+        toValue: 1,
+        duration: 180,
+        easing: Easing.inOut(Easing.ease),
+        useNativeDriver: true,
+      }).start();
+      pagerRef.current?.setPageWithoutAnimation(index);
+    },
+    [tabAnimation],
+  );
+
+  useEffect(() => {
+    // Update tab colors smoothly based on tabAnimation value.
+    function hexToRgb(hex: string) {
+      const clean = hex.replace("#", "");
+      const bigint = parseInt(clean, 16);
+      return [(bigint >> 16) & 255, (bigint >> 8) & 255, bigint & 255];
+    }
+
+    function rgbToHex(r: number, g: number, b: number) {
+      return (
+        "#" +
+        [r, g, b]
+          .map((v) =>
+            Math.max(0, Math.min(255, Math.round(v)))
+              .toString(16)
+              .padStart(2, "0"),
+          )
+          .join("")
+      );
+    }
+
+    function lerpHex(a: string, b: string, t: number) {
+      const ra = hexToRgb(a);
+      const rb = hexToRgb(b);
+      const rr = ra.map((v, i) => v + (rb[i] - v) * t);
+      return rgbToHex(rr[0], rr[1], rr[2]);
+    }
+
+    const id = tabAnimation.addListener(({ value }) => {
+      const newColors = TABS.map((_, i) => {
+        const t = 1 - Math.min(Math.abs(value - i), 1);
+        return lerpHex("#8e8e93", "#ffffff", t);
+      });
+      setTabColors(newColors);
+    });
+
+    return () => {
+      try {
+        tabAnimation.removeListener(id);
+      } catch {}
+    };
+  }, [tabAnimation]);
+
+  // bounce effect removed
 
   const goToTab = useCallback((tabKey: string) => {
     const tabIndex = TABS.findIndex((tab) => tab.key === tabKey);
@@ -326,7 +424,14 @@ function MainTabs({ navigation }: { navigation: AppNavigation }) {
     <>
       <StatusBar barStyle="dark-content" backgroundColor="#f3f6fb" />
       <View style={{ flex: 1, backgroundColor: "#fafbfc" }}>
-        <PagerView ref={pagerRef} style={styles.pager} initialPage={0} onPageSelected={handlePageSelected} overdrag={true}>
+        <PagerView
+          ref={pagerRef}
+          style={styles.pager}
+          initialPage={0}
+          onPageSelected={handlePageSelected}
+          onPageScroll={handlePageScroll}
+          overdrag={true}
+        >
           {TABS.map((tab, index) => {
             const Component = tab.component;
             return (
@@ -344,7 +449,8 @@ function MainTabs({ navigation }: { navigation: AppNavigation }) {
           style={[
             styles.tabBar,
             {
-              paddingBottom: 12 + androidBottomInset,
+              paddingBottom: androidBottomInset || 12,
+              paddingTop: 0,
               height: 72 + androidBottomInset,
             },
           ]}
@@ -352,30 +458,46 @@ function MainTabs({ navigation }: { navigation: AppNavigation }) {
           {TABS.map((tab, index) => {
             const isActive = currentPage === index;
             const iconName = isActive ? tab.icon : tab.iconOutline;
-            const isCenterTab = tab.key === "DateCraft";
-            const color = isActive ? "#1e90ff" : "#8e8e93";
-            const centerButtonColor = isActive ? "#e63f67" : "#f05a7e";
+            const color = isActive ? "#ffffff" : "#8e8e93";
+            const inputRange = [index - 1, index, index + 1];
+            const indicatorScale = tabAnimation.interpolate({
+              inputRange,
+              outputRange: [0.9, 1, 0.9],
+              extrapolate: "clamp",
+            });
+            const indicatorOpacity = tabAnimation.interpolate({
+              inputRange,
+              outputRange: [0, 1, 0],
+              extrapolate: "clamp",
+            });
+            const indicatorCompositeOpacity = isSwiping ? 0 : Animated.multiply(indicatorOpacity, pressFade);
+
+            // Colors are driven via `tabColors` (updated by a listener)
+            const bounceTranslateY = 0;
 
             return (
-              <TouchableOpacity
-                key={tab.key}
-                style={isCenterTab ? styles.centerTabButton : styles.tabButton}
-                onPress={() => handleTabPress(index)}
-                activeOpacity={0.7}
-              >
-                <View
-                  style={
-                    isCenterTab
-                      ? [styles.centerTabCircle, { backgroundColor: centerButtonColor }]
-                      : {
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                        }
-                  }
+              <TouchableOpacity key={tab.key} style={styles.tabButton} onPress={() => handleTabPress(index)} activeOpacity={0.7}>
+                <Animated.View
+                  style={[
+                    styles.tabItem,
+                    {
+                      transform: [{ translateY: bounceTranslateY as any }],
+                    },
+                  ]}
                 >
-                  <Ionicons name={iconName as any} size={isCenterTab ? 30 : 28} color={isCenterTab ? "#ffffff" : color} />
-                </View>
+                  <Ionicons name={iconName as any} size={28} color={isActive ? "#007AFF" : (tabColors[index] ?? color)} />
+                  <Text
+                    numberOfLines={1}
+                    style={[
+                      styles.tabLabel,
+                      {
+                        color: isActive ? "#007AFF" : (tabColors[index] ?? color),
+                      },
+                    ]}
+                  >
+                    {tab.title}
+                  </Text>
+                </Animated.View>
               </TouchableOpacity>
             );
           })}
@@ -404,9 +526,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#ffffff",
     borderTopWidth: 1,
     borderTopColor: "#e0e0e0",
-    paddingBottom: 12,
-    paddingTop: 8,
-    height: 72,
     zIndex: 2,
     elevation: 2,
   },
@@ -414,31 +533,32 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 8,
+    paddingVertical: 6,
   },
-  centerTabButton: {
+  tabItem: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
+    paddingVertical: 4,
+    position: "relative",
+    zIndex: 1,
   },
-  centerTabCircle: {
-    width: 72,
-    height: 72,
-    borderRadius: 44,
-    marginTop: -16,
-    alignItems: "center",
-    justifyContent: "center",
+  tabIndicator: {
+    position: "absolute",
+    top: -8,
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    backgroundColor: "#f05a7e",
+    shadowColor: "#f05a7e",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.26,
+    shadowRadius: 10,
+    elevation: 6,
   },
   tabLabel: {
-    fontSize: 12,
-    fontWeight: "600",
-    marginTop: 4,
-  },
-  centerTabLabel: {
     fontSize: 11,
-    fontWeight: "700",
-    marginTop: 2,
-    color: "#ffffff",
+    marginTop: 0,
     textAlign: "center",
   },
 });

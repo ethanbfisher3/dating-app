@@ -1,5 +1,6 @@
 import React, { useLayoutEffect } from "react";
-import { View, Text, Image, ScrollView, StyleSheet, SectionList } from "react-native";
+import { View, ScrollView, StyleSheet } from "react-native";
+import Text from "../Components/AppText";
 import { getRecipeByIndex } from "../data/Recipes";
 import { sanitizeUri } from "../utils/utils";
 import type { AppScreenProps } from "../types/navigation";
@@ -96,7 +97,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#e0e0e0",
   },
   title: {
-    fontWeight: "900",
     fontSize: 32,
     color: "#1a1a1a",
     marginVertical: 12,
@@ -138,12 +138,10 @@ const styles = StyleSheet.create({
   statLabel: {
     fontSize: 12,
     color: "#999",
-    fontWeight: "600",
     marginBottom: 4,
   },
   statValue: {
     fontSize: 18,
-    fontWeight: "700",
     color: "#1a1a1a",
   },
   categoriesSection: {
@@ -165,14 +163,12 @@ const styles = StyleSheet.create({
   categoryText: {
     fontSize: 12,
     color: "#007AFF",
-    fontWeight: "600",
   },
   sectionContainer: {
     marginHorizontal: 24,
     marginBottom: 24,
   },
   sectionTitle: {
-    fontWeight: "800",
     fontSize: 18,
     color: "#1a1a1a",
     marginBottom: 12,
@@ -188,13 +184,11 @@ const styles = StyleSheet.create({
   ingredientName: {
     fontSize: 15,
     color: "#333",
-    fontWeight: "500",
     flex: 1,
   },
   ingredientAmount: {
     fontSize: 15,
     color: "#999",
-    fontWeight: "500",
     marginLeft: 8,
   },
   stepRow: {
@@ -202,7 +196,6 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   stepNumber: {
-    fontWeight: "700",
     fontSize: 16,
     color: "#007AFF",
     marginRight: 12,

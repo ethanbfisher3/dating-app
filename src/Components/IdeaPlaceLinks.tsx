@@ -1,4 +1,5 @@
-import { Linking, Platform, Text, TouchableOpacity, View } from "react-native";
+import { Linking, Platform, TouchableOpacity, View } from "react-native";
+import Text from "./AppText";
 import type { AppNavigation } from "../types/navigation";
 import type { PlaceSummary } from "../hooks/usePlacesActivitiesRecipes";
 
@@ -59,7 +60,6 @@ export default function IdeaPlaceLinks({ places, navigation, marginTop = 12 }: I
               fontSize: 15,
               color: "#1e90ff",
               textDecorationLine: "underline",
-              fontWeight: "700",
             }}
           >
             {place.name}

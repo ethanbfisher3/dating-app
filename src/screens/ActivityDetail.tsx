@@ -1,5 +1,6 @@
 import React, { useLayoutEffect } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
+import Text from "../Components/AppText";
 import { getActivityById } from "../data/activities";
 import type { AppScreenProps } from "../types/navigation";
 
@@ -107,7 +108,6 @@ const styles = StyleSheet.create({
     backgroundColor: "transparent",
   },
   title: {
-    fontWeight: "900",
     fontSize: 32,
     color: "#1a1a1a",
     marginBottom: 12,
@@ -139,12 +139,10 @@ const styles = StyleSheet.create({
   statLabel: {
     fontSize: 12,
     color: "#999",
-    fontWeight: "600",
     marginBottom: 4,
   },
   statValue: {
     fontSize: 18,
-    fontWeight: "700",
     color: "#1a1a1a",
     textAlign: "center",
   },
@@ -152,7 +150,6 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   sectionTitle: {
-    fontWeight: "800",
     fontSize: 18,
     color: "#1a1a1a",
     marginBottom: 12,
@@ -176,7 +173,6 @@ const styles = StyleSheet.create({
   tagText: {
     fontSize: 12,
     color: "#007AFF",
-    fontWeight: "600",
   },
   timeRow: {
     paddingVertical: 6,

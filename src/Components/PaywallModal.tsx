@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Modal, View, Text, TouchableOpacity, ScrollView, StyleSheet, ActivityIndicator, Alert } from "react-native";
+import { Modal, View, TouchableOpacity, ScrollView, StyleSheet, ActivityIndicator, Alert } from "react-native";
+import Text from "./AppText";
 import { Ionicons } from "@expo/vector-icons";
 import { usePremium } from "../hooks/usePremium";
 import { purchasePremium } from "../data/iapConfig";
@@ -248,7 +249,6 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 24,
-    fontWeight: "800",
     color: "#1a1a1a",
     textAlign: "center",
     marginBottom: 8,
@@ -270,7 +270,6 @@ const styles = StyleSheet.create({
   },
   comparisonTitle: {
     fontSize: 13,
-    fontWeight: "800",
     color: "#475569",
     marginBottom: 6,
   },
@@ -281,7 +280,6 @@ const styles = StyleSheet.create({
   },
   comparisonTitlePremium: {
     fontSize: 13,
-    fontWeight: "800",
     color: "#0f766e",
     marginTop: 8,
     marginBottom: 6,
@@ -311,13 +309,11 @@ const styles = StyleSheet.create({
   featureText: {
     fontSize: 15,
     color: "#2c3e50",
-    fontWeight: "600",
     marginBottom: 2,
   },
   featureSubtext: {
     fontSize: 13,
     color: "#888",
-    fontWeight: "400",
   },
   priceContainer: {
     backgroundColor: "#f0f7ff",
@@ -328,7 +324,6 @@ const styles = StyleSheet.create({
   },
   priceLabel: {
     fontSize: 12,
-    fontWeight: "700",
     color: "#007AFF",
     textTransform: "uppercase",
     letterSpacing: 0.5,
@@ -340,12 +335,10 @@ const styles = StyleSheet.create({
   },
   price: {
     fontSize: 36,
-    fontWeight: "800",
     color: "#1a1a1a",
   },
   pricePeriod: {
     fontSize: 14,
-    fontWeight: "600",
     color: "#666",
   },
   footer: {
@@ -368,7 +361,6 @@ const styles = StyleSheet.create({
   },
   cancelButtonText: {
     fontSize: 16,
-    fontWeight: "700",
     color: "#666",
   },
   purchaseButton: {
@@ -380,7 +372,6 @@ const styles = StyleSheet.create({
   },
   purchaseButtonText: {
     fontSize: 16,
-    fontWeight: "700",
     color: "#fff",
   },
   disabled: {
@@ -395,7 +386,6 @@ const styles = StyleSheet.create({
   },
   devResetButtonText: {
     fontSize: 14,
-    fontWeight: "700",
     color: "#d93025",
   },
   restoreContainer: {
@@ -410,6 +400,5 @@ const styles = StyleSheet.create({
   restoreButtonText: {
     color: "#007AFF",
     fontSize: 15,
-    fontWeight: "700",
   },
 });

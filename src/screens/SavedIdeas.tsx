@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { Alert, Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { Alert, Image, ScrollView, TouchableOpacity, View } from "react-native";
+import Text from "../Components/AppText";
 import { Ionicons } from "@expo/vector-icons";
 import type { AppNavigation } from "../types/navigation";
 import DateIdeaCard from "../Components/DateIdeaCard";
@@ -76,7 +77,6 @@ export default function SavedIdeas({ navigation }: { navigation: AppNavigation }
         >
           <Text
             style={{
-              fontWeight: "900",
               fontSize: 36,
               color: "#1a1a1a",
             }}
@@ -87,7 +87,6 @@ export default function SavedIdeas({ navigation }: { navigation: AppNavigation }
             <Text
               style={{
                 fontSize: 13,
-                fontWeight: "600",
                 color: "#6b7280",
                 marginBottom: 6,
               }}
@@ -143,14 +142,13 @@ export default function SavedIdeas({ navigation }: { navigation: AppNavigation }
             <Text
               style={{
                 fontSize: 16,
-                fontWeight: "800",
                 color: "#007AFF",
                 marginBottom: 2,
               }}
             >
               Unlock Premium
             </Text>
-            <Text style={{ fontSize: 13, color: "#0051D5", fontWeight: "500" }}>
+            <Text style={{ fontSize: 13, color: "#0051D5" }}>
               Save unlimited ideas for only {lifetimePremium?.priceString || "..."}
             </Text>
           </View>
@@ -175,14 +173,13 @@ export default function SavedIdeas({ navigation }: { navigation: AppNavigation }
             <Text
               style={{
                 fontSize: 16,
-                fontWeight: "800",
                 color: "#2e9f5b",
                 marginBottom: 2,
               }}
             >
               You are a premium user
             </Text>
-            <Text style={{ fontSize: 13, color: "#1f7a45", fontWeight: "500" }}>You can save unlimited date ideas.</Text>
+            <Text style={{ fontSize: 13, color: "#1f7a45" }}>You can save unlimited date ideas.</Text>
           </View>
         </View>
       )}

@@ -1,5 +1,6 @@
 import React from 'react'
-import { TouchableOpacity, Text, Linking } from 'react-native'
+import { TouchableOpacity, Linking } from 'react-native'
+import Text from './AppText'
 
 type WebsiteLinkProps = {
   href?: string

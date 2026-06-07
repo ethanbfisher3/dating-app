@@ -1,5 +1,6 @@
 import React from "react";
-import { Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Modal, StyleSheet, TouchableOpacity, View } from "react-native";
+import Text from "./AppText";
 import { Ionicons } from "@expo/vector-icons";
 
 type PageInfoModalProps = {
@@ -65,7 +66,6 @@ const styles = StyleSheet.create({
   title: {
     flex: 1,
     fontSize: 20,
-    fontWeight: "800",
     color: "#1a1a1a",
     marginRight: 8,
   },
@@ -114,7 +114,6 @@ const styles = StyleSheet.create({
   },
   gotItText: {
     fontSize: 15,
-    fontWeight: "700",
     color: "#fff",
   },
 });

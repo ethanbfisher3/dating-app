@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState, useRef } from "react";
-import { Alert, Image, KeyboardAvoidingView, Platform, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { Alert, Image, KeyboardAvoidingView, Platform, ScrollView, TouchableOpacity, View } from "react-native";
+import Text from "../Components/AppText";
 import * as Location from "expo-location";
 import { Ionicons } from "@expo/vector-icons";
 import type { AppNavigation } from "../types/navigation";
@@ -230,7 +231,6 @@ export default function PlanADate({ navigation }: { navigation: AppNavigation })
         >
           <Text
             style={{
-              fontWeight: "900",
               fontSize: 36,
               color: "#1a1a1a",
               flex: 1,
@@ -277,7 +277,7 @@ export default function PlanADate({ navigation }: { navigation: AppNavigation })
             alignItems: "center",
           }}
         >
-          <Text style={{ color: "#fff", fontSize: 18, fontWeight: "800" }}>Generate Date Ideas</Text>
+          <Text style={{ color: "#fff", fontSize: 18 }}>Generate Date Ideas</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -294,7 +294,7 @@ export default function PlanADate({ navigation }: { navigation: AppNavigation })
             alignItems: "center",
           }}
         >
-          <Text style={{ color: "#1e90ff", fontSize: 17, fontWeight: "800" }}>View Date Calendar</Text>
+          <Text style={{ color: "#1e90ff", fontSize: 17 }}>View Date Calendar</Text>
         </TouchableOpacity>
 
         {!isUnlocked ? (
@@ -318,14 +318,13 @@ export default function PlanADate({ navigation }: { navigation: AppNavigation })
               <Text
                 style={{
                   fontSize: 16,
-                  fontWeight: "800",
                   color: "#007AFF",
                   marginBottom: 2,
                 }}
               >
                 Unlock Premium
               </Text>
-              <Text style={{ fontSize: 13, color: "#0051D5", fontWeight: "500" }}>
+              <Text style={{ fontSize: 13, color: "#0051D5" }}>
                 Save unlimited ideas for only {lifetimePremium?.priceString || "..."}
               </Text>
             </View>
@@ -350,14 +349,13 @@ export default function PlanADate({ navigation }: { navigation: AppNavigation })
               <Text
                 style={{
                   fontSize: 16,
-                  fontWeight: "800",
                   color: "#2e9f5b",
                   marginBottom: 2,
                 }}
               >
                 You are a premium user
               </Text>
-              <Text style={{ fontSize: 13, color: "#1f7a45", fontWeight: "500" }}>You can save unlimited date ideas.</Text>
+              <Text style={{ fontSize: 13, color: "#1f7a45" }}>You can save unlimited date ideas.</Text>
             </View>
           </View>
         )}

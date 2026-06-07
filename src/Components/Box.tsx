@@ -1,5 +1,6 @@
 import React from "react"
-import { View, Text, Image, StyleSheet } from "react-native"
+import { View, Image, StyleSheet } from "react-native"
+import Text from "./AppText"
 
 export default function Box({ title, subtitle, image, children }) {
   return (
@@ -28,6 +29,6 @@ const styles = StyleSheet.create({
   },
   image: { width: "100%", height: 220, resizeMode: "cover" },
   content: { padding: 18 },
-  title: { fontSize: 22, fontWeight: "800", marginBottom: 6, color: "#1a1a1a" },
+  title: { fontSize: 22, marginBottom: 6, color: "#1a1a1a" },
   subtitle: { color: "#666", marginBottom: 12, fontSize: 16 },
 })

@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Image, Linking, Pressable, StyleSheet, Text, View, Platform } from "react-native";
+import { Image, Linking, Pressable, StyleSheet, View, Platform } from "react-native";
+import Text from "./AppText";
 import { NativeAd, NativeAdView, NativeAsset, NativeAssetType, NativeMediaView, TestIds } from "react-native-google-mobile-ads";
 
 // 1. Define your real IDs
@@ -269,7 +270,6 @@ const styles = StyleSheet.create({
   loadingText: {
     color: "#4b5b6b",
     fontSize: 14,
-    fontWeight: "600",
   },
   fallbackContainer: {
     padding: 16,
@@ -290,7 +290,6 @@ const styles = StyleSheet.create({
   },
   fallbackLabel: {
     fontSize: 12,
-    fontWeight: "700",
     color: "#6b7280",
   },
   fallbackContentRow: {
@@ -309,7 +308,6 @@ const styles = StyleSheet.create({
   },
   fallbackTitle: {
     fontSize: 18,
-    fontWeight: "800",
     color: "#1f2d3d",
     marginBottom: 6,
   },
@@ -330,10 +328,10 @@ const styles = StyleSheet.create({
   },
   headerRow: { flexDirection: "row", alignItems: "center", marginBottom: 8 },
   adBadge: { backgroundColor: "#FFD700", paddingHorizontal: 4, borderRadius: 3, marginRight: 8 },
-  adBadgeText: { fontSize: 12, fontWeight: "bold", color: "#000" },
-  headline: { fontSize: 16, fontWeight: "bold", flex: 1 },
+  adBadgeText: { fontSize: 12, color: "#000" },
+  headline: { fontSize: 16, flex: 1 },
   bodyText: { fontSize: 14, color: "#555", marginBottom: 10 },
   mediaContainer: { width: "100%", height: 200, backgroundColor: "#f0f0f0", borderRadius: 8 },
   ctaButton: { marginTop: 12, backgroundColor: "#0055FF", padding: 12, borderRadius: 6, alignItems: "center" },
-  ctaText: { color: "#ffffff", fontWeight: "bold", fontSize: 16 },
+  ctaText: { color: "#ffffff", fontSize: 16 },
 });

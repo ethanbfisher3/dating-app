@@ -1,5 +1,6 @@
 import React from 'react'
-import { TouchableOpacity, Text, StyleSheet } from 'react-native'
+import { TouchableOpacity, StyleSheet } from 'react-native'
+import Text from './AppText'
 
 export function SeeMoreButton({ onPress, label = 'See More' }) {
   return (
@@ -17,7 +18,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     alignSelf: 'flex-start'
   },
-  txt: { color: '#fff', fontWeight: '600' }
+  txt: { color: '#fff' }
 })
 
 export default { SeeMoreButton }

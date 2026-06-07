@@ -1,28 +1,43 @@
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import { useState } from "react";
-import { ScrollView, Text, View, TouchableOpacity, Alert, Image } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { ScrollView, View, TouchableOpacity, Alert, Image } from "react-native";
+import Text from "../Components/AppText";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { usePremium } from "../hooks/usePremium";
+import { useState } from "react";
 import PaywallModal from "../Components/PaywallModal";
 
 export default function Info({ goToTab }) {
-  const [expandedOffers, setExpandedOffers] = useState({
-    dateHistory: true,
-    datePlanner: true,
-    recipeIdeas: true,
-    savedIdeas: true,
-  });
   const [paywallVisible, setPaywallVisible] = useState(false);
   const { isUnlocked, resetPremium } = usePremium();
 
   const insets = useSafeAreaInsets();
 
-  const toggleOffer = (offerKey: keyof typeof expandedOffers) => {
-    setExpandedOffers((previous) => ({
-      ...previous,
-      [offerKey]: !previous[offerKey],
-    }));
-  };
+  const offers = [
+    {
+      title: "Dating History",
+      icon: "time-outline" as const,
+      description: "Curated list of date spots, from outdoor adventures to cozy cafes.",
+      onPress: () => goToTab?.("Date History"),
+    },
+    {
+      title: "Smart Date Planner",
+      icon: "calendar-outline" as const,
+      description: "Answer a few questions and get personalized date recommendations based on your preferences.",
+      onPress: () => goToTab?.("DateCraft"),
+    },
+    {
+      title: "Recipe Ideas",
+      icon: "fast-food-outline" as const,
+      description: "Simple, affordable recipes perfect for cooking together on a date night.",
+      onPress: () => goToTab?.("Recipe Ideas"),
+    },
+    {
+      title: "Save Your Favorite Ideas",
+      icon: "bookmark-outline" as const,
+      description: "Do you like some of the date ideas? Save them to view later.",
+      onPress: () => goToTab?.("Saved Ideas"),
+    },
+  ];
 
   const handleRemovePremium = async () => {
     try {
@@ -44,7 +59,7 @@ export default function Info({ goToTab }) {
     >
       <Text
         style={{
-          fontWeight: "900",
+          fontFamily: "SuperPandora",
           fontSize: 36,
           marginVertical: 24,
           color: "#1a1a1a",
@@ -65,242 +80,86 @@ export default function Info({ goToTab }) {
         />
       </View>
 
-      <View
-        style={{
-          backgroundColor: "#fff",
-          padding: 20,
-          borderRadius: 12,
-          marginBottom: 20,
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.1,
-          shadowRadius: 4,
-          elevation: 2,
-        }}
-      >
+      <View>
         <Text
           style={{
             fontSize: 24,
-            fontWeight: "800",
             marginBottom: 12,
             color: "#1e90ff",
+            fontFamily: "SuperPandora",
           }}
         >
           What We Offer
         </Text>
-        <View style={{ marginBottom: 12 }}>
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "space-between",
-            }}
-          >
-            <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={() => goToTab?.("Date History")}
-              style={{ flexDirection: "row", alignItems: "center", flex: 1 }}
-            >
-              <Text
-                style={{
-                  marginBottom: 6,
-                }}
-              >
-                <MaterialCommunityIcons name="clock-outline" size={20} color="#f05a7e" />{" "}
-              </Text>
-              <Text
-                style={{
-                  fontSize: 18,
-                  fontWeight: "700",
-                  color: "#1a1a1a",
-                  marginBottom: 6,
-                  textDecorationLine: "underline",
-                }}
-              >
-                Dating History
-              </Text>
-            </TouchableOpacity>
-
-            {/* <TouchableOpacity activeOpacity={0.8} onPress={() => toggleOffer("dateHistory")}>
-              <Ionicons name={expandedOffers.dateHistory ? "chevron-up" : "chevron-down"} size={20} color="#1e90ff" />
-            </TouchableOpacity> */}
-          </View>
-
-          {expandedOffers.dateHistory && (
-            <Text
+        <View style={{ gap: 12 }}>
+          {offers.map((offer) => (
+            <View
+              key={offer.title}
               style={{
-                fontSize: 16,
-                lineHeight: 24,
-                color: "#555",
-                marginLeft: 12,
+                backgroundColor: "#ffffff",
+                borderRadius: 16,
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 6 },
+                shadowOpacity: 0.08,
+                shadowRadius: 10,
+                elevation: 3,
+                borderWidth: 1,
+                borderColor: "#edf1f7",
               }}
             >
-              Curated list of date spots, from outdoor adventures to cozy cafes.
-            </Text>
-          )}
-        </View>
-
-        <View style={{ marginBottom: 12 }}>
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "space-between",
-            }}
-          >
-            <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={() => goToTab?.("DateCraft")}
-              style={{ flexDirection: "row", alignItems: "center", flex: 1 }}
-            >
-              <Text
+              <TouchableOpacity
+                activeOpacity={0.86}
+                onPress={offer.onPress}
                 style={{
-                  fontSize: 18,
-                  fontWeight: "700",
-                  color: "#1a1a1a",
-                  marginBottom: 6,
+                  paddingHorizontal: 16,
+                  paddingVertical: 14,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "space-between",
                 }}
               >
-                <Ionicons name="calendar-outline" size={20} color="#f05a7e" />{" "}
-              </Text>
-              <Text
-                style={{
-                  fontSize: 18,
-                  fontWeight: "700",
-                  color: "#1a1a1a",
-                  marginBottom: 6,
-                  textDecorationLine: "underline",
-                }}
-              >
-                Smart Date Planner
-              </Text>
-            </TouchableOpacity>
+                <View style={{ flexDirection: "row", alignItems: "center", flex: 1, paddingRight: 12 }}>
+                  <View
+                    style={{
+                      width: 38,
+                      height: 38,
+                      borderRadius: 19,
+                      alignItems: "center",
+                      justifyContent: "center",
+                      backgroundColor: "#fff2f6",
+                      marginRight: 12,
+                    }}
+                  >
+                    <Ionicons name={offer.icon} size={20} color="#f05a7e" />
+                  </View>
 
-            {/* <TouchableOpacity activeOpacity={0.8} onPress={() => toggleOffer("datePlanner")}>
-              <Ionicons name={expandedOffers.datePlanner ? "chevron-up" : "chevron-down"} size={20} color="#1e90ff" />
-            </TouchableOpacity> */}
-          </View>
+                  <View style={{ flex: 1 }}>
+                    <Text
+                      style={{
+                        fontSize: 17,
+                        fontFamily: "MatchaCih",
+                        color: "#1a1a1a",
+                        marginBottom: 4,
+                      }}
+                    >
+                      {offer.title}
+                    </Text>
+                    <Text
+                      style={{
+                        fontSize: 14,
+                        lineHeight: 20,
+                        color: "#5f6773",
+                      }}
+                    >
+                      {offer.description}
+                    </Text>
+                  </View>
+                </View>
 
-          {expandedOffers.datePlanner && (
-            <Text
-              style={{
-                fontSize: 16,
-                lineHeight: 24,
-                color: "#555",
-                marginLeft: 12,
-              }}
-            >
-              Answer a few questions and get personalized date recommendations based on your preferences.
-            </Text>
-          )}
-        </View>
-
-        <View style={{ marginBottom: 12 }}>
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "space-between",
-            }}
-          >
-            <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={() => goToTab?.("Recipe Ideas")}
-              style={{ flexDirection: "row", alignItems: "center", flex: 1 }}
-            >
-              <Text
-                style={{
-                  fontSize: 18,
-                  fontWeight: "700",
-                  color: "#1a1a1a",
-                  marginBottom: 6,
-                }}
-              >
-                <Ionicons name="fast-food-outline" size={20} color="#f05a7e" />{" "}
-              </Text>
-              <Text
-                style={{
-                  fontSize: 18,
-                  fontWeight: "700",
-                  color: "#1a1a1a",
-                  marginBottom: 6,
-                  textDecorationLine: "underline",
-                }}
-              >
-                Recipe Ideas
-              </Text>
-            </TouchableOpacity>
-
-            {/* <TouchableOpacity activeOpacity={0.8} onPress={() => toggleOffer("recipeIdeas")}>
-              <Ionicons name={expandedOffers.recipeIdeas ? "chevron-up" : "chevron-down"} size={20} color="#1e90ff" />
-            </TouchableOpacity> */}
-          </View>
-
-          {expandedOffers.recipeIdeas && (
-            <Text
-              style={{
-                fontSize: 16,
-                lineHeight: 24,
-                color: "#555",
-                marginLeft: 12,
-              }}
-            >
-              Simple, affordable recipes perfect for cooking together on a date night.
-            </Text>
-          )}
-        </View>
-
-        <View style={{ marginBottom: 12 }}>
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "space-between",
-            }}
-          >
-            <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={() => goToTab?.("Saved Ideas")}
-              style={{ flexDirection: "row", alignItems: "center", flex: 1, marginBottom: 6 }}
-            >
-              <Text
-                style={{
-                  fontSize: 18,
-                  fontWeight: "700",
-                  color: "#1a1a1a",
-                }}
-              >
-                <Ionicons name="bookmark-outline" size={20} color="#f05a7e" />{" "}
-              </Text>
-              <Text
-                style={{
-                  fontSize: 18,
-                  fontWeight: "700",
-                  color: "#1a1a1a",
-                  textDecorationLine: "underline",
-                }}
-              >
-                Save Your Favorite Ideas
-              </Text>
-            </TouchableOpacity>
-
-            {/* <TouchableOpacity activeOpacity={0.8} onPress={() => toggleOffer("savedIdeas")}>
-              <Ionicons name={expandedOffers.savedIdeas ? "chevron-up" : "chevron-down"} size={20} color="#1e90ff" />
-            </TouchableOpacity> */}
-          </View>
-
-          {expandedOffers.savedIdeas && (
-            <Text
-              style={{
-                fontSize: 16,
-                lineHeight: 24,
-                color: "#555",
-                marginLeft: 12,
-              }}
-            >
-              Do you like some of the date ideas? Save them to view later.
-            </Text>
-          )}
+                <Ionicons name="chevron-forward" size={20} color="#9aa3af" />
+              </TouchableOpacity>
+            </View>
+          ))}
         </View>
       </View>
 
@@ -313,7 +172,7 @@ export default function Info({ goToTab }) {
             backgroundColor: isUnlocked ? "#fff5f5" : "#f3f4f6",
             padding: 16,
             borderRadius: 12,
-            marginBottom: 20,
+            marginVertical: 20,
             borderWidth: 1,
             borderColor: isUnlocked ? "#d93025" : "#c9ced6",
             opacity: isUnlocked ? 1 : 0.8,
@@ -323,7 +182,6 @@ export default function Info({ goToTab }) {
             style={{
               textAlign: "center",
               color: isUnlocked ? "#d93025" : "#697281",
-              fontWeight: "800",
               fontSize: 15,
             }}
           >

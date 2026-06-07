@@ -1,5 +1,7 @@
 import React, { useRef, useState } from "react";
-import { Modal, KeyboardAvoidingView, Platform, View, ScrollView, Text, TouchableOpacity, TextInput, Pressable } from "react-native";
+import { Modal, KeyboardAvoidingView, Platform, View, ScrollView, TouchableOpacity, Pressable } from "react-native";
+import Text from "./AppText";
+import TextInput from "./AppTextInput";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import type { ScrollView as ScrollViewType } from "react-native";
 import { DATE_CATEGORIES } from "../utils/utils";
@@ -117,7 +119,7 @@ export default function EditInputsModal(props: Props) {
         <View
           style={{ width: 18, height: 18, borderRadius: 9, backgroundColor: "#1e90ff", justifyContent: "center", alignItems: "center" }}
         >
-          <Text style={{ color: "#fff", fontWeight: "700", fontSize: 12 }}>i</Text>
+          <Text style={{ color: "#fff", fontSize: 12 }}>i</Text>
         </View>
       </Pressable>
     );
@@ -132,7 +134,7 @@ export default function EditInputsModal(props: Props) {
           onPress={onClose}
         >
           <View style={{ backgroundColor: "#fff", padding: 16, borderRadius: 12, maxWidth: 320, borderWidth: 1, borderColor: "#dce6ef" }}>
-            <Text style={{ color: "#1f2d3d", fontSize: 15, fontWeight: "600", marginBottom: 8 }}>Info</Text>
+            <Text style={{ color: "#1f2d3d", fontSize: 15, marginBottom: 8 }}>Info</Text>
             <Text style={{ color: "#3b4a5a", fontSize: 14 }}>{text}</Text>
           </View>
         </Pressable>
@@ -152,7 +154,7 @@ export default function EditInputsModal(props: Props) {
           backgroundColor: active ? "#1e90ff" : "#fff",
         }}
       >
-        <Text style={{ fontWeight: "700", color: active ? "#fff" : "#1f2d3d" }}>{label}</Text>
+        <Text style={{ color: active ? "#fff" : "#1f2d3d" }}>{label}</Text>
       </TouchableOpacity>
     );
   }
@@ -181,7 +183,7 @@ export default function EditInputsModal(props: Props) {
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode="interactive"
           >
-            <Text style={{ fontSize: 18, fontWeight: "800", color: "#1f2d3d", marginBottom: 12 }}>Edit Inputs</Text>
+            <Text style={{ fontSize: 18, color: "#1f2d3d", marginBottom: 12 }}>Edit Inputs</Text>
 
             <Text style={{ color: "#4b5b6b", marginBottom: 4 }}>Date</Text>
             <TouchableOpacity
@@ -214,13 +216,13 @@ export default function EditInputsModal(props: Props) {
             ) : null}
 
             <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 10 }}>
-              <Text style={{ marginRight: 6, fontSize: 16, fontWeight: "600", color: "#2c3e50" }}>Time Window</Text>
+              <Text style={{ marginRight: 6, fontSize: 16, color: "#2c3e50" }}>Time Window</Text>
               <InfoBubble onPress={() => showInfo("The time you are available to go out on this date")} />
             </View>
 
             <View style={{ flexDirection: "row", gap: 12, marginBottom: 12 }}>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 14, fontWeight: "600", color: "#555", marginBottom: 6 }}>Start Hour</Text>
+                <Text style={{ fontSize: 14, color: "#555", marginBottom: 6 }}>Start Hour</Text>
                 <TextInput
                   value={draftStartHour12}
                   onChangeText={setDraftStartHour12}
@@ -238,7 +240,7 @@ export default function EditInputsModal(props: Props) {
               </View>
 
               <View style={{ width: 96 }}>
-                <Text style={{ fontSize: 14, fontWeight: "600", color: "#555", marginBottom: 6 }}>AM/PM</Text>
+                <Text style={{ fontSize: 14, color: "#555", marginBottom: 6 }}>AM/PM</Text>
                 <View style={{ flexDirection: "row", borderWidth: 1, borderColor: "#dce6ef", borderRadius: 10, overflow: "hidden" }}>
                   {(["AM", "PM"] as const).map((period) => (
                     <TouchableOpacity
@@ -251,7 +253,7 @@ export default function EditInputsModal(props: Props) {
                         backgroundColor: draftStartPeriod === period ? "#1e90ff" : "#fff",
                       }}
                     >
-                      <Text style={{ fontWeight: "700", color: draftStartPeriod === period ? "#fff" : "#1f2d3d" }}>{period}</Text>
+                      <Text style={{ color: draftStartPeriod === period ? "#fff" : "#1f2d3d" }}>{period}</Text>
                     </TouchableOpacity>
                   ))}
                 </View>
@@ -260,7 +262,7 @@ export default function EditInputsModal(props: Props) {
 
             <View style={{ flexDirection: "row", gap: 12, marginBottom: 12 }}>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 14, fontWeight: "600", color: "#555", marginBottom: 6 }}>End Hour</Text>
+                <Text style={{ fontSize: 14, color: "#555", marginBottom: 6 }}>End Hour</Text>
                 <TextInput
                   value={draftEndHour12}
                   onChangeText={setDraftEndHour12}
@@ -278,7 +280,7 @@ export default function EditInputsModal(props: Props) {
               </View>
 
               <View style={{ width: 96 }}>
-                <Text style={{ fontSize: 14, fontWeight: "600", color: "#555", marginBottom: 6 }}>AM/PM</Text>
+                <Text style={{ fontSize: 14, color: "#555", marginBottom: 6 }}>AM/PM</Text>
                 <View style={{ flexDirection: "row", borderWidth: 1, borderColor: "#dce6ef", borderRadius: 10, overflow: "hidden" }}>
                   {(["AM", "PM"] as const).map((period) => (
                     <TouchableOpacity
@@ -291,7 +293,7 @@ export default function EditInputsModal(props: Props) {
                         backgroundColor: draftEndPeriod === period ? "#1e90ff" : "#fff",
                       }}
                     >
-                      <Text style={{ fontWeight: "700", color: draftEndPeriod === period ? "#fff" : "#1f2d3d" }}>{period}</Text>
+                      <Text style={{ color: draftEndPeriod === period ? "#fff" : "#1f2d3d" }}>{period}</Text>
                     </TouchableOpacity>
                   ))}
                 </View>
@@ -310,7 +312,7 @@ export default function EditInputsModal(props: Props) {
                 </View>
                 <View style={{ flexDirection: "row", gap: 8 }}>
                   <View style={{ flex: 1 }}>
-                    <Text style={{ fontSize: 12, fontWeight: "700", color: "#667788", marginBottom: 4 }}>Hours</Text>
+                    <Text style={{ fontSize: 12, color: "#667788", marginBottom: 4 }}>Hours</Text>
                     <TextInput
                       value={draftDateLengthHours}
                       onChangeText={setDraftDateLengthHours}
@@ -328,7 +330,7 @@ export default function EditInputsModal(props: Props) {
                     />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={{ fontSize: 12, fontWeight: "700", color: "#667788", marginBottom: 4 }}>Minutes</Text>
+                    <Text style={{ fontSize: 12, color: "#667788", marginBottom: 4 }}>Minutes</Text>
                     <TextInput
                       value={draftDateLengthMinutes}
                       onChangeText={setDraftDateLengthMinutes}
@@ -398,7 +400,7 @@ export default function EditInputsModal(props: Props) {
               </View>
             </View>
 
-            <Text style={{ color: "#4b5b6b", marginBottom: 8, fontWeight: "700" }}>Categories</Text>
+            <Text style={{ color: "#4b5b6b", marginBottom: 8 }}>Categories</Text>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
               {DATE_CATEGORIES.map((category, index) => {
                 const checked = draftCategoriesChecked[index];
@@ -415,7 +417,7 @@ export default function EditInputsModal(props: Props) {
                       backgroundColor: checked ? "#e8f3ff" : "#fff",
                     }}
                   >
-                    <Text style={{ color: checked ? "#1e90ff" : "#4b5b6b", fontWeight: checked ? "700" : "500" }}>{category}</Text>
+                    <Text style={{ color: checked ? "#1e90ff" : "#4b5b6b" }}>{category}</Text>
                   </TouchableOpacity>
                 );
               })}
@@ -436,14 +438,14 @@ export default function EditInputsModal(props: Props) {
                   backgroundColor: "#fff",
                 }}
               >
-                <Text style={{ color: "#3b4a5a", fontWeight: "700" }}>Cancel</Text>
+                <Text style={{ color: "#3b4a5a" }}>Cancel</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 onPress={applyEditsAndRegenerate}
                 style={{ paddingHorizontal: 14, paddingVertical: 10, borderRadius: 10, backgroundColor: "#1e90ff" }}
               >
-                <Text style={{ color: "#fff", fontWeight: "700" }}>Apply & Regenerate</Text>
+                <Text style={{ color: "#fff" }}>Apply & Regenerate</Text>
               </TouchableOpacity>
             </View>
           </ScrollView>

@@ -28,3 +28,11 @@ users can upload pictures or reviews and there can be a 'recent dates in provo' 
 Then, when a user is looking at date ideas or a place, it will show them dates that have taken place at that spot
 Ratings for recipes that you like (upvoting/downvoting)
 Use database on the server instead of querying Mapbox every time
+
+
+
+
+Prompts:
+instead of having the pink circle around just the middle tab, put it around the selected tab. add an animation when the tabs are clicked or when the user swipes between pages
+On the date history page, Add information about how many dates the user has been on, the average rating, the highest rated girl, etc., using a carousel at the top of the page. Also, redesign the way that previous dates are displayed, so each one takes up a box either with the image of the date or with the rating (1 - 10) on the left side, and the information on the right. just display a couple bits of information like the date, but allow the user to click on the date idea to see a popup modal with all of the information, allowing the user to edit anything if they want
+When displaying generated date ideas, redesign the card so that it includes an icon based on the kind of main activity in the date (have an icon for recreation, an icon for food, sports, etc)

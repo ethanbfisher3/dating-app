@@ -493,7 +493,6 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
             marginTop: 16,
             color: "#1f2d3d",
             fontSize: 20,
-            fontWeight: "800",
             textAlign: "center",
           }}
         >
@@ -537,7 +536,6 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
     >
       <Text
         style={{
-          fontWeight: "900",
           fontSize: 36,
           marginBottom: 24,
           marginTop: 12,
@@ -581,7 +579,7 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
           marginBottom: 10,
         }}
       >
-        <Text style={{ color: "#fff", fontWeight: "700", fontSize: 16 }}>Edit Inputs</Text>
+        <Text style={{ color: "#fff", fontSize: 16 }}>Edit Inputs</Text>
       </TouchableOpacity>
 
       <TouchableOpacity
@@ -600,7 +598,7 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
           opacity: isLoading ? 0.6 : 1,
         }}
       >
-        <Text style={{ color: "#fff", fontWeight: "700", fontSize: 16 }}>Regenerate</Text>
+        <Text style={{ color: "#fff", fontSize: 16 }}>Regenerate</Text>
       </TouchableOpacity>
 
       <EditInputsModal
@@ -662,13 +660,12 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
             <Text
               style={{
                 fontSize: 14,
-                fontWeight: "700",
                 color: "#2c3e50",
               }}
             >
               Debug Data
             </Text>
-            <Text style={{ color: "#1e90ff", fontWeight: "700" }}>{showDevMatches ? "Hide" : "Show"}</Text>
+            <Text style={{ color: "#1e90ff" }}>{showDevMatches ? "Hide" : "Show"}</Text>
           </TouchableOpacity>
 
           {showDevMatches ? (
@@ -692,13 +689,12 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
                 <Text
                   style={{
                     fontSize: 14,
-                    fontWeight: "700",
                     color: "#2c3e50",
                   }}
                 >
                   Places ({places.length})
                 </Text>
-                <Text style={{ color: "#1e90ff", fontWeight: "700" }}>{showDevPlaces ? "Hide" : "Show"}</Text>
+                <Text style={{ color: "#1e90ff" }}>{showDevPlaces ? "Hide" : "Show"}</Text>
               </TouchableOpacity>
 
               {showDevPlaces ? (
@@ -706,7 +702,6 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
                   <Text
                     style={{
                       fontSize: 12,
-                      fontWeight: "700",
                       color: "#667788",
                       marginBottom: 2,
                     }}
@@ -740,13 +735,12 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
                 <Text
                   style={{
                     fontSize: 14,
-                    fontWeight: "700",
                     color: "#2c3e50",
                   }}
                 >
                   Cached Places ({allCachedPlaces.length})
                 </Text>
-                <Text style={{ color: "#1e90ff", fontWeight: "700" }}>{showDevCachedPlaces ? "Hide" : "Show"}</Text>
+                <Text style={{ color: "#1e90ff" }}>{showDevCachedPlaces ? "Hide" : "Show"}</Text>
               </TouchableOpacity>
 
               {showDevCachedPlaces ? (
@@ -779,13 +773,12 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
                 <Text
                   style={{
                     fontSize: 14,
-                    fontWeight: "700",
                     color: "#2c3e50",
                   }}
                 >
                   Activities ({activities.length})
                 </Text>
-                <Text style={{ color: "#1e90ff", fontWeight: "700" }}>{showDevActivities ? "Hide" : "Show"}</Text>
+                <Text style={{ color: "#1e90ff" }}>{showDevActivities ? "Hide" : "Show"}</Text>
               </TouchableOpacity>
 
               {showDevActivities ? (
@@ -817,13 +810,12 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
                 <Text
                   style={{
                     fontSize: 14,
-                    fontWeight: "700",
                     color: "#2c3e50",
                   }}
                 >
                   Recipes ({recipes.length})
                 </Text>
-                <Text style={{ color: "#1e90ff", fontWeight: "700" }}>{showDevRecipes ? "Hide" : "Show"}</Text>
+                <Text style={{ color: "#1e90ff" }}>{showDevRecipes ? "Hide" : "Show"}</Text>
               </TouchableOpacity>
 
               {showDevRecipes ? (
@@ -886,7 +878,7 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
               alignItems: "center",
             }}
           >
-            <Text style={{ color: "#fff", fontWeight: "700", fontSize: 15 }}>Retry</Text>
+            <Text style={{ color: "#fff", fontSize: 15 }}>Retry</Text>
           </TouchableOpacity>
         </View>
       ) : null}

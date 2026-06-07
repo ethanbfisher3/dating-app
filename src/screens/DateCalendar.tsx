@@ -1,5 +1,6 @@
 import React, { useEffect, useLayoutEffect, useMemo, useState } from "react";
-import { Modal, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { Modal, ScrollView, TouchableOpacity, View } from "react-native";
+import Text from "../Components/AppText";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { getRecordedDates, initializeRecordedDates, subscribeRecordedDates, type RecordedDate } from "../data/dateHistoryStore";
 import { getSavedIdeas, subscribeSavedIdeas, type SavedDateIdea } from "../data/savedIdeasStore";
@@ -175,7 +176,6 @@ export default function DateCalendar({ navigation }: { navigation?: AppNavigatio
       >
         <Text
           style={{
-            fontWeight: "900",
             fontSize: 34,
             color: "#1a1a1a",
             flex: 1,
@@ -228,10 +228,10 @@ export default function DateCalendar({ navigation }: { navigation?: AppNavigatio
               paddingVertical: 6,
             }}
           >
-            <Text style={{ color: "#1d4ed8", fontWeight: "700" }}>Prev</Text>
+            <Text style={{ color: "#1d4ed8" }}>Prev</Text>
           </TouchableOpacity>
 
-          <Text style={{ fontSize: 18, fontWeight: "800", color: "#1f2d3d" }}>{monthLabel(currentMonth)}</Text>
+          <Text style={{ fontSize: 18, color: "#1f2d3d" }}>{monthLabel(currentMonth)}</Text>
 
           <TouchableOpacity
             onPress={goToNextMonth}
@@ -244,14 +244,14 @@ export default function DateCalendar({ navigation }: { navigation?: AppNavigatio
               paddingVertical: 6,
             }}
           >
-            <Text style={{ color: "#1d4ed8", fontWeight: "700" }}>Next</Text>
+            <Text style={{ color: "#1d4ed8" }}>Next</Text>
           </TouchableOpacity>
         </View>
 
         <View style={{ flexDirection: "row", marginBottom: 8 }}>
           {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
             <View key={day} style={{ width: "14.285%", alignItems: "center" }}>
-              <Text style={{ color: "#6b7280", fontWeight: "700", fontSize: 12 }}>{day}</Text>
+              <Text style={{ color: "#6b7280", fontSize: 12 }}>{day}</Text>
             </View>
           ))}
         </View>
@@ -286,7 +286,7 @@ export default function DateCalendar({ navigation }: { navigation?: AppNavigatio
                     opacity: hasEntries ? 1 : 0.72,
                   }}
                 >
-                  <Text style={{ color: "#1f2d3d", fontWeight: "700" }}>{dayNumber}</Text>
+                  <Text style={{ color: "#1f2d3d" }}>{dayNumber}</Text>
                   <View style={{ flexDirection: "row", gap: 5, marginTop: 4 }}>
                     {hasPast ? (
                       <View
@@ -329,7 +329,6 @@ export default function DateCalendar({ navigation }: { navigation?: AppNavigatio
         <Text
           style={{
             fontSize: 15,
-            fontWeight: "800",
             color: "#1f2d3d",
             marginBottom: 8,
           }}
@@ -381,7 +380,6 @@ export default function DateCalendar({ navigation }: { navigation?: AppNavigatio
           style={{
             color: "#1f2d3d",
             fontSize: 15,
-            fontWeight: "800",
             marginBottom: 4,
           }}
         >
@@ -422,7 +420,6 @@ export default function DateCalendar({ navigation }: { navigation?: AppNavigatio
                 <Text
                   style={{
                     fontSize: 20,
-                    fontWeight: "800",
                     color: "#1f2d3d",
                     flex: 1,
                     marginRight: 10,
@@ -435,7 +432,6 @@ export default function DateCalendar({ navigation }: { navigation?: AppNavigatio
                     style={{
                       color: "#1e90ff",
                       fontSize: 16,
-                      fontWeight: "700",
                     }}
                   >
                     Close
@@ -448,7 +444,6 @@ export default function DateCalendar({ navigation }: { navigation?: AppNavigatio
                   <Text
                     style={{
                       fontSize: 16,
-                      fontWeight: "800",
                       color: "#ef4444",
                       marginBottom: 8,
                     }}
@@ -469,7 +464,6 @@ export default function DateCalendar({ navigation }: { navigation?: AppNavigatio
                     >
                       <Text
                         style={{
-                          fontWeight: "700",
                           color: "#1f2d3d",
                           marginBottom: 3,
                         }}
@@ -490,7 +484,6 @@ export default function DateCalendar({ navigation }: { navigation?: AppNavigatio
                   <Text
                     style={{
                       fontSize: 16,
-                      fontWeight: "800",
                       color: "#22c55e",
                       marginBottom: 8,
                     }}
@@ -511,7 +504,6 @@ export default function DateCalendar({ navigation }: { navigation?: AppNavigatio
                     >
                       <Text
                         style={{
-                          fontWeight: "700",
                           color: "#1f2d3d",
                           marginBottom: 3,
                         }}

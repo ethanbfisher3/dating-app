@@ -39,7 +39,16 @@ export default {
     },
 
     plugins: [
-      "expo-font",
+      [
+        "expo-font",
+        {
+          fonts: [
+            "./src/assets/fonts/SuperMindset.ttf",
+            "./src/assets/fonts/SuperPandora.ttf",
+            "./src/assets/fonts/MatchaCih.ttf",
+          ],
+        },
+      ],
       "expo-asset",
       "@react-native-community/datetimepicker",
       [
