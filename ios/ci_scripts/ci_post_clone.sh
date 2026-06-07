@@ -1,36 +1,35 @@
 #!/bin/sh
 
-# 'set -e' stops the script if any command fails
-# 'set -x' prints every command to the Xcode Cloud logs so you can see what failed
 set -e
 set -x
 
 echo "===== STARTING CI ====="
 
-# Speed up Homebrew
+# Prevent Homebrew from wasting time
 export HOMEBREW_NO_AUTO_UPDATE=1
 export HOMEBREW_NO_INSTALL_CLEANUP=1
 
-# Check for Node and install if missing
-if ! command -v node >/dev/null 2>&1; then
-    echo "Node not found. Installing Node 20..."
-    brew install node@20
-    
-    # Link it so the system can find it without hardcoding paths
-    brew link --overwrite node@20
-fi
+echo "===== INSTALLING BUILD TOOLS ====="
 
-echo "===== NODE VERSION ====="
+# Install Node 20 (safe if already installed)
+brew install node@20 || true
+brew link --overwrite node@20 || true
+
+# Required by React Native 0.81 / Hermes source builds
+brew install cmake || true
+
+echo "===== TOOL VERSIONS ====="
 node -v
 npm -v
+cmake --version
 
 echo "===== GOING TO REPOSITORY ====="
 cd "$CI_PRIMARY_REPOSITORY_PATH"
 
 echo "===== CLEANING ====="
-# Using '|| true' ensures the script doesn't fail if these folders don't exist yet
-rm -rf node_modules || true
-rm -rf ios/Pods || true
+rm -rf node_modules
+rm -rf ios/Pods
+rm -rf ios/build
 
 echo "===== INSTALLING DEPENDENCIES ====="
 npm ci --legacy-peer-deps
@@ -39,4 +38,4 @@ echo "===== INSTALLING PODS ====="
 cd ios
 pod install --repo-update
 
-echo "===== DONE ====="
+echo "===== CI SETUP COMPLETE ====="
