@@ -65,27 +65,28 @@ const SLOT_TO_CATEGORY: Record<string, string> = {
   activityPlace: "Entertainment",
 };
 
-function getPrimaryCategory(schedule: Array<{ slot: string; place: PlaceSummary | null }>): string | null {
-  const counts: Record<string, number> = {};
+function getPrimaryCategory(schedule: Array<{ slot: string; place: PlaceSummary | null; durationMinutes?: number }>): string | null {
+  const weights: Record<string, number> = {};
 
   for (const step of schedule) {
     const parts = step.slot.split("|").map((s) => s.trim());
     const sources = [...parts, step.place?.type ?? ""].filter(Boolean);
+    const weight = step.durationMinutes && step.durationMinutes > 0 ? step.durationMinutes : 1;
 
     for (const part of sources) {
       const cat = SLOT_TO_CATEGORY[part];
       if (cat) {
-        counts[cat] = (counts[cat] ?? 0) + 1;
+        weights[cat] = (weights[cat] ?? 0) + weight;
       }
     }
   }
 
   let best: string | null = null;
-  let bestCount = 0;
-  for (const [cat, count] of Object.entries(counts)) {
-    if (count > bestCount) {
+  let bestWeight = 0;
+  for (const [cat, weight] of Object.entries(weights)) {
+    if (weight > bestWeight) {
       best = cat;
-      bestCount = count;
+      bestWeight = weight;
     }
   }
   return best;

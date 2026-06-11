@@ -5,10 +5,12 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { usePremium } from "../hooks/usePremium";
 import { useState } from "react";
 import PaywallModal from "../Components/PaywallModal";
+import usePurchases from "src/hooks/usePurchases";
 
 export default function Info({ goToTab }) {
   const [paywallVisible, setPaywallVisible] = useState(false);
   const { isUnlocked, resetPremium } = usePremium();
+  const { lifetimePremium } = usePurchases();
 
   const insets = useSafeAreaInsets();
 
@@ -61,11 +63,16 @@ export default function Info({ goToTab }) {
         style={{
           fontFamily: "SuperPandora",
           fontSize: 36,
-          marginVertical: 24,
+          marginTop: 24,
+          marginBottom: 8,
           color: "#1a1a1a",
         }}
       >
         DateCraft
+      </Text>
+
+      <Text style={{ fontSize: 14, color: "#6b7280", marginBottom: 20 }}>
+        Your all-in-one date planning companion.
       </Text>
 
       <View style={{ width: "100%" }}>
@@ -137,7 +144,7 @@ export default function Info({ goToTab }) {
                     <Text
                       style={{
                         fontSize: 17,
-                        fontFamily: "MatchaCih",
+                        fontFamily: "SuperPandora",
                         color: "#1a1a1a",
                         marginBottom: 4,
                       }}
@@ -162,6 +169,53 @@ export default function Info({ goToTab }) {
           ))}
         </View>
       </View>
+
+      {!isUnlocked ? (
+        <TouchableOpacity
+          activeOpacity={0.9}
+          onPress={() => setPaywallVisible(true)}
+          style={{
+            backgroundColor: "#f0f7ff",
+            borderRadius: 12,
+            borderWidth: 2,
+            borderColor: "#007AFF",
+            padding: 16,
+            marginTop: 20,
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 12,
+          }}
+        >
+          <Ionicons name="star" size={28} color="#007AFF" />
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: 16, color: "#007AFF", marginBottom: 2 }}>Unlock Premium</Text>
+            <Text style={{ fontSize: 13, color: "#0051D5" }}>
+              Save unlimited ideas for only {lifetimePremium?.priceString || "..."}
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color="#007AFF" />
+        </TouchableOpacity>
+      ) : (
+        <View
+          style={{
+            backgroundColor: "#eefaf0",
+            borderRadius: 12,
+            borderWidth: 2,
+            borderColor: "#2e9f5b",
+            padding: 16,
+            marginTop: 20,
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 12,
+          }}
+        >
+          <Ionicons name="checkmark-circle" size={28} color="#2e9f5b" />
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: 16, color: "#2e9f5b", marginBottom: 2 }}>You are a premium user</Text>
+            <Text style={{ fontSize: 13, color: "#1f7a45" }}>You can save unlimited date ideas.</Text>
+          </View>
+        </View>
+      )}
 
       {__DEV__ && (
         <TouchableOpacity

@@ -7,28 +7,23 @@ import { getSavedIdeas, subscribeSavedIdeas, type SavedDateIdea } from "../data/
 import { AppNavigation } from "src/types/navigation";
 import { Ionicons } from "@expo/vector-icons";
 import PageInfoModal from "../Components/PageInfoModal";
-
-function toDateKey(date: Date): string {
-  return date.toISOString().slice(0, 10);
-}
-
-function startOfMonth(date: Date): Date {
-  return new Date(date.getFullYear(), date.getMonth(), 1);
-}
-
-function monthLabel(date: Date): string {
-  return date.toLocaleDateString("en-US", { month: "long", year: "numeric" });
-}
+import CalendarWidget from "../Components/CalendarWidget";
 
 function isValidDateKey(value: string): boolean {
   return /^\d{4}-\d{2}-\d{2}$/.test(value);
 }
 
+function formatDateLong(dateKey: string): string {
+  return new Date(`${dateKey}T12:00:00`).toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
 export default function DateCalendar({ navigation }: { navigation?: AppNavigation }) {
   const insets = useSafeAreaInsets();
-  const [currentMonth, setCurrentMonth] = useState(startOfMonth(new Date()));
-  const [recordedDateKeys, setRecordedDateKeys] = useState<string[]>([]);
-  const [savedIdeaDateKeys, setSavedIdeaDateKeys] = useState<string[]>([]);
   const [recordedDates, setRecordedDates] = useState<RecordedDate[]>([]);
   const [savedIdeas, setSavedIdeas] = useState<SavedDateIdea[]>([]);
   const [selectedDateKey, setSelectedDateKey] = useState<string | null>(null);
@@ -46,98 +41,34 @@ export default function DateCalendar({ navigation }: { navigation?: AppNavigatio
 
   useEffect(() => {
     let isMounted = true;
-
     const load = () => {
-      if (!isMounted) {
-        return;
-      }
-
-      const recorded = getRecordedDates().filter((entry) => isValidDateKey(entry.dateOfDate));
-      const saved = getSavedIdeas().filter((entry) => entry.selectedDate && isValidDateKey(entry.selectedDate));
-
+      if (!isMounted) return;
+      const recorded = getRecordedDates().filter((e) => isValidDateKey(e.dateOfDate));
+      const saved = getSavedIdeas().filter((e) => e.selectedDate && isValidDateKey(e.selectedDate));
       setRecordedDates(recorded);
       setSavedIdeas(saved);
-      setRecordedDateKeys(recorded.map((entry) => entry.dateOfDate));
-      setSavedIdeaDateKeys(saved.map((entry) => entry.selectedDate as string));
     };
-
     void initializeRecordedDates().then(load);
     const unsubRecorded = subscribeRecordedDates(load);
-    const unsubSavedIdeas = subscribeSavedIdeas(load);
-
+    const unsubSaved = subscribeSavedIdeas(load);
     return () => {
       isMounted = false;
       unsubRecorded();
-      unsubSavedIdeas();
+      unsubSaved();
     };
   }, []);
 
-  const todayKey = toDateKey(new Date());
-
-  const eventsByDate = useMemo(() => {
-    const map = new Map<string, { past: number; future: number }>();
-
-    const increment = (dateKey: string, isFuture: boolean) => {
-      const current = map.get(dateKey) ?? { past: 0, future: 0 };
-      if (isFuture) {
-        current.future += 1;
-      } else {
-        current.past += 1;
-      }
-      map.set(dateKey, current);
-    };
-
-    recordedDateKeys.forEach((dateKey) => {
-      increment(dateKey, dateKey >= todayKey);
-    });
-
-    savedIdeaDateKeys.forEach((dateKey) => {
-      increment(dateKey, dateKey >= todayKey);
-    });
-
-    return map;
-  }, [savedIdeaDateKeys, recordedDateKeys, todayKey]);
-
-  const monthStart = startOfMonth(currentMonth);
-  const year = monthStart.getFullYear();
-  const month = monthStart.getMonth();
-  const firstWeekday = new Date(year, month, 1).getDay();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-  const cells: Array<number | null> = [];
-  for (let i = 0; i < firstWeekday; i += 1) {
-    cells.push(null);
-  }
-  for (let day = 1; day <= daysInMonth; day += 1) {
-    cells.push(day);
-  }
-
-  while (cells.length % 7 !== 0) {
-    cells.push(null);
-  }
-
-  const goToPreviousMonth = () => {
-    setCurrentMonth((current) => new Date(current.getFullYear(), current.getMonth() - 1, 1));
-  };
-
-  const goToNextMonth = () => {
-    setCurrentMonth((current) => new Date(current.getFullYear(), current.getMonth() + 1, 1));
-  };
-
-  const totalPast = Array.from(eventsByDate.values()).reduce((sum, entry) => sum + entry.past, 0);
-  const totalFuture = Array.from(eventsByDate.values()).reduce((sum, entry) => sum + entry.future, 0);
-
   const selectedRecordedDates = useMemo(() => {
     if (!selectedDateKey) return [];
-    return recordedDates.filter((entry) => entry.dateOfDate === selectedDateKey);
+    return recordedDates.filter((e) => e.dateOfDate === selectedDateKey);
   }, [recordedDates, selectedDateKey]);
 
   const selectedSavedIdeas = useMemo(() => {
     if (!selectedDateKey) return [];
-    return savedIdeas.filter((entry) => entry.selectedDate === selectedDateKey);
+    return savedIdeas.filter((e) => e.selectedDate === selectedDateKey);
   }, [savedIdeas, selectedDateKey]);
 
-  const openDateDetails = (dateKey: string) => {
+  const handleDayPress = (dateKey: string) => {
     setSelectedDateKey(dateKey);
     setIsDetailsModalVisible(true);
   };
@@ -146,15 +77,6 @@ export default function DateCalendar({ navigation }: { navigation?: AppNavigatio
     setIsDetailsModalVisible(false);
     setSelectedDateKey(null);
   };
-
-  const selectedDateLabel = selectedDateKey
-    ? new Date(`${selectedDateKey}T12:00:00`).toLocaleDateString("en-US", {
-        weekday: "long",
-        month: "long",
-        day: "numeric",
-        year: "numeric",
-      })
-    : "";
 
   return (
     <ScrollView
@@ -165,311 +87,44 @@ export default function DateCalendar({ navigation }: { navigation?: AppNavigatio
         backgroundColor: "transparent",
       }}
     >
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "flex-start",
-          justifyContent: "space-between",
-          gap: 12,
-          marginBottom: 12,
-        }}
-      >
-        <Text
-          style={{
-            fontSize: 34,
-            color: "#1a1a1a",
-            flex: 1,
-          }}
-        >
+      <View style={{ flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: 12, marginBottom: 4 }}>
+        <Text style={{ fontSize: 34, color: "#1a1a1a", flex: 1, fontFamily: "SuperPandora" }}>
           Date Calendar
         </Text>
         <TouchableOpacity
-          style={{
-            width: 36,
-            height: 36,
-            borderRadius: 18,
-            backgroundColor: "#eef5ff",
-            alignItems: "center",
-            justifyContent: "center",
-            marginTop: 4,
-          }}
+          style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: "#eef5ff", alignItems: "center", justifyContent: "center", marginTop: 4 }}
           onPress={() => setInfoVisible(true)}
         >
           <Ionicons name="information-circle-outline" size={22} color="#007AFF" />
         </TouchableOpacity>
       </View>
 
-      <View
-        style={{
-          backgroundColor: "#fff",
-          borderRadius: 12,
-          borderWidth: 1,
-          borderColor: "#dce6ef",
-          padding: 14,
-          marginBottom: 14,
-        }}
-      >
-        <View
-          style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: 10,
-          }}
-        >
-          <TouchableOpacity
-            onPress={goToPreviousMonth}
-            style={{
-              backgroundColor: "#eff6ff",
-              borderColor: "#bfdbfe",
-              borderWidth: 1,
-              borderRadius: 8,
-              paddingHorizontal: 10,
-              paddingVertical: 6,
-            }}
-          >
-            <Text style={{ color: "#1d4ed8" }}>Prev</Text>
-          </TouchableOpacity>
+      <Text style={{ fontSize: 14, color: "#6b7280", marginBottom: 16 }}>
+        See all your planned and recorded dates in one place.
+      </Text>
 
-          <Text style={{ fontSize: 18, color: "#1f2d3d" }}>{monthLabel(currentMonth)}</Text>
+      <CalendarWidget onDayPress={handleDayPress} />
 
-          <TouchableOpacity
-            onPress={goToNextMonth}
-            style={{
-              backgroundColor: "#eff6ff",
-              borderColor: "#bfdbfe",
-              borderWidth: 1,
-              borderRadius: 8,
-              paddingHorizontal: 10,
-              paddingVertical: 6,
-            }}
-          >
-            <Text style={{ color: "#1d4ed8" }}>Next</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={{ flexDirection: "row", marginBottom: 8 }}>
-          {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
-            <View key={day} style={{ width: "14.285%", alignItems: "center" }}>
-              <Text style={{ color: "#6b7280", fontSize: 12 }}>{day}</Text>
-            </View>
-          ))}
-        </View>
-
-        <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
-          {cells.map((dayNumber, index) => {
-            if (dayNumber === null) {
-              return <View key={`empty_${index}`} style={{ width: "14.285%", padding: 4 }} />;
-            }
-
-            const dateKey = `${year}-${String(month + 1).padStart(2, "0")}-${String(dayNumber).padStart(2, "0")}`;
-            const stats = eventsByDate.get(dateKey);
-            const hasPast = Boolean(stats?.past);
-            const hasFuture = Boolean(stats?.future);
-            const isToday = dateKey === todayKey;
-            const hasEntries = hasPast || hasFuture;
-
-            return (
-              <View key={dateKey} style={{ width: "14.285%", padding: 4 }}>
-                <TouchableOpacity
-                  onPress={() => openDateDetails(dateKey)}
-                  disabled={!hasEntries}
-                  activeOpacity={0.75}
-                  style={{
-                    minHeight: 54,
-                    borderRadius: 10,
-                    borderWidth: 1,
-                    borderColor: isToday ? "#1e90ff" : "#dce6ef",
-                    backgroundColor: isToday ? "#eff6ff" : "#fff",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    opacity: hasEntries ? 1 : 0.72,
-                  }}
-                >
-                  <Text style={{ color: "#1f2d3d" }}>{dayNumber}</Text>
-                  <View style={{ flexDirection: "row", gap: 5, marginTop: 4 }}>
-                    {hasPast ? (
-                      <View
-                        style={{
-                          width: 7,
-                          height: 7,
-                          borderRadius: 4,
-                          backgroundColor: "#ef4444",
-                        }}
-                      />
-                    ) : null}
-                    {hasFuture ? (
-                      <View
-                        style={{
-                          width: 7,
-                          height: 7,
-                          borderRadius: 4,
-                          backgroundColor: "#22c55e",
-                        }}
-                      />
-                    ) : null}
-                  </View>
-                </TouchableOpacity>
-              </View>
-            );
-          })}
-        </View>
-      </View>
-
-      <View
-        style={{
-          backgroundColor: "#fff",
-          borderRadius: 12,
-          borderWidth: 1,
-          borderColor: "#dce6ef",
-          padding: 14,
-          marginBottom: 14,
-        }}
-      >
-        <Text
-          style={{
-            fontSize: 15,
-            color: "#1f2d3d",
-            marginBottom: 8,
-          }}
-        >
-          Legend
-        </Text>
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            marginBottom: 6,
-          }}
-        >
-          <View
-            style={{
-              width: 8,
-              height: 8,
-              borderRadius: 4,
-              backgroundColor: "#ef4444",
-              marginRight: 8,
-            }}
-          />
-          <Text style={{ color: "#4b5b6b" }}>Past dates</Text>
-        </View>
-        <View style={{ flexDirection: "row", alignItems: "center" }}>
-          <View
-            style={{
-              width: 8,
-              height: 8,
-              borderRadius: 4,
-              backgroundColor: "#22c55e",
-              marginRight: 8,
-            }}
-          />
-          <Text style={{ color: "#4b5b6b" }}>Future dates</Text>
-        </View>
-      </View>
-
-      <View
-        style={{
-          backgroundColor: "#ffffff",
-          borderWidth: 1,
-          borderColor: "#dce6ef",
-          borderRadius: 12,
-          padding: 14,
-        }}
-      >
-        <Text
-          style={{
-            color: "#1f2d3d",
-            fontSize: 15,
-            marginBottom: 4,
-          }}
-        >
-          Summary
-        </Text>
-        <Text style={{ color: "#4b5b6b", marginBottom: 2 }}>Past entries: {totalPast}</Text>
-        <Text style={{ color: "#4b5b6b" }}>Future entries: {totalFuture}</Text>
-      </View>
-
+      {/* Day detail modal */}
       <Modal visible={isDetailsModalVisible} transparent animationType="fade" onRequestClose={closeDateDetails}>
-        <View
-          style={{
-            flex: 1,
-            backgroundColor: "rgba(0,0,0,0.35)",
-            justifyContent: "center",
-            paddingHorizontal: 20,
-          }}
-        >
-          <View
-            style={{
-              backgroundColor: "#fff",
-              borderRadius: 12,
-              borderWidth: 1,
-              borderColor: "#dce6ef",
-              maxHeight: "85%",
-              overflow: "hidden",
-            }}
-          >
+        <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.35)", justifyContent: "center", paddingHorizontal: 20 }}>
+          <View style={{ backgroundColor: "#fff", borderRadius: 12, borderWidth: 1, borderColor: "#dce6ef", maxHeight: "85%", overflow: "hidden" }}>
             <ScrollView contentContainerStyle={{ padding: 16 }}>
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  marginBottom: 10,
-                }}
-              >
-                <Text
-                  style={{
-                    fontSize: 20,
-                    color: "#1f2d3d",
-                    flex: 1,
-                    marginRight: 10,
-                  }}
-                >
-                  {selectedDateLabel}
+              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                <Text style={{ fontSize: 20, color: "#1f2d3d", flex: 1, marginRight: 10 }}>
+                  {selectedDateKey ? formatDateLong(selectedDateKey) : ""}
                 </Text>
                 <TouchableOpacity onPress={closeDateDetails}>
-                  <Text
-                    style={{
-                      color: "#1e90ff",
-                      fontSize: 16,
-                    }}
-                  >
-                    Close
-                  </Text>
+                  <Text style={{ color: "#1e90ff", fontSize: 16 }}>Close</Text>
                 </TouchableOpacity>
               </View>
 
               {selectedRecordedDates.length > 0 ? (
                 <View style={{ marginBottom: 12 }}>
-                  <Text
-                    style={{
-                      fontSize: 16,
-                      color: "#ef4444",
-                      marginBottom: 8,
-                    }}
-                  >
-                    Recorded Dates
-                  </Text>
+                  <Text style={{ fontSize: 16, color: "#ef4444", marginBottom: 8 }}>Recorded Dates</Text>
                   {selectedRecordedDates.map((entry, index) => (
-                    <View
-                      key={entry.id}
-                      style={{
-                        borderWidth: 1,
-                        borderColor: "#e8edf3",
-                        borderRadius: 10,
-                        padding: 10,
-                        marginBottom: 8,
-                        backgroundColor: "#fff",
-                      }}
-                    >
-                      <Text
-                        style={{
-                          color: "#1f2d3d",
-                          marginBottom: 3,
-                        }}
-                      >
-                        Date #{index + 1}
-                      </Text>
+                    <View key={entry.id} style={{ borderWidth: 1, borderColor: "#e8edf3", borderRadius: 10, padding: 10, marginBottom: 8, backgroundColor: "#fff" }}>
+                      <Text style={{ color: "#1f2d3d", marginBottom: 3 }}>Date #{index + 1}</Text>
                       <Text style={{ color: "#4b5b6b", marginBottom: 2 }}>With: {entry.whoWentWith || "Not provided"}</Text>
                       <Text style={{ color: "#4b5b6b", marginBottom: 2 }}>Activity: {entry.whatYouDid || "Not provided"}</Text>
                       <Text style={{ color: "#4b5b6b", marginBottom: 2 }}>Spent: ${entry.moneySpent.toFixed(2)}</Text>
@@ -481,35 +136,10 @@ export default function DateCalendar({ navigation }: { navigation?: AppNavigatio
 
               {selectedSavedIdeas.length > 0 ? (
                 <View>
-                  <Text
-                    style={{
-                      fontSize: 16,
-                      color: "#22c55e",
-                      marginBottom: 8,
-                    }}
-                  >
-                    Saved Date Ideas
-                  </Text>
+                  <Text style={{ fontSize: 16, color: "#22c55e", marginBottom: 8 }}>Saved Date Ideas</Text>
                   {selectedSavedIdeas.map((entry, index) => (
-                    <View
-                      key={entry.id}
-                      style={{
-                        borderWidth: 1,
-                        borderColor: "#e8edf3",
-                        borderRadius: 10,
-                        padding: 10,
-                        marginBottom: 8,
-                        backgroundColor: "#fff",
-                      }}
-                    >
-                      <Text
-                        style={{
-                          color: "#1f2d3d",
-                          marginBottom: 3,
-                        }}
-                      >
-                        Saved Idea #{index + 1}
-                      </Text>
+                    <View key={entry.id} style={{ borderWidth: 1, borderColor: "#e8edf3", borderRadius: 10, padding: 10, marginBottom: 8, backgroundColor: "#fff" }}>
+                      <Text style={{ color: "#1f2d3d", marginBottom: 3 }}>Saved Idea #{index + 1}</Text>
                       <Text style={{ color: "#4b5b6b", marginBottom: 2 }}>Idea: {entry.filledTemplate}</Text>
                       <Text style={{ color: "#4b5b6b" }}>Saved on {new Date(entry.savedAt).toLocaleDateString()}</Text>
                     </View>

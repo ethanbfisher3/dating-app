@@ -13,6 +13,8 @@ import PaywallModal from "../Components/PaywallModal";
 import EditInputsModal from "../Components/EditInputsModal";
 import usePurchases from "src/hooks/usePurchases";
 import PageInfoModal from "../Components/PageInfoModal";
+import CalendarWidget from "../Components/CalendarWidget";
+import { getSavedIdeas, initializeSavedIdeas, subscribeSavedIdeas, type SavedDateIdea } from "../data/savedIdeasStore";
 
 export default function PlanADate({ navigation }: { navigation: AppNavigation }) {
   const { isUnlocked } = usePremium();
@@ -39,6 +41,7 @@ export default function PlanADate({ navigation }: { navigation: AppNavigation })
   const [isGeneratingIdeas, setIsGeneratingIdeas] = useState(false);
   const [paywallVisible, setPaywallVisible] = useState(false);
   const [infoVisible, setInfoVisible] = useState(false);
+  const [savedIdeas, setSavedIdeas] = useState<SavedDateIdea[]>([]);
   const serverTarget = "overpass";
 
   useEffect(() => {
@@ -61,6 +64,14 @@ export default function PlanADate({ navigation }: { navigation: AppNavigation })
     };
 
     loadLocation();
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+    const load = () => { if (isMounted) setSavedIdeas(getSavedIdeas()); };
+    void initializeSavedIdeas().then(load);
+    const unsub = subscribeSavedIdeas(load);
+    return () => { isMounted = false; unsub(); };
   }, []);
 
   useEffect(() => {
@@ -226,7 +237,8 @@ export default function PlanADate({ navigation }: { navigation: AppNavigation })
             alignItems: "flex-start",
             justifyContent: "space-between",
             gap: 12,
-            marginVertical: 24,
+            marginTop: 24,
+            marginBottom: 8,
           }}
         >
           <Text
@@ -254,6 +266,10 @@ export default function PlanADate({ navigation }: { navigation: AppNavigation })
           </TouchableOpacity>
         </View>
 
+        <Text style={{ fontSize: 14, color: "#6b7280", marginBottom: 20, marginTop: -8 }}>
+          Generate personalized date ideas based on your budget, time, and preferences.
+        </Text>
+
         <Image
           source={require("../assets/images/guy_asking_girl.jpg")}
           style={{
@@ -280,22 +296,63 @@ export default function PlanADate({ navigation }: { navigation: AppNavigation })
           <Text style={{ color: "#fff", fontSize: 18 }}>Generate Date Ideas</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          activeOpacity={0.9}
-          onPress={() => navigation.navigate("DateCalendar")}
-          style={{
-            backgroundColor: "#ffffff",
-            borderRadius: 12,
-            borderWidth: 2,
-            borderColor: "#1e90ff",
-            paddingVertical: 16,
-            paddingHorizontal: 18,
-            marginBottom: 16,
-            alignItems: "center",
-          }}
-        >
-          <Text style={{ color: "#1e90ff", fontSize: 17 }}>View Date Calendar</Text>
-        </TouchableOpacity>
+        {/* Saved Ideas horizontal scroll */}
+        <View style={{ marginBottom: 20 }}>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+            <Text style={{ fontSize: 20, color: "#1a1a1a" }}>Saved Ideas</Text>
+            {savedIdeas.length > 0 ? (
+              <TouchableOpacity onPress={() => navigation.navigate("SavedIdeas")}>
+                <Text style={{ fontSize: 14, color: "#1e90ff" }}>View All</Text>
+              </TouchableOpacity>
+            ) : null}
+          </View>
+          {savedIdeas.length === 0 ? (
+            <View style={{ backgroundColor: "#fff", borderRadius: 12, borderWidth: 1, borderColor: "#dce6ef", padding: 20, alignItems: "center" }}>
+              <Ionicons name="bookmark-outline" size={32} color="#c0c8d4" style={{ marginBottom: 8 }} />
+              <Text style={{ fontSize: 14, color: "#9aa3af", textAlign: "center" }}>
+                No saved ideas yet. Generate some date ideas and tap Save!
+              </Text>
+            </View>
+          ) : (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
+              {savedIdeas.map((idea) => (
+                <TouchableOpacity
+                  key={idea.id}
+                  onPress={() => navigation.navigate("SavedIdeas")}
+                  activeOpacity={0.8}
+                  style={{
+                    width: 220,
+                    backgroundColor: "#fff",
+                    borderRadius: 12,
+                    borderWidth: 1,
+                    borderColor: "#dce6ef",
+                    padding: 14,
+                  }}
+                >
+                  <Text style={{ fontSize: 14, color: "#1f2d3d", lineHeight: 20 }} numberOfLines={4}>
+                    {idea.filledTemplate}
+                  </Text>
+                  {idea.selectedDate ? (
+                    <Text style={{ fontSize: 12, color: "#9aa3af", marginTop: 8 }}>
+                      {new Date(`${idea.selectedDate}T12:00:00`).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                    </Text>
+                  ) : null}
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          )}
+        </View>
+
+        {/* Inline calendar */}
+        <View style={{ marginBottom: 20 }}>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+            <Text style={{ fontSize: 20, color: "#1a1a1a" }}>Date Calendar</Text>
+            <TouchableOpacity onPress={() => navigation.navigate("DateCalendar")}>
+              <Text style={{ fontSize: 14, color: "#1e90ff" }}>Open Full View</Text>
+            </TouchableOpacity>
+          </View>
+          <CalendarWidget onDayPress={() => navigation.navigate("DateCalendar")} />
+        </View>
 
         {!isUnlocked ? (
           <TouchableOpacity

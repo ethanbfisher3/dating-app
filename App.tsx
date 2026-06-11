@@ -68,13 +68,6 @@ const TABS = [
     iconOutline: "restaurant-outline",
     component: RecipesPage,
   },
-  {
-    key: "Saved Ideas",
-    title: "Saved Ideas",
-    icon: "bookmark",
-    iconOutline: "bookmark-outline",
-    component: SavedIdeas,
-  },
 ];
 
 function SwipeBackLayout({ navigation, children }: { navigation: AppNavigation; children: React.ReactNode }) {
@@ -155,7 +148,7 @@ export default function App() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <NavigationContainer>
-          <Stack.Navigator screenOptions={{ contentStyle: { backgroundColor: "transparent" } }}>
+          <Stack.Navigator screenOptions={{ contentStyle: { backgroundColor: "#fafbfc" } }}>
             <Stack.Screen name="MainTabs" component={MainTabs} options={{ headerShown: false }} />
             <Stack.Screen name="DateCraft">
               {({ navigation }) => (

@@ -327,9 +327,18 @@ export default function DateHistoryScreen(_: { navigation: AppNavigation }) {
           </TouchableOpacity>
         </View>
 
+        <Text style={{ fontSize: 14, color: "#6b7280", marginBottom: 12, marginTop: 2 }}>
+          Log and reflect on dates you've been on.
+        </Text>
+
         {/* Stats carousel */}
         {stats ? (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 20 }} contentContainerStyle={{ gap: 10 }}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={{ marginBottom: 20, marginTop: 10 }}
+            contentContainerStyle={{ gap: 10 }}
+          >
             <StatCard icon="calendar" value={String(stats.total)} label="Total Dates" color="#007AFF" />
             {stats.avgRating != null ? (
               <StatCard icon="star" value={stats.avgRating.toFixed(1)} label="Avg Rating" color="#f59e0b" />
@@ -679,6 +688,7 @@ const styles = StyleSheet.create({
 
   // Add button
   addButton: {
+    // marginTop: 20,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",

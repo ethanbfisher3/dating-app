@@ -58,6 +58,7 @@
     "babel-plugin-dotenv": "^0.1.1",
     "babel-preset-expo": "~54.0.10",
     "react-native-dotenv": "^3.4.11",
+    "react-refresh": "^0.18.0",
     "typescript": "~5.9.2"
   }
 }

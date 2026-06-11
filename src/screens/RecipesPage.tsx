@@ -104,6 +104,10 @@ export default function RecipesPage({ navigation }: { navigation: AppNavigation 
           </TouchableOpacity>
         </View>
 
+        <Text style={{ fontSize: 14, color: "#6b7280", marginBottom: 16, marginTop: -8 }}>
+          Simple, affordable recipes perfect for cooking together on a date night.
+        </Text>
+
         {/* Meal Type Carousel */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingBottom: 20 }}>
           {/* Favorites pill */}

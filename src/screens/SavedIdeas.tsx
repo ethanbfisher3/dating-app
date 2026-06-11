@@ -52,8 +52,8 @@ export default function SavedIdeas({ navigation }: { navigation: AppNavigation }
   return (
     <ScrollView
       contentContainerStyle={{
-        padding: 24,
-        paddingTop: insets.top,
+        paddingHorizontal: 24,
+        paddingTop: 12,
         backgroundColor: "transparent",
       }}
     >
@@ -63,7 +63,7 @@ export default function SavedIdeas({ navigation }: { navigation: AppNavigation }
           alignItems: "flex-start",
           justifyContent: "space-between",
           gap: 12,
-          marginVertical: 24,
+          marginBottom: 4,
         }}
       >
         <View
@@ -111,6 +111,10 @@ export default function SavedIdeas({ navigation }: { navigation: AppNavigation }
         </TouchableOpacity>
       </View>
 
+      <Text style={{ fontSize: 14, color: "#6b7280", marginBottom: 16 }}>
+        Your favorite generated date ideas, saved for later.
+      </Text>
+
       <Image
         source={require("../assets/images/thinking.jpg")}
         style={{
@@ -148,9 +152,7 @@ export default function SavedIdeas({ navigation }: { navigation: AppNavigation }
             >
               Unlock Premium
             </Text>
-            <Text style={{ fontSize: 13, color: "#0051D5" }}>
-              Save unlimited ideas for only {lifetimePremium?.priceString || "..."}
-            </Text>
+            <Text style={{ fontSize: 13, color: "#0051D5" }}>Save unlimited ideas for only {lifetimePremium?.priceString || "..."}</Text>
           </View>
           <Ionicons name="chevron-forward" size={20} color="#007AFF" />
         </TouchableOpacity>
