@@ -19,7 +19,7 @@
     <key>CFBundlePackageType</key>
     <string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
     <key>CFBundleShortVersionString</key>
-    <string>1.0.1</string>
+    <string>1.1.0</string>
     <key>CFBundleSignature</key>
     <string>????</string>
     <key>CFBundleURLTypes</key>
@@ -27,12 +27,12 @@
       <dict>
         <key>CFBundleURLSchemes</key>
         <array>
-          <string>com.ethanbfisher3.datingapp</string>
+          <string>com.ethanbfisher3.dateplanner</string>
         </array>
       </dict>
     </array>
     <key>CFBundleVersion</key>
-    <string>50</string>
+    <string>75</string>
     <key>GADApplicationIdentifier</key>
     <string>ca-app-pub-9592701510571371~1448814278</string>
     <key>GADDelayAppMeasurementInit</key>
