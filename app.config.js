@@ -2,7 +2,7 @@ export default {
   expo: {
     name: "DateCraft: Date Planner",
     slug: "byu-dating-native",
-    version: "1.0.1",
+    version: "1.1.0",
     icon: "./src/assets/images/girl_icon.jpg",
     backgroundColor: "#FFFFFF",
 
@@ -26,7 +26,7 @@ export default {
         NSLocationAlwaysAndWhenInUseUsageDescription: "$(PRODUCT_NAME) uses your location to find nearby places for your dates.",
       },
       bundleIdentifier: "com.ethanbfisher3.datingapp",
-      buildNumber: "50",
+      buildNumber: "75",
     },
 
     extra: {
