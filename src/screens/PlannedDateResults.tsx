@@ -28,6 +28,7 @@ import PaywallModal from "../Components/PaywallModal";
 import DateIdeaCard from "../Components/DateIdeaCard";
 import CustomNativeAd from "../Components/CustomNativeAd";
 import { DATE_CATEGORIES } from "src/utils/utils";
+import AppText from "src/Components/AppText";
 
 const IMAGES = [
   require("../assets/images/date_images/idea.jpg"),
@@ -488,7 +489,7 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
         }}
       >
         <ActivityIndicator size="large" color="#1e90ff" />
-        <Text
+        <AppText
           style={{
             marginTop: 16,
             color: "#1f2d3d",
@@ -497,8 +498,8 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
           }}
         >
           Generating Your Date Ideas...
-        </Text>
-        <Text
+        </AppText>
+        <AppText
           style={{
             marginTop: 10,
             color: "#556677",
@@ -508,7 +509,7 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
           }}
         >
           Finding places and building the best matches for your preferences.
-        </Text>
+        </AppText>
         {!isUnlocked ? (
           <View style={{ width: "100%", marginTop: 24 }}>
             <CustomNativeAd
@@ -534,7 +535,7 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
         backgroundColor: "transparent",
       }}
     >
-      <Text
+      <AppText
         style={{
           fontSize: 36,
           marginBottom: 24,
@@ -543,7 +544,7 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
         }}
       >
         Results
-      </Text>
+      </AppText>
 
       <Image
         source={image}
@@ -556,7 +557,7 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
       />
 
       {places.length === 0 && maxDistance > 0 && (
-        <Text
+        <AppText
           style={{
             marginBottom: 16,
             fontSize: 17,
@@ -566,7 +567,7 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
         >
           No places found nearby. Date ideas won't include any travel. You may need to try generating again or increasing the distance
           filter in edit inputs.
-        </Text>
+        </AppText>
       )}
 
       <TouchableOpacity
@@ -579,7 +580,7 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
           marginBottom: 10,
         }}
       >
-        <Text style={{ color: "#fff", fontSize: 16 }}>Edit Inputs</Text>
+        <AppText style={{ color: "#fff", fontSize: 16 }}>Edit Inputs</AppText>
       </TouchableOpacity>
 
       <TouchableOpacity
@@ -598,7 +599,7 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
           opacity: isLoading ? 0.6 : 1,
         }}
       >
-        <Text style={{ color: "#fff", fontSize: 16 }}>Regenerate</Text>
+        <AppText style={{ color: "#fff", fontSize: 16 }}>Regenerate</AppText>
       </TouchableOpacity>
 
       <EditInputsModal
@@ -822,12 +823,12 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
                 <View style={{ paddingHorizontal: 14, paddingBottom: 10, gap: 6 }}>
                   {recipes.length ? (
                     recipes.map((recipe, index) => (
-                      <Text key={index} style={{ fontSize: 14, color: "#2c3e50" }}>
+                      <AppText key={index} style={{ fontSize: 14, color: "#2c3e50" }}>
                         • {recipe.name}
-                      </Text>
+                      </AppText>
                     ))
                   ) : (
-                    <Text style={{ fontSize: 14, color: "#667788" }}>No recipes.</Text>
+                    <AppText style={{ fontSize: 14, color: "#667788" }}>No recipes.</AppText>
                   )}
                 </View>
               ) : null}
@@ -852,7 +853,7 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
       {isLoading ? (
         <View style={{ marginTop: 24, alignItems: "center" }}>
           <ActivityIndicator size="large" color="#1e90ff" />
-          <Text style={{ marginTop: 12, color: "#555", fontSize: 16 }}>Building your date ideas...</Text>
+          <AppText style={{ marginTop: 12, color: "#555", fontSize: 16 }}>Building your date ideas...</AppText>
         </View>
       ) : null}
 
@@ -867,8 +868,8 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
             marginBottom: 16,
           }}
         >
-          <Text style={{ color: "#9b2226", fontSize: 15, marginBottom: 10 }}>(DEV) Could not load date ideas.</Text>
-          {<Text style={{ color: "#9b2226", fontSize: 13, marginBottom: 12 }}>{error}</Text>}
+          <AppText style={{ color: "#9b2226", fontSize: 15, marginBottom: 10 }}>(DEV) Could not load date ideas.</AppText>
+          {<AppText style={{ color: "#9b2226", fontSize: 13, marginBottom: 12 }}>{error}</AppText>}
           <TouchableOpacity
             onPress={() => refetch()}
             style={{
@@ -878,7 +879,7 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
               alignItems: "center",
             }}
           >
-            <Text style={{ color: "#fff", fontSize: 15 }}>Retry</Text>
+            <AppText style={{ color: "#fff", fontSize: 15 }}>Retry</AppText>
           </TouchableOpacity>
         </View>
       ) : null}

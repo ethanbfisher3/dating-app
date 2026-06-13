@@ -17,6 +17,7 @@ const PRODUCTION_ID = Platform.select({
 const AD_UNIT_ID = __DEV__ ? TestIds.NATIVE : PRODUCTION_ID;
 
 const PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=com.ethanbfisher3.node_master";
+const APP_STORE_URL = "https://apps.apple.com/app/id6744806119";
 const FALLBACK_ICON = require("../assets/images/uncrossed/nodemaster_icon_512.jpg");
 
 type CustomNativeAdProps = {
@@ -30,7 +31,7 @@ export default function CustomNativeAd({ onLoaded, onError }: CustomNativeAdProp
   const [connectionChecked, setConnectionChecked] = useState(false);
   const readyReportedRef = useRef(false);
   const loadTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const supportsNativeAds = Platform.OS === "android";
+  const supportsNativeAds = Platform.OS === "android" || Platform.OS === "ios";
 
   const clearLoadTimeout = () => {
     if (loadTimeoutRef.current) {
@@ -175,14 +176,11 @@ export default function CustomNativeAd({ onLoaded, onError }: CustomNativeAdProp
   if (showFallback || !supportsNativeAds) {
     return (
       <Pressable
-        accessibilityRole={supportsNativeAds ? "link" : undefined}
+        accessibilityRole="link"
         onPress={() => {
-          if (!supportsNativeAds) {
-            return;
-          }
-
-          Linking.openURL(PLAY_STORE_URL).catch((error) => {
-            console.warn("[CustomNativeAd] Failed to open Play Store.", error);
+          const url = Platform.OS === "ios" ? APP_STORE_URL : PLAY_STORE_URL;
+          Linking.openURL(url).catch((error) => {
+            console.warn("[CustomNativeAd] Failed to open store.", error);
           });
         }}
         style={styles.fallbackContainer}
@@ -191,7 +189,7 @@ export default function CustomNativeAd({ onLoaded, onError }: CustomNativeAdProp
           <View style={styles.adBadge}>
             <Text style={styles.adBadgeText}>Ad</Text>
           </View>
-          <Text style={styles.fallbackLabel}>{supportsNativeAds ? "Sponsored" : "Unavailable on iOS"}</Text>
+          <Text style={styles.fallbackLabel}>Sponsored</Text>
         </View>
 
         <View style={styles.fallbackContentRow}>
@@ -202,16 +200,13 @@ export default function CustomNativeAd({ onLoaded, onError }: CustomNativeAdProp
             </Text>
             <Text style={styles.fallbackBody} numberOfLines={3}>
               Try a relaxing puzzle challenge from the same creator.
-              {supportsNativeAds ? " Tap to open the Google Play Store." : " Ads are disabled on iOS to keep the screen stable."}
             </Text>
           </View>
         </View>
 
-        {supportsNativeAds ? (
-          <View style={styles.ctaButton}>
-            <Text style={styles.ctaText}>Open in Google Play</Text>
-          </View>
-        ) : null}
+        <View style={styles.ctaButton}>
+          <Text style={styles.ctaText}>{Platform.OS === "ios" ? "Open in App Store" : "Open in Google Play"}</Text>
+        </View>
       </Pressable>
     );
   }
