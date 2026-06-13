@@ -220,7 +220,7 @@ export default function CustomNativeAd({ onLoaded, onError }: CustomNativeAdProp
   }
 
   return (
-    // NativeAdView acts as the root boundary for interaction tracking
+    <View style={styles.adShadowWrapper}>
     <NativeAdView nativeAd={nativeAd} style={styles.adContainer}>
       <View style={styles.headerRow}>
         <View style={styles.adBadge}>
@@ -232,6 +232,12 @@ export default function CustomNativeAd({ onLoaded, onError }: CustomNativeAdProp
           </Text>
         </NativeAsset>
       </View>
+
+      <NativeAsset assetType={NativeAssetType.ADVERTISER}>
+        <Text style={styles.advertiserText} numberOfLines={1}>
+          {nativeAd.advertiser}
+        </Text>
+      </NativeAsset>
 
       <NativeAsset assetType={NativeAssetType.BODY}>
         <Text style={styles.bodyText} numberOfLines={2}>
@@ -248,6 +254,7 @@ export default function CustomNativeAd({ onLoaded, onError }: CustomNativeAdProp
         </View>
       </NativeAsset>
     </NativeAdView>
+    </View>
   );
 }
 
@@ -311,20 +318,26 @@ const styles = StyleSheet.create({
     color: "#556677",
     lineHeight: 20,
   },
+  adShadowWrapper: {
+    borderRadius: 8,
+    marginVertical: 10,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    backgroundColor: "#ffffff",
+  },
   adContainer: {
     padding: 12,
     backgroundColor: "#ffffff",
     borderRadius: 8,
-    marginVertical: 10,
-    elevation: 2, // shadow for Android
-    shadowColor: "#000", // shadow for iOS
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    overflow: "hidden",
   },
   headerRow: { flexDirection: "row", alignItems: "center", marginBottom: 8 },
   adBadge: { backgroundColor: "#FFD700", paddingHorizontal: 4, borderRadius: 3, marginRight: 8 },
   adBadgeText: { fontSize: 12, color: "#000" },
   headline: { fontSize: 16, flex: 1 },
+  advertiserText: { fontSize: 12, color: "#888", marginBottom: 4 },
   bodyText: { fontSize: 14, color: "#555", marginBottom: 10 },
   mediaContainer: { width: "100%", height: 200, backgroundColor: "#f0f0f0", borderRadius: 8 },
   ctaButton: { marginTop: 12, backgroundColor: "#0055FF", padding: 12, borderRadius: 6, alignItems: "center" },

@@ -1,0 +1,13 @@
+diff --git a/node_modules/react-native-google-mobile-ads/ios/RNGoogleMobileAds/RNGoogleMobileAdsNativeView.mm b/node_modules/react-native-google-mobile-ads/ios/RNGoogleMobileAds/RNGoogleMobileAdsNativeView.mm
+index 1178da1..e550ee1 100644
+--- a/node_modules/react-native-google-mobile-ads/ios/RNGoogleMobileAds/RNGoogleMobileAdsNativeView.mm
++++ b/node_modules/react-native-google-mobile-ads/ios/RNGoogleMobileAds/RNGoogleMobileAdsNativeView.mm
+@@ -196,6 +196,8 @@ using namespace facebook::react;
+   }
+   _debouncedReload = dispatch_block_create(DISPATCH_BLOCK_NO_QOS_CLASS, ^{
+     if (_nativeAd != nil) {
++      _nativeAdView.frame = self.bounds;
++      [_nativeAdView layoutIfNeeded];
+       _nativeAdView.nativeAd = _nativeAd;
+     }
+   });
