@@ -174,7 +174,7 @@ const MONTHS = ["January", "February", "March", "April", "May", "June", "July", 
 
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
-const MAX_PLACES_RETURNED = Number.POSITIVE_INFINITY;
+const MAX_PLACES_RETURNED = 500;
 const METERS_PER_MILE = 1609.34;
 const OVERPASS_QUERY_MAX_RADIUS_METERS = Math.round(25 * METERS_PER_MILE);
 const OVERPASS_INTERPRETER_URL = process.env.EXPO_PUBLIC_OVERPASS_INTERPRETER_URL || "https://overpass-api.de/api/interpreter";

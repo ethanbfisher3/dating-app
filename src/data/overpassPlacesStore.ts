@@ -21,6 +21,7 @@ type StoredOverpassCategorySnapshot = {
 
 const OVERPASS_PLACES_STORAGE_KEY = "@overpass_places_cache";
 const LOCATION_BUCKET_PRECISION = 3;
+const MAX_PLACES_PER_SNAPSHOT = 500;
 
 let snapshots: StoredOverpassCategorySnapshot[] = [];
 let hasInitialized = false;
@@ -59,7 +60,11 @@ export async function initializeOverpassPlacesStore(): Promise<void> {
         if (stored) {
           const parsed = JSON.parse(stored);
           if (Array.isArray(parsed)) {
-            snapshots = parsed;
+            // Trim any oversized legacy snapshots from before the per-snapshot cap was added.
+            snapshots = parsed.map((entry: StoredOverpassCategorySnapshot) => ({
+              ...entry,
+              places: entry.places.slice(0, MAX_PLACES_PER_SNAPSHOT),
+            }));
           }
         }
       } catch {
@@ -88,7 +93,7 @@ export function saveOverpassPlacesSnapshot(snapshot: {
     },
     serverBaseUrl: snapshot.serverBaseUrl,
     savedAt: new Date().toISOString(),
-    places: snapshot.places.map(clonePlace),
+    places: snapshot.places.slice(0, MAX_PLACES_PER_SNAPSHOT).map(clonePlace),
   };
 
   snapshots = [
