@@ -91,7 +91,7 @@ export default function RecipesPage({ navigation }: { navigation: AppNavigation 
       <ScrollView
         ref={scrollRef}
         style={styles.container}
-        contentContainerStyle={{ padding: 20, paddingTop: insets.top, paddingBottom: 24 }}
+        contentContainerStyle={{ padding: 24, paddingTop: insets.top, paddingBottom: 24 }}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
         keyboardDismissMode="interactive"
@@ -306,6 +306,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     color: "#1a1a1a",
+    fontFamily: "SuperPandora",
   },
   infoButton: {
     width: 36,

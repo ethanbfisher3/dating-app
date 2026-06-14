@@ -91,7 +91,8 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
   const [nativeAdDisplayComplete, setNativeAdDisplayComplete] = useState(false);
   const nativeAdHoldTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingRegenerateRef = useRef<(() => void) | null>(null);
-
+  const [historyCount, setHistoryCount] = useState(0);
+  const resultsHistoryRef = useRef<Array<{ ideas: any[]; mods: Map<number, any>; undoHist: Map<string, any>; image: any }>>([]);
   useLayoutEffect(() => {
     navigation.setOptions({
       headerBackTitle: "Back",
@@ -131,13 +132,43 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
   const [showDevRecipes, setShowDevRecipes] = useState(false);
   const [regeneratingSteps, setRegeneratingSteps] = useState<Set<string>>(new Set());
   const [modifiedIdeas, setModifiedIdeas] = useState<Map<number, any>>(new Map());
+  const [stepUndoHistory, setStepUndoHistory] = useState<Map<string, any>>(new Map());
+  const [pinnedIdeas, setPinnedIdeas] = useState<any[] | null>(null);
   const editModalScrollRef = useRef<ScrollView>(null);
+
+  const undoStep = (ideaIndex: number, stepIndex: number) => {
+    const stepKey = `${ideaIndex}-${stepIndex}`;
+    if (!stepUndoHistory.has(stepKey)) return;
+    const previousState = stepUndoHistory.get(stepKey);
+    setModifiedIdeas((prev) => {
+      const next = new Map(prev);
+      if (previousState === null) {
+        next.delete(ideaIndex);
+      } else {
+        next.set(ideaIndex, previousState);
+      }
+      return next;
+    });
+    setStepUndoHistory((prev) => {
+      const next = new Map(prev);
+      next.delete(stepKey);
+      return next;
+    });
+  };
 
   const regenerateStep = async (ideaIndex: number, stepIndex: number, idea: any) => {
     const stepKey = `${ideaIndex}-${stepIndex}`;
     const schedule = idea.schedule || [];
     const step = schedule[stepIndex];
     if (!step) return;
+
+    // Save current state for undo before modifying
+    const previousIdeaState = modifiedIdeas.get(ideaIndex) ?? null;
+    setStepUndoHistory((prev) => {
+      const next = new Map(prev);
+      next.set(stepKey, previousIdeaState);
+      return next;
+    });
 
     setRegeneratingSteps((prev) => new Set(prev).add(stepKey));
 
@@ -292,7 +323,12 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
   };
 
   const startRegenerate = () => {
-    setImage(IMAGES[Math.floor(Math.random() * IMAGES.length)]);
+    pushResultsSnapshot(displayedIdeas);
+    setPinnedIdeas(null);
+    setModifiedIdeas(new Map());
+    setStepUndoHistory(new Map());
+    const newImage = IMAGES[Math.floor(Math.random() * IMAGES.length)];
+    setImage(newImage);
 
     const runRefresh = () => {
       refetch({ bypassCache: true });
@@ -313,6 +349,28 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
     recipes,
     activities,
   });
+
+  const displayedIdeas = pinnedIdeas ?? filledIdeas;
+
+  const pushResultsSnapshot = (currentIdeas: any[]) => {
+    if (!currentIdeas.length) return;
+    resultsHistoryRef.current = [
+      ...resultsHistoryRef.current,
+      { ideas: currentIdeas, mods: new Map(modifiedIdeas), undoHist: new Map(stepUndoHistory), image },
+    ];
+    setHistoryCount(resultsHistoryRef.current.length);
+  };
+
+  const handleBack = () => {
+    if (resultsHistoryRef.current.length === 0) return;
+    const snapshot = resultsHistoryRef.current[resultsHistoryRef.current.length - 1];
+    resultsHistoryRef.current = resultsHistoryRef.current.slice(0, -1);
+    setHistoryCount(resultsHistoryRef.current.length);
+    setPinnedIdeas(snapshot.ideas);
+    setModifiedIdeas(snapshot.mods);
+    setStepUndoHistory(snapshot.undoHist);
+    setImage(snapshot.image);
+  };
 
   const { maxDistance } = plannerParams;
 
@@ -432,6 +490,10 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
       return;
     }
 
+    pushResultsSnapshot(displayedIdeas);
+    setPinnedIdeas(null);
+    setModifiedIdeas(new Map());
+    setStepUndoHistory(new Map());
     resetNativeAdGate();
     setImage(IMAGES[Math.floor(Math.random() * IMAGES.length)]);
 
@@ -541,6 +603,7 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
           marginBottom: 24,
           marginTop: 12,
           color: "#1a1a1a",
+          fontFamily: "SuperPandora",
         }}
       >
         Results
@@ -583,12 +646,28 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
         <AppText style={{ color: "#fff", fontSize: 16 }}>Edit Inputs</AppText>
       </TouchableOpacity>
 
+      {historyCount > 0 ? (
+        <TouchableOpacity
+          onPress={handleBack}
+          style={{
+            borderRadius: 10,
+            paddingVertical: 12,
+            alignItems: "center",
+            marginBottom: 10,
+            borderWidth: 1,
+            borderColor: "#1e90ff",
+            backgroundColor: "#eff6ff",
+            flexDirection: "row",
+            justifyContent: "center",
+            gap: 6,
+          }}
+        >
+          <AppText style={{ color: "#1e90ff", fontSize: 16 }}>← Previous Results ({historyCount})</AppText>
+        </TouchableOpacity>
+      ) : null}
+
       <TouchableOpacity
-        onPress={() => {
-          resetNativeAdGate();
-          setImage(IMAGES[Math.floor(Math.random() * IMAGES.length)]);
-          refetch();
-        }}
+        onPress={startRegenerate}
         disabled={isLoading}
         style={{
           backgroundColor: "#28a745",
@@ -885,7 +964,7 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
       ) : null}
 
       {!isLoading
-        ? filledIdeas.map((idea, index) => {
+        ? displayedIdeas.map((idea, index) => {
             const modifiedPlaces = modifiedIdeas.get(index)?.places;
             const ideaPlacesRecord = modifiedPlaces || idea.places || {};
             const ideaPlaces = Object.values(ideaPlacesRecord).filter(Boolean);
@@ -931,6 +1010,8 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
                 primaryActionLabel="Save"
                 onRegenerateStep={(stepIndex) => regenerateStep(index, stepIndex, idea)}
                 isRegeneratingStep={(stepIndex) => regeneratingSteps.has(`${index}-${stepIndex}`)}
+                onUndoStep={(stepIndex) => undoStep(index, stepIndex)}
+                canUndoStep={(stepIndex) => stepUndoHistory.has(`${index}-${stepIndex}`)}
               />
             );
           })

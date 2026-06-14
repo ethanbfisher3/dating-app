@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { TouchableOpacity, View } from "react-native";
+import { Share, TouchableOpacity, View } from "react-native";
 import Text from "./AppText";
 import IdeaPlaceLinks from "./IdeaPlaceLinks";
 import type { PlaceSummary } from "../hooks/useDatePlannerIdeas";
 import type { AppNavigation } from "../types/navigation";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import { SLOT_TO_CATEGORY } from "../utils/utils";
 
 type CategoryConfig = { icon: string; color: string; bg: string; label: string };
 
@@ -19,51 +20,7 @@ const CATEGORY_CONFIG: Record<string, CategoryConfig> = {
 
 const DEFAULT_CONFIG: CategoryConfig = { icon: "heart", color: "#e63f67", bg: "#fff0f5", label: "Date" };
 
-const SLOT_TO_CATEGORY: Record<string, string> = {
-  restaurant: "Food",
-  fast_food: "Food",
-  cafe: "Food",
-  food_court: "Food",
-  ice_cream: "Food",
-  recipe: "Food",
-  dessert: "Food",
-  meal: "Food",
-  park: "Outdoors",
-  garden: "Outdoors",
-  nature_reserve: "Outdoors",
-  recreation_ground: "Outdoors",
-  dog_park: "Outdoors",
-  viewpoint: "Outdoors",
-  picnic_site: "Outdoors",
-  camp_site: "Outdoors",
-  pitch: "Outdoors",
-  leisure: "Outdoors",
-  sport: "Sports",
-  tennis: "Sports",
-  golf: "Sports",
-  fitness: "Sports",
-  yoga: "Sports",
-  museum: "Education",
-  art_gallery: "Education",
-  library: "Education",
-  historic: "Education",
-  tourism: "Education",
-  learningSpot: "Education",
-  mall: "Shopping",
-  shop: "Shopping",
-  clothes: "Shopping",
-  gift: "Shopping",
-  toys: "Shopping",
-  books: "Shopping",
-  electronics: "Shopping",
-  cinema: "Entertainment",
-  amusement_arcade: "Entertainment",
-  theme_park: "Entertainment",
-  playground: "Entertainment",
-  bowling_alley: "Entertainment",
-  miniature_golf: "Entertainment",
-  activityPlace: "Entertainment",
-};
+// SLOT_TO_CATEGORY imported from utils
 
 function getPrimaryCategory(schedule: Array<{ slot: string; place: PlaceSummary | null; durationMinutes?: number }>): string | null {
   const weights: Record<string, number> = {};
@@ -120,6 +77,9 @@ type DateIdeaCardProps = {
   primaryActionColor?: string;
   onRegenerateStep?: (stepIndex: number) => void;
   isRegeneratingStep?: (stepIndex: number) => boolean;
+  onUndoStep?: (stepIndex: number) => void;
+  canUndoStep?: (stepIndex: number) => boolean;
+  onMarkAsDone?: () => void;
 };
 
 export default function DateIdeaCard({
@@ -140,8 +100,21 @@ export default function DateIdeaCard({
   primaryActionColor = "#1e90ff",
   onRegenerateStep,
   isRegeneratingStep,
+  onUndoStep,
+  canUndoStep,
+  onMarkAsDone,
 }: DateIdeaCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+
+  const handleShare = () => {
+    const lines = schedule
+      .map((s) => `• ${s.title}${s.startTime ? ` (${s.startTime}–${s.endTime})` : ""}`)
+      .join("\n");
+    Share.share({
+      message: lines ? `${filledTemplate}\n\nSchedule:\n${lines}` : filledTemplate,
+      title: "Date Idea",
+    });
+  };
 
   const primaryCategory = getPrimaryCategory(schedule);
   const categoryConfig = (primaryCategory ? CATEGORY_CONFIG[primaryCategory] : null) ?? DEFAULT_CONFIG;
@@ -273,16 +246,17 @@ export default function DateIdeaCard({
         </Text>
       ) : null} */}
 
-      <TouchableOpacity onPress={() => setIsExpanded((prev) => !prev)} style={{ marginTop: 10, alignSelf: "flex-start" }}>
-        <Text
-          style={{
-            fontSize: 14,
-            color: "#1e90ff",
-          }}
-        >
-          {isExpanded ? "▲ Hide details" : "▼ Show details"}
-        </Text>
-      </TouchableOpacity>
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 10 }}>
+        <TouchableOpacity onPress={() => setIsExpanded((prev) => !prev)} style={{ alignSelf: "flex-start" }}>
+          <Text style={{ fontSize: 14, color: "#1e90ff" }}>
+            {isExpanded ? "▲ Hide details" : "▼ Show details"}
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={handleShare} style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+          <Ionicons name="share-outline" size={16} color="#8899aa" />
+          <Text style={{ fontSize: 13, color: "#8899aa" }}>Share</Text>
+        </TouchableOpacity>
+      </View>
 
       {isExpanded && schedule.length ? (
         <View style={{ marginTop: 12 }}>
@@ -326,17 +300,27 @@ export default function DateIdeaCard({
                   </Text>
                   <Text style={{ fontSize: 13, color: "#8899aa" }}>{timeLabel}</Text>
                   {row.kind === "activity" && onRegenerateStep ? (
-                    <TouchableOpacity
-                      onPress={() => onRegenerateStep(row.stepIndex)}
-                      disabled={isRegeneratingStep?.(row.stepIndex)}
-                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                    >
-                      <Ionicons
-                        name="refresh"
-                        size={16}
-                        color={isRegeneratingStep?.(row.stepIndex) ? "#ccc" : "#e63f67"}
-                      />
-                    </TouchableOpacity>
+                    <View style={{ flexDirection: "row", gap: 6 }}>
+                      {canUndoStep?.(row.stepIndex) ? (
+                        <TouchableOpacity
+                          onPress={() => onUndoStep?.(row.stepIndex)}
+                          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                        >
+                          <Ionicons name="arrow-undo" size={16} color="#1e90ff" />
+                        </TouchableOpacity>
+                      ) : null}
+                      <TouchableOpacity
+                        onPress={() => onRegenerateStep(row.stepIndex)}
+                        disabled={isRegeneratingStep?.(row.stepIndex)}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      >
+                        <Ionicons
+                          name="refresh"
+                          size={16}
+                          color={isRegeneratingStep?.(row.stepIndex) ? "#ccc" : "#e63f67"}
+                        />
+                      </TouchableOpacity>
+                    </View>
                   ) : null}
                 </View>
               );
@@ -369,6 +353,27 @@ export default function DateIdeaCard({
       ) : null}
 
       {isExpanded && places.length ? <IdeaPlaceLinks places={places} navigation={navigation} /> : null}
+
+      {isExpanded && onMarkAsDone ? (
+        <TouchableOpacity
+          onPress={onMarkAsDone}
+          style={{
+            marginTop: 12,
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 6,
+            backgroundColor: "#edfaf2",
+            borderRadius: 8,
+            borderWidth: 1,
+            borderColor: "#86efac",
+            paddingVertical: 10,
+          }}
+        >
+          <Ionicons name="checkmark-circle-outline" size={18} color="#16803c" />
+          <Text style={{ fontSize: 14, color: "#16803c" }}>We did this!</Text>
+        </TouchableOpacity>
+      ) : null}
     </View>
   );
 }

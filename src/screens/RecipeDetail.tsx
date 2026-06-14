@@ -123,6 +123,7 @@ const styles = StyleSheet.create({
     fontSize: 28,
     color: "#1a1a1a",
     marginBottom: 8,
+    fontFamily: "SuperPandora",
   },
   description: {
     fontSize: 15,

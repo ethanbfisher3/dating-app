@@ -168,7 +168,16 @@ export default function DateHistoryScreen(_: { navigation: AppNavigation }) {
 
     const highestRated = rated.length ? [...rated].sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))[0] : null;
 
-    return { total, avgRating, topPerson, topPersonCount, highestRated };
+    const now = new Date();
+    const thisMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    const datesWithSpending = recordedDates.filter((d) => d.moneySpent !== -1);
+    const spentThisMonth = datesWithSpending
+      .filter((d) => d.dateOfDate.startsWith(thisMonthKey))
+      .reduce((s, d) => s + d.moneySpent, 0);
+    const spentAllTime = datesWithSpending.reduce((s, d) => s + d.moneySpent, 0);
+    const hasSpending = datesWithSpending.length > 0;
+
+    return { total, avgRating, topPerson, topPersonCount, highestRated, spentThisMonth, spentAllTime, hasSpending };
   }, [recordedDates]);
 
   const handleDateChange = (event: any, date?: Date) => {
@@ -358,6 +367,12 @@ export default function DateHistoryScreen(_: { navigation: AppNavigation }) {
                 label={stats.highestRated.whoWentWith}
                 color={getRatingColor(stats.highestRated.rating!)}
               />
+            ) : null}
+            {stats.hasSpending ? (
+              <StatCard icon="cash-outline" value={`$${stats.spentThisMonth.toFixed(0)}`} label="Spent This Month" color="#059669" />
+            ) : null}
+            {stats.hasSpending ? (
+              <StatCard icon="wallet-outline" value={`$${stats.spentAllTime.toFixed(0)}`} label="All-Time Spent" color="#7c3aed" />
             ) : null}
           </ScrollView>
         ) : null}
@@ -657,7 +672,7 @@ const styles = StyleSheet.create({
   // Header
   headerRow: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: 12, marginBottom: 4 },
   titleTextRow: { flexDirection: "row", alignItems: "flex-end", gap: 8, flexWrap: "wrap", flex: 1 },
-  title: { fontSize: 36, marginTop: 24, marginBottom: 4, color: "#1a1a1a" },
+  title: { fontSize: 36, marginTop: 24, marginBottom: 4, color: "#1a1a1a", fontFamily: "SuperPandora" },
   freeCounterText: { fontSize: 13, color: "#6b7280", marginBottom: 8 },
   infoButton: {
     width: 36,

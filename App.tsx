@@ -171,7 +171,7 @@ export default function App() {
                 </SwipeBackLayout>
               )}
             </Stack.Screen>
-            <Stack.Screen name="SavedIdeas">
+            <Stack.Screen name="SavedIdeas" options={{ headerBackTitle: "Back" }}>
               {({ navigation }) => (
                 <SwipeBackLayout navigation={navigation as any}>
                   <SavedIdeas navigation={navigation as any} />

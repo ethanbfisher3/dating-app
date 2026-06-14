@@ -75,7 +75,7 @@ export default function Info({ goToTab }) {
         Your all-in-one date planning companion.
       </Text>
 
-      <View style={{ width: "100%" }}>
+      {/* <View style={{ width: "100%" }}>
         <Image
           source={require("../assets/images/date_planner_icon.png")}
           style={{
@@ -85,7 +85,7 @@ export default function Info({ goToTab }) {
             borderRadius: 12,
           }}
         />
-      </View>
+      </View> */}
 
       <View>
         <Text

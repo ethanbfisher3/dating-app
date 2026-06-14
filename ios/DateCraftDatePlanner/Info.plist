@@ -27,7 +27,7 @@
       <dict>
         <key>CFBundleURLSchemes</key>
         <array>
-          <string>com.ethanbfisher3.dateplanner</string>
+          <string>com.ethanbfisher3.datingapp</string>
         </array>
       </dict>
     </array>

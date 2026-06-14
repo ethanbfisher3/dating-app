@@ -1,10 +1,10 @@
 import React, { useEffect, useMemo, useState, useRef } from "react";
-import { Alert, Image, KeyboardAvoidingView, Platform, ScrollView, TouchableOpacity, View } from "react-native";
+import { Alert, Image, KeyboardAvoidingView, Modal, Platform, ScrollView, Share, TextInput, TouchableOpacity, View } from "react-native";
 import Text from "../Components/AppText";
 import * as Location from "expo-location";
 import { Ionicons } from "@expo/vector-icons";
 import type { AppNavigation } from "../types/navigation";
-import { DATE_CATEGORIES, timesAreInvalid } from "../utils/utils";
+import { DATE_CATEGORIES, SLOT_TO_CATEGORY, timesAreInvalid } from "../utils/utils";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { usePremium } from "../hooks/usePremium";
 import { addPlannedDate } from "../data/plannedDatesStore";
@@ -14,7 +14,47 @@ import EditInputsModal from "../Components/EditInputsModal";
 import usePurchases from "src/hooks/usePurchases";
 import PageInfoModal from "../Components/PageInfoModal";
 import CalendarWidget from "../Components/CalendarWidget";
-import { getSavedIdeas, initializeSavedIdeas, subscribeSavedIdeas, type SavedDateIdea } from "../data/savedIdeasStore";
+import { getSavedIdeas, initializeSavedIdeas, removeSavedIdea, subscribeSavedIdeas, type SavedDateIdea } from "../data/savedIdeasStore";
+import { addRecordedDate, FREE_TIER_RECORDED_DATES_LIMIT, getRecordedDates, initializeRecordedDates, subscribeRecordedDates, type RecordedDate } from "../data/dateHistoryStore";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import IdeaPlaceLinks from "../Components/IdeaPlaceLinks";
+import type { PlaceSummary } from "../hooks/useDatePlannerIdeas";
+
+type CategoryConfig = { icon: string; color: string; bg: string; label: string };
+
+const CATEGORY_CONFIG: Record<string, CategoryConfig> = {
+  Food: { icon: "restaurant", color: "#d4522a", bg: "#fef0e8", label: "Food" },
+  Sports: { icon: "barbell", color: "#16803c", bg: "#edfaf2", label: "Sports" },
+  Outdoors: { icon: "leaf", color: "#0d7560", bg: "#e6f4f0", label: "Outdoors" },
+  Education: { icon: "book", color: "#5746af", bg: "#eeebff", label: "Education" },
+  Shopping: { icon: "bag-handle", color: "#b45309", bg: "#fef8e8", label: "Shopping" },
+  Entertainment: { icon: "film", color: "#7c3aed", bg: "#f3eeff", label: "Entertainment" },
+};
+
+const DEFAULT_CAT_CONFIG: CategoryConfig = { icon: "heart", color: "#e63f67", bg: "#fff0f5", label: "Date" };
+
+function getIdeaCategory(schedule: { slot: string }[]): string | null {
+  const weights: Record<string, number> = {};
+  for (const step of schedule) {
+    for (const part of step.slot.split("|").map((s) => s.trim())) {
+      const cat = SLOT_TO_CATEGORY[part];
+      if (cat) weights[cat] = (weights[cat] ?? 0) + 1;
+    }
+  }
+  let best: string | null = null, bestW = 0;
+  for (const [cat, w] of Object.entries(weights)) {
+    if (w > bestW) { best = cat; bestW = w; }
+  }
+  return best;
+}
+
+function getRatingColor(n: number): string {
+  return `hsl(${Math.round(((n - 1) / 9) * 120)}, 72%, 40%)`;
+}
+
+function formatDateShort(date: Date): string {
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
 
 export default function PlanADate({ navigation }: { navigation: AppNavigation }) {
   const { isUnlocked } = usePremium();
@@ -42,6 +82,20 @@ export default function PlanADate({ navigation }: { navigation: AppNavigation })
   const [paywallVisible, setPaywallVisible] = useState(false);
   const [infoVisible, setInfoVisible] = useState(false);
   const [savedIdeas, setSavedIdeas] = useState<SavedDateIdea[]>([]);
+  const [recordedDates, setRecordedDates] = useState<RecordedDate[]>([]);
+  const [selectedDateKey, setSelectedDateKey] = useState<string | null>(null);
+  const [isDetailsModalVisible, setIsDetailsModalVisible] = useState(false);
+
+  // Saved idea detail popup
+  const [selectedIdea, setSelectedIdea] = useState<SavedDateIdea | null>(null);
+
+  // Mark as done form
+  const [markDoneIdea, setMarkDoneIdea] = useState<SavedDateIdea | null>(null);
+  const [markDoneWhoWith, setMarkDoneWhoWith] = useState("");
+  const [markDoneDate, setMarkDoneDate] = useState(new Date());
+  const [markDoneMoneySpent, setMarkDoneMoneySpent] = useState("");
+  const [markDoneRating, setMarkDoneRating] = useState<number | null>(null);
+  const [markDoneShowDatePicker, setMarkDoneShowDatePicker] = useState(false);
   const serverTarget = "overpass";
 
   useEffect(() => {
@@ -75,12 +129,43 @@ export default function PlanADate({ navigation }: { navigation: AppNavigation })
   }, []);
 
   useEffect(() => {
+    let isMounted = true;
+    const load = () => {
+      if (!isMounted) return;
+      setRecordedDates(getRecordedDates().filter((e) => /^\d{4}-\d{2}-\d{2}$/.test(e.dateOfDate)));
+    };
+    void initializeRecordedDates().then(load);
+    const unsub = subscribeRecordedDates(load);
+    return () => { isMounted = false; unsub(); };
+  }, []);
+
+  useEffect(() => {
     setMaxDistance((prev) => {
       if (isUnlocked) return prev === "5" ? "10" : prev;
       return Number.parseInt(prev, 10) > 5 ? "5" : prev;
     });
   }, [isUnlocked]);
   const selectedCategoriesCount = useMemo(() => categoriesChecked.filter(Boolean).length, [categoriesChecked]);
+
+  const selectedRecordedDates = useMemo(() => {
+    if (!selectedDateKey) return [];
+    return recordedDates.filter((e) => e.dateOfDate === selectedDateKey);
+  }, [recordedDates, selectedDateKey]);
+
+  const selectedSavedIdeas = useMemo(() => {
+    if (!selectedDateKey) return [];
+    return savedIdeas.filter((e) => e.selectedDate === selectedDateKey);
+  }, [savedIdeas, selectedDateKey]);
+
+  const handleCalendarDayPress = (dateKey: string) => {
+    setSelectedDateKey(dateKey);
+    setIsDetailsModalVisible(true);
+  };
+
+  const closeDateDetails = () => {
+    setIsDetailsModalVisible(false);
+    setSelectedDateKey(null);
+  };
 
   const clampHour12 = (value: number) => {
     if (Number.isNaN(value)) return 1;
@@ -215,6 +300,39 @@ export default function PlanADate({ navigation }: { navigation: AppNavigation })
     setTimeout(() => setIsGeneratingIdeas(false), 500);
   };
 
+  const openMarkDone = (idea: SavedDateIdea) => {
+    if (!isUnlocked && getRecordedDates().length >= FREE_TIER_RECORDED_DATES_LIMIT) {
+      setPaywallVisible(true);
+      return;
+    }
+    setMarkDoneIdea(idea);
+    setMarkDoneWhoWith("");
+    setMarkDoneDate(idea.selectedDate ? new Date(`${idea.selectedDate}T12:00:00`) : new Date());
+    setMarkDoneMoneySpent("");
+    setMarkDoneRating(null);
+    setMarkDoneShowDatePicker(false);
+  };
+
+  const closeMarkDone = () => { setMarkDoneIdea(null); setMarkDoneShowDatePicker(false); };
+
+  const submitMarkDone = () => {
+    if (!markDoneIdea) return;
+    if (!markDoneWhoWith.trim()) { Alert.alert("Required", "Please enter who you went with."); return; }
+    const moneyValue = parseFloat(markDoneMoneySpent);
+    addRecordedDate({
+      dateOfDate: markDoneDate.toISOString().split("T")[0],
+      imageUri: null,
+      whoWentWith: markDoneWhoWith.trim(),
+      whatYouDid: markDoneIdea.filledTemplate,
+      moneySpent: Number.isNaN(moneyValue) ? -1 : moneyValue,
+      rating: markDoneRating,
+      whatYouLiked: "",
+      whatYouLearned: "",
+    });
+    closeMarkDone();
+    Alert.alert("Recorded!", "Date added to your history.");
+  };
+
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
@@ -246,6 +364,7 @@ export default function PlanADate({ navigation }: { navigation: AppNavigation })
               fontSize: 36,
               color: "#1a1a1a",
               flex: 1,
+              fontFamily: "SuperPandora",
             }}
           >
             Date Ideas
@@ -270,7 +389,7 @@ export default function PlanADate({ navigation }: { navigation: AppNavigation })
           Generate personalized date ideas based on your budget, time, and preferences.
         </Text>
 
-        <Image
+        {/* <Image
           source={require("../assets/images/guy_asking_girl.jpg")}
           style={{
             width: "100%",
@@ -279,7 +398,7 @@ export default function PlanADate({ navigation }: { navigation: AppNavigation })
             marginBottom: 24,
           }}
           resizeMode="cover"
-        />
+        /> */}
 
         <TouchableOpacity
           activeOpacity={0.9}
@@ -289,7 +408,7 @@ export default function PlanADate({ navigation }: { navigation: AppNavigation })
             borderRadius: 12,
             paddingVertical: 18,
             paddingHorizontal: 18,
-            marginBottom: 14,
+            marginBottom: 18,
             alignItems: "center",
           }}
         >
@@ -315,44 +434,99 @@ export default function PlanADate({ navigation }: { navigation: AppNavigation })
             </View>
           ) : (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
-              {savedIdeas.map((idea) => (
-                <TouchableOpacity
-                  key={idea.id}
-                  onPress={() => navigation.navigate("SavedIdeas")}
-                  activeOpacity={0.8}
-                  style={{
-                    width: 220,
-                    backgroundColor: "#fff",
-                    borderRadius: 12,
-                    borderWidth: 1,
-                    borderColor: "#dce6ef",
-                    padding: 14,
-                  }}
-                >
-                  <Text style={{ fontSize: 14, color: "#1f2d3d", lineHeight: 20 }} numberOfLines={4}>
-                    {idea.filledTemplate}
-                  </Text>
-                  {idea.selectedDate ? (
-                    <Text style={{ fontSize: 12, color: "#9aa3af", marginTop: 8 }}>
-                      {new Date(`${idea.selectedDate}T12:00:00`).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+              {savedIdeas.map((idea) => {
+                const cat = getIdeaCategory(idea.schedule || []);
+                const cfg = (cat ? CATEGORY_CONFIG[cat] : null) ?? DEFAULT_CAT_CONFIG;
+                return (
+                  <TouchableOpacity
+                    key={idea.id}
+                    onPress={() => setSelectedIdea(idea)}
+                    activeOpacity={0.8}
+                    style={{
+                      width: 220,
+                      backgroundColor: "#fff",
+                      borderRadius: 12,
+                      borderWidth: 1,
+                      borderColor: "#dce6ef",
+                      padding: 14,
+                    }}
+                  >
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                      <View style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: cfg.bg, justifyContent: "center", alignItems: "center" }}>
+                        <Ionicons name={cfg.icon as any} size={16} color={cfg.color} />
+                      </View>
+                      <Text style={{ fontSize: 12, color: cfg.color, textTransform: "uppercase", letterSpacing: 0.5 }}>{cfg.label}</Text>
+                    </View>
+                    <Text style={{ fontSize: 14, color: "#1f2d3d", lineHeight: 20 }} numberOfLines={3}>
+                      {idea.filledTemplate}
                     </Text>
-                  ) : null}
-                </TouchableOpacity>
-              ))}
+                    {idea.selectedDate ? (
+                      <Text style={{ fontSize: 12, color: "#9aa3af", marginTop: 8 }}>
+                        {new Date(`${idea.selectedDate}T12:00:00`).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                      </Text>
+                    ) : null}
+                  </TouchableOpacity>
+                );
+              })}
             </ScrollView>
           )}
         </View>
 
         {/* Inline calendar */}
         <View style={{ marginBottom: 20 }}>
-          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-            <Text style={{ fontSize: 20, color: "#1a1a1a" }}>Date Calendar</Text>
-            <TouchableOpacity onPress={() => navigation.navigate("DateCalendar")}>
-              <Text style={{ fontSize: 14, color: "#1e90ff" }}>Open Full View</Text>
-            </TouchableOpacity>
-          </View>
-          <CalendarWidget onDayPress={() => navigation.navigate("DateCalendar")} />
+          <Text style={{ fontSize: 20, color: "#1a1a1a", marginBottom: 10 }}>Date Calendar</Text>
+          <CalendarWidget onDayPress={handleCalendarDayPress} />
         </View>
+
+        {/* Day detail modal */}
+        <Modal visible={isDetailsModalVisible} transparent animationType="fade" onRequestClose={closeDateDetails}>
+          <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.35)", justifyContent: "center", paddingHorizontal: 20 }}>
+            <View style={{ backgroundColor: "#fff", borderRadius: 12, borderWidth: 1, borderColor: "#dce6ef", maxHeight: "85%", overflow: "hidden" }}>
+              <ScrollView contentContainerStyle={{ padding: 16 }}>
+                <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                  <Text style={{ fontSize: 20, color: "#1f2d3d", flex: 1, marginRight: 10 }}>
+                    {selectedDateKey ? new Date(`${selectedDateKey}T12:00:00`).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" }) : ""}
+                  </Text>
+                  <TouchableOpacity onPress={closeDateDetails}>
+                    <Text style={{ color: "#1e90ff", fontSize: 16 }}>Close</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {selectedRecordedDates.length > 0 ? (
+                  <View style={{ marginBottom: 12 }}>
+                    <Text style={{ fontSize: 16, color: "#ef4444", marginBottom: 8 }}>Recorded Dates</Text>
+                    {selectedRecordedDates.map((entry, index) => (
+                      <View key={entry.id} style={{ borderWidth: 1, borderColor: "#e8edf3", borderRadius: 10, padding: 10, marginBottom: 8, backgroundColor: "#fff" }}>
+                        <Text style={{ color: "#1f2d3d", marginBottom: 3 }}>Date #{index + 1}</Text>
+                        <Text style={{ color: "#4b5b6b", marginBottom: 2 }}>With: {entry.whoWentWith || "Not provided"}</Text>
+                        <Text style={{ color: "#4b5b6b", marginBottom: 2 }}>Activity: {entry.whatYouDid || "Not provided"}</Text>
+                        <Text style={{ color: "#4b5b6b", marginBottom: 2 }}>Spent: ${entry.moneySpent.toFixed(2)}</Text>
+                        {entry.rating != null ? <Text style={{ color: "#4b5b6b" }}>Rating: {entry.rating}/10</Text> : null}
+                      </View>
+                    ))}
+                  </View>
+                ) : null}
+
+                {selectedSavedIdeas.length > 0 ? (
+                  <View>
+                    <Text style={{ fontSize: 16, color: "#22c55e", marginBottom: 8 }}>Saved Date Ideas</Text>
+                    {selectedSavedIdeas.map((entry, index) => (
+                      <View key={entry.id} style={{ borderWidth: 1, borderColor: "#e8edf3", borderRadius: 10, padding: 10, marginBottom: 8, backgroundColor: "#fff" }}>
+                        <Text style={{ color: "#1f2d3d", marginBottom: 3 }}>Saved Idea #{index + 1}</Text>
+                        <Text style={{ color: "#4b5b6b", marginBottom: 2 }}>Idea: {entry.filledTemplate}</Text>
+                        <Text style={{ color: "#4b5b6b" }}>Saved on {new Date(entry.savedAt).toLocaleDateString()}</Text>
+                      </View>
+                    ))}
+                  </View>
+                ) : null}
+
+                {selectedRecordedDates.length === 0 && selectedSavedIdeas.length === 0 ? (
+                  <Text style={{ color: "#4b5b6b" }}>No date details are available for this day.</Text>
+                ) : null}
+              </ScrollView>
+            </View>
+          </View>
+        </Modal>
 
         {!isUnlocked ? (
           <TouchableOpacity
@@ -480,6 +654,178 @@ export default function PlanADate({ navigation }: { navigation: AppNavigation })
 
         <PaywallModal visible={paywallVisible} onClose={() => setPaywallVisible(false)} reason="general" />
       </ScrollView>
+
+      {/* Saved idea detail popup */}
+      <Modal visible={selectedIdea !== null} transparent animationType="slide" onRequestClose={() => setSelectedIdea(null)}>
+        <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" }}>
+          <View style={{ backgroundColor: "#fff", borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: "90%", paddingBottom: 24 }}>
+            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 24, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: "#f0f0f0" }}>
+              {selectedIdea ? (() => {
+                const cat = getIdeaCategory(selectedIdea.schedule || []);
+                const cfg = (cat ? CATEGORY_CONFIG[cat] : null) ?? DEFAULT_CAT_CONFIG;
+                return (
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 10, flex: 1 }}>
+                    <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: cfg.bg, justifyContent: "center", alignItems: "center" }}>
+                      <Ionicons name={cfg.icon as any} size={18} color={cfg.color} />
+                    </View>
+                    <Text style={{ fontSize: 15, color: cfg.color, textTransform: "uppercase", letterSpacing: 0.5 }}>{cfg.label}</Text>
+                  </View>
+                );
+              })() : null}
+              <TouchableOpacity onPress={() => setSelectedIdea(null)}>
+                <Ionicons name="close" size={28} color="#1a1a1a" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingVertical: 16 }}>
+              {selectedIdea ? (
+                <>
+                  <Text style={{ fontSize: 16, color: "#1f2d3d", lineHeight: 24, marginBottom: 16 }}>
+                    {selectedIdea.filledTemplate}
+                  </Text>
+                  {selectedIdea.schedule?.length ? (
+                    <>
+                      <Text style={{ fontSize: 13, color: "#8899aa", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 8 }}>Schedule</Text>
+                      {selectedIdea.schedule.map((step, i) => (
+                        <View key={i} style={{ flexDirection: "row", alignItems: "flex-start", gap: 8, paddingVertical: 4 }}>
+                          <Text style={{ color: "#e63f67", fontSize: 14, lineHeight: 22 }}>•</Text>
+                          <View style={{ flex: 1 }}>
+                            <Text style={{ fontSize: 14, color: "#2c3e50" }}>{step.title}</Text>
+                            {step.startTime && step.endTime ? (
+                              <Text style={{ fontSize: 12, color: "#8899aa" }}>{step.startTime} – {step.endTime}</Text>
+                            ) : null}
+                          </View>
+                        </View>
+                      ))}
+                    </>
+                  ) : null}
+                  {(() => {
+                    const places = Object.values(selectedIdea.places || {}).filter((p): p is PlaceSummary => Boolean(p));
+                    return places.length ? <IdeaPlaceLinks places={places} navigation={navigation} /> : null;
+                  })()}
+                </>
+              ) : null}
+            </ScrollView>
+
+            {selectedIdea ? (
+              <View style={{ paddingHorizontal: 24, paddingTop: 12, gap: 10 }}>
+                <View style={{ flexDirection: "row", gap: 10 }}>
+                  <TouchableOpacity
+                    onPress={() => {
+                      if (!selectedIdea) return;
+                      const lines = (selectedIdea.schedule || [])
+                        .map((s) => `• ${s.title}${s.startTime ? ` (${s.startTime}–${s.endTime})` : ""}`)
+                        .join("\n");
+                      Share.share({ message: lines ? `${selectedIdea.filledTemplate}\n\nSchedule:\n${lines}` : selectedIdea.filledTemplate, title: "Date Idea" });
+                    }}
+                    style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, borderWidth: 1, borderColor: "#dce6ef", borderRadius: 8, paddingVertical: 10 }}
+                  >
+                    <Ionicons name="share-outline" size={18} color="#4b5b6b" />
+                    <Text style={{ fontSize: 14, color: "#4b5b6b" }}>Share</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => {
+                      Alert.alert("Remove date idea?", "Are you sure you want to remove this saved idea?", [
+                        { text: "Cancel", style: "cancel" },
+                        { text: "Remove", style: "destructive", onPress: () => { removeSavedIdea(selectedIdea.id); setSelectedIdea(null); } },
+                      ]);
+                    }}
+                    style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, borderWidth: 1, borderColor: "#fee2e2", borderRadius: 8, paddingVertical: 10, backgroundColor: "#fff5f5" }}
+                  >
+                    <Ionicons name="trash-outline" size={18} color="#dc3545" />
+                    <Text style={{ fontSize: 14, color: "#dc3545" }}>Remove</Text>
+                  </TouchableOpacity>
+                </View>
+                <TouchableOpacity
+                  onPress={() => { const idea = selectedIdea; setSelectedIdea(null); openMarkDone(idea); }}
+                  style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, backgroundColor: "#edfaf2", borderRadius: 8, borderWidth: 1, borderColor: "#86efac", paddingVertical: 12 }}
+                >
+                  <Ionicons name="checkmark-circle-outline" size={18} color="#16803c" />
+                  <Text style={{ fontSize: 14, color: "#16803c" }}>We did this!</Text>
+                </TouchableOpacity>
+              </View>
+            ) : null}
+          </View>
+        </View>
+      </Modal>
+
+      {/* Mark as done modal */}
+      <Modal visible={markDoneIdea !== null} transparent animationType="slide" onRequestClose={closeMarkDone}>
+        <KeyboardAvoidingView style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
+          <View style={{ backgroundColor: "#fff", borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: "90%", paddingBottom: 24 }}>
+            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 24, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: "#f0f0f0" }}>
+              <Text style={{ fontSize: 20, color: "#1a1a1a" }}>We did this!</Text>
+              <TouchableOpacity onPress={closeMarkDone}><Ionicons name="close" size={28} color="#1a1a1a" /></TouchableOpacity>
+            </View>
+            <ScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingVertical: 16 }} keyboardShouldPersistTaps="handled">
+              {markDoneIdea ? <Text style={{ fontSize: 14, color: "#6b7280", marginBottom: 16, lineHeight: 20 }}>{markDoneIdea.filledTemplate}</Text> : null}
+              <Text style={{ fontSize: 14, color: "#1a1a1a", marginBottom: 8 }}>When was the date? *</Text>
+              <TouchableOpacity
+                onPress={() => setMarkDoneShowDatePicker((p) => !p)}
+                style={{ flexDirection: "row", alignItems: "center", gap: 8, borderWidth: 1, borderColor: "#ddd", borderRadius: 8, paddingVertical: 12, paddingHorizontal: 12, marginBottom: 8, backgroundColor: "#fafbfc" }}
+              >
+                <Ionicons name="calendar" size={20} color="#007AFF" />
+                <Text style={{ fontSize: 14, color: "#1a1a1a" }}>{formatDateShort(markDoneDate)}</Text>
+              </TouchableOpacity>
+              {markDoneShowDatePicker ? (
+                <View style={{ borderRadius: 12, borderWidth: 1, borderColor: "#dfe5eb", backgroundColor: "#f3f6fa", paddingHorizontal: 8, paddingVertical: 6, marginBottom: 8 }}>
+                  <DateTimePicker
+                    value={markDoneDate}
+                    mode="date"
+                    display={Platform.OS === "ios" ? "inline" : "calendar"}
+                    onChange={(_, date) => { if (Platform.OS === "android") setMarkDoneShowDatePicker(false); if (date) setMarkDoneDate(date); }}
+                    maximumDate={new Date()}
+                    themeVariant="light"
+                  />
+                  {Platform.OS === "ios" ? (
+                    <TouchableOpacity onPress={() => setMarkDoneShowDatePicker(false)} style={{ alignItems: "center", paddingVertical: 12, borderTopWidth: 1, borderTopColor: "#dfe5eb" }}>
+                      <Text style={{ color: "#007AFF", fontSize: 16 }}>Done</Text>
+                    </TouchableOpacity>
+                  ) : null}
+                </View>
+              ) : null}
+              <Text style={{ fontSize: 14, color: "#1a1a1a", marginBottom: 8, marginTop: 8 }}>Who did you go with? *</Text>
+              <TextInput
+                style={{ borderWidth: 1, borderColor: "#ddd", borderRadius: 8, paddingVertical: 12, paddingHorizontal: 12, fontSize: 14, color: "#1a1a1a", backgroundColor: "#fafbfc", fontFamily: "System", marginBottom: 16 }}
+                placeholder="Name(s)" placeholderTextColor="#999"
+                value={markDoneWhoWith} onChangeText={setMarkDoneWhoWith}
+              />
+              <Text style={{ fontSize: 14, color: "#1a1a1a", marginBottom: 8 }}>How much did you spend?</Text>
+              <View style={{ flexDirection: "row", alignItems: "center", borderWidth: 1, borderColor: "#ddd", borderRadius: 8, backgroundColor: "#fafbfc", marginBottom: 16 }}>
+                <Text style={{ fontSize: 16, color: "#1a1a1a", paddingHorizontal: 12 }}>$</Text>
+                <TextInput
+                  style={{ flex: 1, paddingVertical: 12, fontSize: 14, color: "#1a1a1a", fontFamily: "System" }}
+                  placeholder="0.00" placeholderTextColor="#999"
+                  keyboardType="number-pad"
+                  value={markDoneMoneySpent} onChangeText={setMarkDoneMoneySpent}
+                />
+              </View>
+              <Text style={{ fontSize: 14, color: "#1a1a1a", marginBottom: 8 }}>Rate the date (1–10)</Text>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
+                {[1,2,3,4,5,6,7,8,9,10].map((n) => {
+                  const color = getRatingColor(n);
+                  const selected = markDoneRating === n;
+                  return (
+                    <TouchableOpacity key={n} onPress={() => setMarkDoneRating(selected ? null : n)}
+                      style={{ width: 40, height: 40, borderRadius: 8, borderWidth: 1, borderColor: color, alignItems: "center", justifyContent: "center", backgroundColor: selected ? color : "#fafbfc" }}>
+                      <Text style={{ color: selected ? "#fff" : color, fontSize: 14 }}>{n}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </ScrollView>
+            <View style={{ flexDirection: "row", gap: 12, paddingHorizontal: 24, paddingTop: 12 }}>
+              <TouchableOpacity onPress={closeMarkDone} style={{ flex: 1, borderWidth: 1, borderColor: "#ddd", borderRadius: 8, paddingVertical: 12, alignItems: "center" }}>
+                <Text style={{ fontSize: 16, color: "#666" }}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={submitMarkDone} style={{ flex: 1, backgroundColor: "#007AFF", borderRadius: 8, paddingVertical: 12, alignItems: "center" }}>
+                <Text style={{ fontSize: 16, color: "#fff" }}>Save to History</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
       <PageInfoModal
         visible={infoVisible}
         onClose={() => setInfoVisible(false)}

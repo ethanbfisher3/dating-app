@@ -111,6 +111,7 @@ const styles = StyleSheet.create({
     fontSize: 32,
     color: "#1a1a1a",
     marginBottom: 12,
+    fontFamily: "SuperPandora",
   },
   description: {
     fontSize: 16,
