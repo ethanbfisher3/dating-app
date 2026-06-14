@@ -834,6 +834,8 @@ async function fetchPlacesFromOverpass(params: PlannedDateResultsParams): Promis
     }> = new Array(categories.length);
     let nextCategoryIndex = 0;
 
+    const distanceMeters = Math.max(0, Math.round(params.maxDistance * METERS_PER_MILE));
+
     const workers = Array.from({ length: categoryConcurrency }, async () => {
       while (true) {
         const currentIndex = nextCategoryIndex;
@@ -844,7 +846,6 @@ async function fetchPlacesFromOverpass(params: PlannedDateResultsParams): Promis
         }
 
         const category = categories[currentIndex];
-        const distanceMeters = Math.max(0, Math.round(params.maxDistance * METERS_PER_MILE));
         categoryResults[currentIndex] = await fetchPlacesForCategoryFromOverpass(
           category,
           params,
@@ -1164,11 +1165,21 @@ export default function useDatePlannerIdeas(params: PlannedDateResultsParams): {
       return;
     }
 
+    // When bypassing the outer cache (Regenerate), also clear the per-category cache so
+    // the Overpass API is queried fresh. This guarantees the loading gate is visible for
+    // a real network round-trip and that results are genuinely new.
+    if (options?.bypassCache) {
+      categoryFetchCache.clear();
+    }
+
+    const softTimeoutMs = options?.bypassCache ? 10000 : PLANNER_SOFT_TIMEOUT_MS;
     const softTimeoutId = setTimeout(() => {
       releaseLoadingState();
-    }, PLANNER_SOFT_TIMEOUT_MS);
+    }, softTimeoutMs);
 
-    const fetchPromise = options?.bypassCache ? fetchPlacesFromOverpass(params) : fetchPlacesFromOverpassWithCache(params);
+    const fetchPromise = options?.bypassCache
+      ? fetchPlacesFromOverpass(params)
+      : fetchPlacesFromOverpassWithCache(params);
 
     void fetchPromise
       .then((serverResult) => {

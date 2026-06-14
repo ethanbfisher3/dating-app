@@ -8,6 +8,12 @@ Build the date calendar page a little more. Include summaries (you've spent x am
 Profile for girls or guys (information about the dates you've been on with a girl, how much money you've spent on a girl, how well the dates went with the girl, etc.)
 
 
+TODO:
+[x] 'Previous results' button doesn't work
+[x] The date ideas aren't respecting the categories selected by the user
+
+Users can upload date ideas for their areas and others can view them on a 'social' page
+
 Test:
 Test for if products don't load (test if the user has premium and they aren't connected to the internet)
 

@@ -2,7 +2,6 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  Image,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -30,17 +29,6 @@ import CustomNativeAd from "../Components/CustomNativeAd";
 import { DATE_CATEGORIES } from "src/utils/utils";
 import AppText from "src/Components/AppText";
 
-const IMAGES = [
-  require("../assets/images/date_images/idea.jpg"),
-  require("../assets/images/date_images/mall.jpg"),
-  require("../assets/images/date_images/mini_golf.jpg"),
-  require("../assets/images/date_images/museum.jpg"),
-  require("../assets/images/date_images/laser_tag.jpg"),
-  require("../assets/images/date_images/video_games.jpg"),
-  require("../assets/images/date_images/board_games.jpg"),
-  require("../assets/images/date_images/puzzle.jpg"),
-  require("../assets/images/date_images/origami.jpg"),
-];
 
 function toRadians(value: number): number {
   return (value * Math.PI) / 180;
@@ -87,12 +75,11 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
   const { isUnlocked } = usePremium();
   const [paywallVisible, setPaywallVisible] = useState(false);
   const [paywallReason, setPaywallReason] = useState<"date_history_limit" | "mile_radius_limit" | "ideas_limit" | "general">("general");
-  const [image, setImage] = useState(IMAGES[Math.floor(Math.random() * IMAGES.length)]);
   const [nativeAdDisplayComplete, setNativeAdDisplayComplete] = useState(false);
   const nativeAdHoldTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingRegenerateRef = useRef<(() => void) | null>(null);
   const [historyCount, setHistoryCount] = useState(0);
-  const resultsHistoryRef = useRef<Array<{ ideas: any[]; mods: Map<number, any>; undoHist: Map<string, any>; image: any }>>([]);
+  const resultsHistoryRef = useRef<Array<{ ideas: any[]; mods: Map<number, any>; undoHist: Map<string, any[]> }>>([]);
   useLayoutEffect(() => {
     navigation.setOptions({
       headerBackTitle: "Back",
@@ -132,14 +119,15 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
   const [showDevRecipes, setShowDevRecipes] = useState(false);
   const [regeneratingSteps, setRegeneratingSteps] = useState<Set<string>>(new Set());
   const [modifiedIdeas, setModifiedIdeas] = useState<Map<number, any>>(new Map());
-  const [stepUndoHistory, setStepUndoHistory] = useState<Map<string, any>>(new Map());
+  const [stepUndoHistory, setStepUndoHistory] = useState<Map<string, any[]>>(new Map());
   const [pinnedIdeas, setPinnedIdeas] = useState<any[] | null>(null);
   const editModalScrollRef = useRef<ScrollView>(null);
 
   const undoStep = (ideaIndex: number, stepIndex: number) => {
     const stepKey = `${ideaIndex}-${stepIndex}`;
-    if (!stepUndoHistory.has(stepKey)) return;
-    const previousState = stepUndoHistory.get(stepKey);
+    const stack = stepUndoHistory.get(stepKey);
+    if (!stack || !stack.length) return;
+    const previousState = stack[stack.length - 1];
     setModifiedIdeas((prev) => {
       const next = new Map(prev);
       if (previousState === null) {
@@ -151,7 +139,12 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
     });
     setStepUndoHistory((prev) => {
       const next = new Map(prev);
-      next.delete(stepKey);
+      const newStack = stack.slice(0, -1);
+      if (newStack.length === 0) {
+        next.delete(stepKey);
+      } else {
+        next.set(stepKey, newStack);
+      }
       return next;
     });
   };
@@ -166,7 +159,8 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
     const previousIdeaState = modifiedIdeas.get(ideaIndex) ?? null;
     setStepUndoHistory((prev) => {
       const next = new Map(prev);
-      next.set(stepKey, previousIdeaState);
+      const stack = [...(next.get(stepKey) || []), previousIdeaState];
+      next.set(stepKey, stack);
       return next;
     });
 
@@ -293,17 +287,6 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
   };
 
   useEffect(() => {
-    if (isLoading) {
-      setNativeAdDisplayComplete(false);
-
-      if (nativeAdHoldTimerRef.current) {
-        clearTimeout(nativeAdHoldTimerRef.current);
-        nativeAdHoldTimerRef.current = null;
-      }
-    }
-  }, [isLoading]);
-
-  useEffect(() => {
     if (!nativeAdDisplayComplete || !pendingRegenerateRef.current) {
       return;
     }
@@ -327,8 +310,6 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
     setPinnedIdeas(null);
     setModifiedIdeas(new Map());
     setStepUndoHistory(new Map());
-    const newImage = IMAGES[Math.floor(Math.random() * IMAGES.length)];
-    setImage(newImage);
 
     const runRefresh = () => {
       refetch({ bypassCache: true });
@@ -356,7 +337,7 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
     if (!currentIdeas.length) return;
     resultsHistoryRef.current = [
       ...resultsHistoryRef.current,
-      { ideas: currentIdeas, mods: new Map(modifiedIdeas), undoHist: new Map(stepUndoHistory), image },
+      { ideas: currentIdeas, mods: new Map(modifiedIdeas), undoHist: new Map(stepUndoHistory) },
     ];
     setHistoryCount(resultsHistoryRef.current.length);
   };
@@ -369,7 +350,6 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
     setPinnedIdeas(snapshot.ideas);
     setModifiedIdeas(snapshot.mods);
     setStepUndoHistory(snapshot.undoHist);
-    setImage(snapshot.image);
   };
 
   const { maxDistance } = plannerParams;
@@ -495,7 +475,6 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
     setModifiedIdeas(new Map());
     setStepUndoHistory(new Map());
     resetNativeAdGate();
-    setImage(IMAGES[Math.floor(Math.random() * IMAGES.length)]);
 
     setPlannerParams({
       selectedDate: draftSelectedDate,
@@ -608,16 +587,6 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
       >
         Results
       </AppText>
-
-      <Image
-        source={image}
-        style={{
-          width: "100%",
-          height: 200,
-          borderRadius: 12,
-          marginBottom: 20,
-        }}
-      />
 
       {places.length === 0 && maxDistance > 0 && (
         <AppText
@@ -1011,7 +980,10 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
                 onRegenerateStep={(stepIndex) => regenerateStep(index, stepIndex, idea)}
                 isRegeneratingStep={(stepIndex) => regeneratingSteps.has(`${index}-${stepIndex}`)}
                 onUndoStep={(stepIndex) => undoStep(index, stepIndex)}
-                canUndoStep={(stepIndex) => stepUndoHistory.has(`${index}-${stepIndex}`)}
+                canUndoStep={(stepIndex) => {
+                  const stack = stepUndoHistory.get(`${index}-${stepIndex}`);
+                  return Boolean(stack && stack.length > 0);
+                }}
               />
             );
           })
