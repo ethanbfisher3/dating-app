@@ -1,33 +1,15 @@
 Next update:
 More recipes
 More activities
-Fix BottomBackgroundArt file
-More date templates/Fix current date templates, add more activities, and recipes, more categories/more specific categories (like dropdowns from food > dessert, lunch, etc)
 Fix locations sending the user's map to a place far away
-Build the date calendar page a little more. Include summaries (you've spent x amount of money this month, you've been on x dates with sarah, etc.). Fix the dates showing up wrong on the calendar (they showed up as the 23rd for Jacob when they should have been the 22nd)
-Profile for girls or guys (information about the dates you've been on with a girl, how much money you've spent on a girl, how well the dates went with the girl, etc.)
-
-
-TODO:
-[x] 'Previous results' button doesn't work
-[x] The date ideas aren't respecting the categories selected by the user
-
 Users can upload date ideas for their areas and others can view them on a 'social' page
+More date idea categories when generating ideas
+When opening an activity or recipe, open a popup from the bottom of the page instead of adding a whole page to the stack
+I shouldn't see 'Date' as a category ever in the plaanned date ideas page
+Add an app tutorial
+More visual stimuli (More animations, sounds, etc.)
+Let the user drop a location to plan the dates from instead of using their location
+Cute 'DateCraft' splash screen (with 'By ...' below with my name or something)
 
 Test:
 Test for if products don't load (test if the user has premium and they aren't connected to the internet)
-
-Maybe:
-Let the user enter a zip code if they don't want their location
-Search button in the saved ideas
-Add a spot for the user to add comments?
-Text box for specific ideas ('i want to do something outdoorsy, but not a hike' or 'i want something that we can talk while doing something')
-Let the user drop a location to plan the dates from instead of using their location
-Incorporate pictures on the date results page / Restyle that page
-
-
-Eventually:
-users can input their own date ideas
-users can upload pictures or reviews and there can be a 'recent dates in provo' section on the app to make it more like social media. 
-Then, when a user is looking at date ideas or a place, it will show them dates that have taken place at that spot
-

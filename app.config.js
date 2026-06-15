@@ -3,7 +3,7 @@ export default {
     name: "DateCraft: Date Planner",
     slug: "byu-dating-native",
     version: "1.1.0",
-    icon: "./src/assets/images/girl_icon.jpg",
+    icon: "./src/assets/images/icon.jpg",
     backgroundColor: "#FFFFFF",
 
     splash: {

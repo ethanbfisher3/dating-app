@@ -77,9 +77,6 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
   const [paywallReason, setPaywallReason] = useState<"date_history_limit" | "mile_radius_limit" | "ideas_limit" | "general">("general");
   const [nativeAdDisplayComplete, setNativeAdDisplayComplete] = useState(false);
   const nativeAdHoldTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const pendingRegenerateRef = useRef<(() => void) | null>(null);
-  const [historyCount, setHistoryCount] = useState(0);
-  const resultsHistoryRef = useRef<Array<{ ideas: any[]; mods: Map<number, any>; undoHist: Map<string, any[]> }>>([]);
   useLayoutEffect(() => {
     navigation.setOptions({
       headerBackTitle: "Back",
@@ -120,7 +117,6 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
   const [regeneratingSteps, setRegeneratingSteps] = useState<Set<string>>(new Set());
   const [modifiedIdeas, setModifiedIdeas] = useState<Map<number, any>>(new Map());
   const [stepUndoHistory, setStepUndoHistory] = useState<Map<string, any[]>>(new Map());
-  const [pinnedIdeas, setPinnedIdeas] = useState<any[] | null>(null);
   const editModalScrollRef = useRef<ScrollView>(null);
 
   const undoStep = (ideaIndex: number, stepIndex: number) => {
@@ -286,16 +282,6 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
     }, 5000);
   };
 
-  useEffect(() => {
-    if (!nativeAdDisplayComplete || !pendingRegenerateRef.current) {
-      return;
-    }
-
-    const pendingAction = pendingRegenerateRef.current;
-    pendingRegenerateRef.current = null;
-    pendingAction();
-  }, [nativeAdDisplayComplete]);
-
   const resetNativeAdGate = () => {
     setNativeAdDisplayComplete(false);
 
@@ -305,25 +291,6 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
     }
   };
 
-  const startRegenerate = () => {
-    pushResultsSnapshot(displayedIdeas);
-    setPinnedIdeas(null);
-    setModifiedIdeas(new Map());
-    setStepUndoHistory(new Map());
-
-    const runRefresh = () => {
-      refetch({ bypassCache: true });
-    };
-
-    if (isUnlocked) {
-      runRefresh();
-      return;
-    }
-
-    pendingRegenerateRef.current = runRefresh;
-    resetNativeAdGate();
-  };
-
   const filledIdeas = useFilledIdeas({
     params: plannerParams,
     places,
@@ -331,26 +298,6 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
     activities,
   });
 
-  const displayedIdeas = pinnedIdeas ?? filledIdeas;
-
-  const pushResultsSnapshot = (currentIdeas: any[]) => {
-    if (!currentIdeas.length) return;
-    resultsHistoryRef.current = [
-      ...resultsHistoryRef.current,
-      { ideas: currentIdeas, mods: new Map(modifiedIdeas), undoHist: new Map(stepUndoHistory) },
-    ];
-    setHistoryCount(resultsHistoryRef.current.length);
-  };
-
-  const handleBack = () => {
-    if (resultsHistoryRef.current.length === 0) return;
-    const snapshot = resultsHistoryRef.current[resultsHistoryRef.current.length - 1];
-    resultsHistoryRef.current = resultsHistoryRef.current.slice(0, -1);
-    setHistoryCount(resultsHistoryRef.current.length);
-    setPinnedIdeas(snapshot.ideas);
-    setModifiedIdeas(snapshot.mods);
-    setStepUndoHistory(snapshot.undoHist);
-  };
 
   const { maxDistance } = plannerParams;
 
@@ -470,8 +417,6 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
       return;
     }
 
-    pushResultsSnapshot(displayedIdeas);
-    setPinnedIdeas(null);
     setModifiedIdeas(new Map());
     setStepUndoHistory(new Map());
     resetNativeAdGate();
@@ -615,40 +560,6 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
         <AppText style={{ color: "#fff", fontSize: 16 }}>Edit Inputs</AppText>
       </TouchableOpacity>
 
-      {historyCount > 0 ? (
-        <TouchableOpacity
-          onPress={handleBack}
-          style={{
-            borderRadius: 10,
-            paddingVertical: 12,
-            alignItems: "center",
-            marginBottom: 10,
-            borderWidth: 1,
-            borderColor: "#1e90ff",
-            backgroundColor: "#eff6ff",
-            flexDirection: "row",
-            justifyContent: "center",
-            gap: 6,
-          }}
-        >
-          <AppText style={{ color: "#1e90ff", fontSize: 16 }}>← Previous Results ({historyCount})</AppText>
-        </TouchableOpacity>
-      ) : null}
-
-      <TouchableOpacity
-        onPress={startRegenerate}
-        disabled={isLoading}
-        style={{
-          backgroundColor: "#28a745",
-          borderRadius: 10,
-          paddingVertical: 12,
-          alignItems: "center",
-          marginBottom: 16,
-          opacity: isLoading ? 0.6 : 1,
-        }}
-      >
-        <AppText style={{ color: "#fff", fontSize: 16 }}>Regenerate</AppText>
-      </TouchableOpacity>
 
       <EditInputsModal
         visible={isEditModalVisible}
@@ -933,7 +844,7 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
       ) : null}
 
       {!isLoading
-        ? displayedIdeas.map((idea, index) => {
+        ? filledIdeas.map((idea, index) => {
             const modifiedPlaces = modifiedIdeas.get(index)?.places;
             const ideaPlacesRecord = modifiedPlaces || idea.places || {};
             const ideaPlaces = Object.values(ideaPlacesRecord).filter(Boolean);

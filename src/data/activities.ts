@@ -353,6 +353,399 @@ export const activities: Activity[] = [
     bestDaysOfWeek: ALL_WEEKDAYS,
     bestTimesOfDay: ALL_TIMES_OF_DAY,
   },
+  {
+    id: "act_021",
+    name: "Have a karaoke night",
+    categories: ["Entertainment"],
+    description:
+      "Pull up a free karaoke app or YouTube karaoke videos and take turns performing your favorite songs. Cheer each other on and don't take it too seriously.",
+    cost: 0,
+    durationMinutes: {
+      min: 30,
+      max: 90,
+    },
+    bestMonthsOfYear: ALL_MONTHS,
+    bestDaysOfWeek: ALL_WEEKDAYS,
+    bestTimesOfDay: ALL_TIMES_OF_DAY,
+  },
+  {
+    id: "act_022",
+    name: "Play card games together",
+    categories: ["Entertainment"],
+    description:
+      "Break out a deck of cards and play classic two-player games like Rummy, War, Cribbage, or Speed. Easy to learn and surprisingly competitive.",
+    cost: 0,
+    durationMinutes: {
+      min: 20,
+      max: 90,
+    },
+    bestMonthsOfYear: ALL_MONTHS,
+    bestDaysOfWeek: ALL_WEEKDAYS,
+    bestTimesOfDay: ALL_TIMES_OF_DAY,
+  },
+  {
+    id: "act_023",
+    name: "Answer the '36 questions to fall in love'",
+    categories: ["Entertainment", "Education"],
+    description:
+      "Look up Dr. Arthur Aron's famous 36 questions and take turns asking and answering them. The questions get progressively deeper and are a great way to connect.",
+    cost: 0,
+    durationMinutes: {
+      min: 30,
+      max: 60,
+    },
+    bestMonthsOfYear: ALL_MONTHS,
+    bestDaysOfWeek: ALL_WEEKDAYS,
+    bestTimesOfDay: ALL_TIMES_OF_DAY,
+  },
+  {
+    id: "act_024",
+    name: "Do an at-home spa night",
+    categories: ["Entertainment"],
+    description:
+      "Grab some face masks, exfoliants, and nail polish. Dim the lights, put on relaxing music, and pamper each other with a low-key self-care night.",
+    cost: 5,
+    durationMinutes: {
+      min: 45,
+      max: 90,
+    },
+    bestMonthsOfYear: ALL_MONTHS,
+    bestDaysOfWeek: ALL_WEEKDAYS,
+    bestTimesOfDay: [
+      {
+        startHour12: "6",
+        endHour12: "11",
+        startPeriod: "PM",
+        endPeriod: "PM",
+      },
+    ],
+  },
+  {
+    id: "act_025",
+    name: "Go on a bike ride",
+    categories: ["Outdoors", "Sports"],
+    description:
+      "Grab your bikes and explore a nearby trail, park path, or neighborhood. A great way to enjoy the outdoors together without any pressure.",
+    cost: 0,
+    durationMinutes: {
+      min: 30,
+      max: 90,
+    },
+    bestMonthsOfYear: ["March", "April", "May", "June", "July", "August", "September", "October"],
+    bestDaysOfWeek: ALL_WEEKDAYS,
+    bestTimesOfDay: [
+      {
+        startHour12: "9",
+        endHour12: "7",
+        startPeriod: "AM",
+        endPeriod: "PM",
+      },
+    ],
+  },
+  {
+    id: "act_026",
+    name: "Do a workout video together",
+    categories: ["Sports", "Entertainment"],
+    description:
+      "Find a fun workout video on YouTube — dance cardio, yoga, kickboxing, or Pilates. Working out together is motivating and a little hilarious.",
+    cost: 0,
+    durationMinutes: {
+      min: 20,
+      max: 60,
+    },
+    bestMonthsOfYear: ALL_MONTHS,
+    bestDaysOfWeek: ALL_WEEKDAYS,
+    bestTimesOfDay: ALL_TIMES_OF_DAY,
+  },
+  {
+    id: "act_027",
+    name: "Watch a documentary together",
+    categories: ["Entertainment", "Education"],
+    description:
+      "Pick a documentary on a topic you're both curious about — nature, history, true crime, food, or space. Great conversation starter afterward.",
+    cost: 0,
+    durationMinutes: {
+      min: 60,
+      max: 120,
+    },
+    bestMonthsOfYear: ALL_MONTHS,
+    bestDaysOfWeek: ALL_WEEKDAYS,
+    bestTimesOfDay: [
+      {
+        startHour12: "6",
+        endHour12: "11",
+        startPeriod: "PM",
+        endPeriod: "PM",
+      },
+    ],
+  },
+  {
+    id: "act_028",
+    name: "Take a virtual museum tour",
+    categories: ["Education", "Entertainment"],
+    description:
+      "Many world-class museums offer free virtual tours online, including the Louvre, the Smithsonian, and the British Museum. Explore art and history from your couch.",
+    cost: 0,
+    durationMinutes: {
+      min: 30,
+      max: 60,
+    },
+    bestMonthsOfYear: ALL_MONTHS,
+    bestDaysOfWeek: ALL_WEEKDAYS,
+    bestTimesOfDay: ALL_TIMES_OF_DAY,
+  },
+  {
+    id: "act_029",
+    name: "Make friendship bracelets",
+    categories: ["Entertainment", "Education"],
+    description:
+      "Grab some embroidery floss and learn a simple bracelet pattern together. Make matching ones for each other — it's easier than it sounds and a fun keepsake.",
+    cost: 3,
+    durationMinutes: {
+      min: 30,
+      max: 60,
+    },
+    bestMonthsOfYear: ALL_MONTHS,
+    bestDaysOfWeek: ALL_WEEKDAYS,
+    bestTimesOfDay: ALL_TIMES_OF_DAY,
+  },
+  {
+    id: "act_030",
+    name: "Play truth or dare",
+    categories: ["Entertainment"],
+    description:
+      "Classic for a reason. Keep it light and fun, or use it as a way to learn things about each other you wouldn't normally talk about.",
+    cost: 0,
+    durationMinutes: {
+      min: 20,
+      max: 60,
+    },
+    bestMonthsOfYear: ALL_MONTHS,
+    bestDaysOfWeek: ALL_WEEKDAYS,
+    bestTimesOfDay: ALL_TIMES_OF_DAY,
+  },
+  {
+    id: "act_031",
+    name: "Build a LEGO set together",
+    categories: ["Entertainment", "Education"],
+    description:
+      "Grab a LEGO set and build it together. Even a basic set turns into a fun, focused activity where you talk and collaborate without screens.",
+    cost: 10,
+    durationMinutes: {
+      min: 30,
+      max: 120,
+    },
+    bestMonthsOfYear: ALL_MONTHS,
+    bestDaysOfWeek: ALL_WEEKDAYS,
+    bestTimesOfDay: ALL_TIMES_OF_DAY,
+  },
+  {
+    id: "act_032",
+    name: "Go on an outdoor scavenger hunt",
+    categories: ["Outdoors", "Entertainment"],
+    description:
+      "Look up a free scavenger hunt list online or make your own, then head outside and compete to find everything. Works in a park, neighborhood, or campus.",
+    cost: 0,
+    durationMinutes: {
+      min: 30,
+      max: 60,
+    },
+    bestMonthsOfYear: ["March", "April", "May", "June", "July", "August", "September", "October"],
+    bestDaysOfWeek: ALL_WEEKDAYS,
+    bestTimesOfDay: [
+      {
+        startHour12: "10",
+        endHour12: "7",
+        startPeriod: "AM",
+        endPeriod: "PM",
+      },
+    ],
+  },
+  {
+    id: "act_033",
+    name: "Watch the sunset or sunrise together",
+    categories: ["Outdoors", "Entertainment"],
+    description:
+      "Find a good spot — a hilltop, rooftop, park bench, or open field — and watch the sky change colors together. Simple and genuinely memorable.",
+    cost: 0,
+    durationMinutes: {
+      min: 20,
+      max: 45,
+    },
+    bestMonthsOfYear: ALL_MONTHS,
+    bestDaysOfWeek: ALL_WEEKDAYS,
+    bestTimesOfDay: [
+      {
+        startHour12: "5",
+        endHour12: "9",
+        startPeriod: "AM",
+        endPeriod: "AM",
+      },
+      {
+        startHour12: "6",
+        endHour12: "9",
+        startPeriod: "PM",
+        endPeriod: "PM",
+      },
+    ],
+  },
+  {
+    id: "act_034",
+    name: "Do finger painting",
+    categories: ["Entertainment", "Education"],
+    description:
+      "Grab some finger paints and large paper and paint whatever you feel like. No skill required — it's just fun to be messy and creative together.",
+    cost: 5,
+    durationMinutes: {
+      min: 30,
+      max: 60,
+    },
+    bestMonthsOfYear: ALL_MONTHS,
+    bestDaysOfWeek: ALL_WEEKDAYS,
+    bestTimesOfDay: ALL_TIMES_OF_DAY,
+  },
+  {
+    id: "act_035",
+    name: "Play 20 questions",
+    categories: ["Entertainment"],
+    description:
+      "One person thinks of something, the other asks up to 20 yes/no questions to figure out what it is. Great for car rides, restaurants, or waiting around.",
+    cost: 0,
+    durationMinutes: {
+      min: 15,
+      max: 30,
+    },
+    bestMonthsOfYear: ALL_MONTHS,
+    bestDaysOfWeek: ALL_WEEKDAYS,
+    bestTimesOfDay: ALL_TIMES_OF_DAY,
+  },
+  {
+    id: "act_036",
+    name: "Write a bucket list together",
+    categories: ["Entertainment", "Education"],
+    description:
+      "Each write your own bucket lists, then share them with each other. Find the overlapping items and plan which ones you want to tackle together.",
+    cost: 0,
+    durationMinutes: {
+      min: 20,
+      max: 45,
+    },
+    bestMonthsOfYear: ALL_MONTHS,
+    bestDaysOfWeek: ALL_WEEKDAYS,
+    bestTimesOfDay: ALL_TIMES_OF_DAY,
+  },
+  {
+    id: "act_037",
+    name: "Make a photo album or scrapbook together",
+    categories: ["Entertainment", "Education"],
+    description:
+      "Print some recent photos and put together a small album or scrapbook. A surprisingly satisfying project and a great keepsake.",
+    cost: 5,
+    durationMinutes: {
+      min: 30,
+      max: 90,
+    },
+    bestMonthsOfYear: ALL_MONTHS,
+    bestDaysOfWeek: ALL_WEEKDAYS,
+    bestTimesOfDay: ALL_TIMES_OF_DAY,
+  },
+  {
+    id: "act_038",
+    name: "Have a fashion show",
+    categories: ["Entertainment"],
+    description:
+      "Raid each other's closets, style each other in ridiculous or surprisingly good outfits, and do a runway walk. Surprisingly funny every time.",
+    cost: 0,
+    durationMinutes: {
+      min: 20,
+      max: 45,
+    },
+    bestMonthsOfYear: ALL_MONTHS,
+    bestDaysOfWeek: ALL_WEEKDAYS,
+    bestTimesOfDay: ALL_TIMES_OF_DAY,
+  },
+  {
+    id: "act_039",
+    name: "Make your own trail mix",
+    categories: ["Food", "Entertainment"],
+    description:
+      "Lay out a bunch of trail mix ingredients — nuts, dried fruit, chocolate chips, pretzels, granola — and each design your perfect mix. Then trade and taste.",
+    cost: 5,
+    durationMinutes: {
+      min: 15,
+      max: 30,
+    },
+    bestMonthsOfYear: ALL_MONTHS,
+    bestDaysOfWeek: ALL_WEEKDAYS,
+    bestTimesOfDay: ALL_TIMES_OF_DAY,
+  },
+  {
+    id: "act_040",
+    name: "Do a tie-dye project",
+    categories: ["Entertainment"],
+    description:
+      "Grab a tie-dye kit from a craft store and dye a white shirt or pair of socks together. There's a satisfying reveal when you unfold them after letting the dye set.",
+    cost: 10,
+    durationMinutes: {
+      min: 45,
+      max: 90,
+    },
+    bestMonthsOfYear: ALL_MONTHS,
+    bestDaysOfWeek: ALL_WEEKDAYS,
+    bestTimesOfDay: ALL_TIMES_OF_DAY,
+  },
+  {
+    id: "act_041",
+    name: "Play frisbee or catch",
+    categories: ["Outdoors", "Sports"],
+    description:
+      "Head to a nearby park or open field and toss a frisbee or ball around. Low effort, high quality time together.",
+    cost: 0,
+    durationMinutes: {
+      min: 20,
+      max: 60,
+    },
+    bestMonthsOfYear: ["March", "April", "May", "June", "July", "August", "September", "October"],
+    bestDaysOfWeek: ALL_WEEKDAYS,
+    bestTimesOfDay: [
+      {
+        startHour12: "9",
+        endHour12: "7",
+        startPeriod: "AM",
+        endPeriod: "PM",
+      },
+    ],
+  },
+  {
+    id: "act_042",
+    name: "Learn a magic trick together",
+    categories: ["Entertainment", "Education"],
+    description:
+      "Look up a beginner card or coin trick on YouTube and practice until you can both perform it. Then try to fool each other.",
+    cost: 0,
+    durationMinutes: {
+      min: 20,
+      max: 45,
+    },
+    bestMonthsOfYear: ALL_MONTHS,
+    bestDaysOfWeek: ALL_WEEKDAYS,
+    bestTimesOfDay: ALL_TIMES_OF_DAY,
+  },
+  {
+    id: "act_043",
+    name: "Make a playlist for each other",
+    categories: ["Entertainment", "Education"],
+    description:
+      "Each of you spend 15 minutes secretly making a playlist that describes how you feel about the other person or what you think they'd love. Then swap and listen together.",
+    cost: 0,
+    durationMinutes: {
+      min: 30,
+      max: 60,
+    },
+    bestMonthsOfYear: ALL_MONTHS,
+    bestDaysOfWeek: ALL_WEEKDAYS,
+    bestTimesOfDay: ALL_TIMES_OF_DAY,
+  },
 ];
 
 export function getActivityById(id: string) {
