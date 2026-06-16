@@ -8,7 +8,7 @@ export default {
 
     splash: {
       backgroundColor: "#FFFFFF",
-      image: "./src/assets/images/splash.jpg",
+      image: "./src/assets/images/splash_screen.jpg",
     },
 
     android: {
