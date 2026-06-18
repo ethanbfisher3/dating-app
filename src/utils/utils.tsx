@@ -121,6 +121,11 @@ export const SLOT_TO_PLACE_TYPES: Record<string, string[]> = {
   shop: ["mall", "clothes", "gift", "toys", "books", "electronics"],
   learningSpot: ["museum", "art_gallery", "library", "historic"],
   activityPlace: ["cinema", "amusement_arcade", "theme_park", "playground", "bowling_alley", "miniature_golf"],
+  fitness_centre: ["fitness_centre", "sports_centre", "swimming_pool", "ice_rink", "gym"],
+  gym: ["fitness_centre", "sports_centre", "swimming_pool", "ice_rink", "gym"],
+  sports_centre: ["fitness_centre", "sports_centre", "swimming_pool", "ice_rink", "gym"],
+  swimming_pool: ["fitness_centre", "sports_centre", "swimming_pool", "ice_rink", "gym"],
+  ice_rink: ["fitness_centre", "sports_centre", "swimming_pool", "ice_rink", "gym"],
 };
 
 export const DATE_CATEGORIES = ["Food", "Sports", "Outdoors", "Education", "Shopping", "Entertainment"] as const;
@@ -171,4 +176,12 @@ export const SLOT_TO_CATEGORY: Record<string, string> = {
   bowling_alley: "Entertainment",
   miniature_golf: "Entertainment",
   activityPlace: "Entertainment",
+  museum: "Education",
+  art_gallery: "Education",
+  library: "Education",
+  fitness_centre: "Sports",
+  gym: "Sports",
+  sports_centre: "Sports",
+  swimming_pool: "Sports",
+  ice_rink: "Sports",
 };

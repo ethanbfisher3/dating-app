@@ -2,7 +2,11 @@ import type { DateCategory } from "../../utils/utils";
 
 const dateCategoryToNodes: Record<DateCategory, string[]> = {
   Food: ['nwr["amenity"~"restaurant|fast_food|cafe|food_court|ice_cream"]'],
-  Sports: ['nwr["sport"~"tennis|golf|fitness|yoga"]'],
+  Sports: [
+    'nwr["leisure"~"fitness_centre|sports_centre|swimming_pool|ice_rink|golf_course"]',
+    'nwr["amenity"="gym"]',
+    'nwr["sport"~"tennis|golf|yoga"]',
+  ],
   Outdoors: [
     'nwr["leisure"~"park|garden|nature_reserve|recreation_ground|dog_park"]',
     'nwr["tourism"~"viewpoint|picnic_site|camp_site"]',

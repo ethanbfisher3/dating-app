@@ -149,11 +149,60 @@ function chooseTemplates(params: PlannedDateResultsParams, places: PlaceSummary[
       return [...filteredStayInTemplates, ...noPlaceTemplates];
     }
 
-    // Fall back to the activity/recipe-only templates from SHORT_TEMPLATES
     return SHORT_TEMPLATES.filter((t) => !requiresPlaces(t) && matchesSelectedCategories(t));
   }
 
-  return base.filter(matchesSelectedCategories);
+  const filtered = shuffleIdeas(base.filter(matchesSelectedCategories));
+
+  if (selectedCategories.length <= 1) {
+    return filtered;
+  }
+
+  // Bucket templates by category so each selected category gets equal representation
+  // in the idea pool. Each template goes into the bucket of the one selected category
+  // it uniquely matches; multi-category templates go to whichever selected-category
+  // bucket is smallest at the time of assignment (balancing heuristic).
+  const buckets = new Map<string, IdeaTemplate[]>(selectedCategories.map((cat) => [cat, []]));
+
+  for (const template of filtered) {
+    const matchingCategories = template.categories.filter((cat) => selectedCategories.includes(cat));
+
+    if (!matchingCategories.length) {
+      // Shouldn't happen after filter, but assign to first bucket as fallback
+      buckets.get(selectedCategories[0])?.push(template);
+      continue;
+    }
+
+    if (matchingCategories.length === 1) {
+      buckets.get(matchingCategories[0])?.push(template);
+      continue;
+    }
+
+    // Assign to the currently-smallest matching bucket so buckets stay balanced
+    const target = matchingCategories.reduce((best, cat) => {
+      const bestSize = buckets.get(best)?.length ?? 0;
+      const catSize = buckets.get(cat)?.length ?? 0;
+      return catSize < bestSize ? cat : best;
+    });
+    buckets.get(target)?.push(template);
+  }
+
+  // Round-robin across category buckets: one template per category per pass
+  const result: IdeaTemplate[] = [];
+  const bucketArrays = selectedCategories.map((cat) => buckets.get(cat) ?? []);
+  let anyAdded = true;
+
+  while (anyAdded) {
+    anyAdded = false;
+    for (const bucket of bucketArrays) {
+      if (bucket.length > 0) {
+        result.push(bucket.shift()!);
+        anyAdded = true;
+      }
+    }
+  }
+
+  return result;
 }
 
 function getPlaceCandidatesBySlotType(slot: string, places: PlaceSummary[]): PlaceSummary[] {
@@ -572,11 +621,12 @@ export default function useFilledIdeas({ params, places, recipes, activities }: 
     const ideaGenerationStartMs = Date.now();
     const uniquePlaces = dedupeByKey(places, (place) => `${place.id}__${place.name}__${place.address}`);
     const uniqueRecipes = dedupeByKey(recipes, (recipe) => recipe.name);
-    const uniqueActivities = dedupeByKey(activities, (activity) => `${activity.id}__${activity.name}`);
+    const uniqueActivities = dedupeByKey(activities, (activity) => `${activity.id}__${activity.name}`)
+      .filter((activity) => activity.cost <= params.maxPrice);
     const randomizedPlaces = shuffleIdeas(uniquePlaces);
     const randomizedRecipes = shuffleIdeas(uniqueRecipes);
     const randomizedActivities = shuffleIdeas(uniqueActivities);
-    const templates = shuffleIdeas(chooseTemplates(params, randomizedPlaces, randomizedActivities));
+    const templates = chooseTemplates(params, randomizedPlaces, randomizedActivities);
     const targetCount = isUnlocked ? 25 : 10;
     const poolTargetCount = Math.max(targetCount * 4, 30);
     const ideas: FilledIdea[] = [];

@@ -19,6 +19,7 @@ import PlannedDateResults from "./src/screens/PlannedDateResults";
 import SavedIdeas from "./src/screens/SavedIdeas";
 import DateHistory from "./src/screens/DateHistory";
 import DateCalendar from "./src/screens/DateCalendar";
+import SwipeIdeas from "./src/screens/SwipeIdeas";
 import recipes from "./src/data/Recipes";
 import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
 import mobileAds from "react-native-google-mobile-ads";
@@ -62,6 +63,13 @@ const TABS = [
     component: PlanADate,
   },
   {
+    key: "SwipeIdeas",
+    title: "Discover",
+    icon: "heart-circle",
+    iconOutline: "heart-circle-outline",
+    component: SwipeIdeas,
+  },
+  {
     key: "Recipe Ideas",
     title: "Recipes",
     icon: "restaurant",
@@ -69,6 +77,8 @@ const TABS = [
     component: RecipesPage,
   },
 ];
+
+const SWIPE_IDEAS_TAB_INDEX = TABS.findIndex((t) => t.key === "SwipeIdeas");
 
 function SwipeBackLayout({ navigation, children }: { navigation: AppNavigation; children: React.ReactNode }) {
   const handleStateChange = useCallback(
@@ -424,6 +434,7 @@ function MainTabs({ navigation }: { navigation: AppNavigation }) {
           onPageSelected={handlePageSelected}
           onPageScroll={handlePageScroll}
           overdrag={true}
+          scrollEnabled={currentPage !== SWIPE_IDEAS_TAB_INDEX}
         >
           {TABS.map((tab, index) => {
             const Component = tab.component;

@@ -7,7 +7,7 @@ export type SavedDateIdea = FilledIdea & {
   selectedDate?: string;
 };
 
-export const FREE_TIER_SAVED_IDEAS_LIMIT = 3;
+export const FREE_TIER_SAVED_IDEAS_LIMIT = 10;
 const SAVED_IDEAS_KEY = "@saved_date_ideas";
 
 let savedIdeas: SavedDateIdea[] = [];

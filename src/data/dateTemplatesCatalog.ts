@@ -14,6 +14,9 @@ const DESSERT_PLACE_SLOT = "ice_cream";
 const OUTDOOR_PLACE_SLOT = "viewpoint|picnic_site|camp_site";
 const LEISURE_PLACE_SLOT = "leisure|park|garden|nature_reserve|recreation_ground|dog_park|viewpoint|picnic_site|camp_site|pitch|amusement_arcade|playground|bowling_alley|miniature_golf";
 const SHOP_PLACE_SLOT = "shop|mall|clothes|gift|toys|books|electronics";
+const SPORTS_PLACE_SLOT = "fitness_centre|gym|sports_centre|swimming_pool|ice_rink";
+const EDUCATION_PLACE_SLOT = "museum|art_gallery|library|historic";
+const ENTERTAINMENT_PLACE_SLOT = "cinema|bowling_alley|amusement_arcade|miniature_golf|theme_park";
 
 const DATE_CATEGORIES: DateCategory[] = ["Food", "Sports", "Outdoors", "Education", "Shopping", "Entertainment"];
 
@@ -50,6 +53,16 @@ const SLOT_CATEGORY_OPTIONS: Record<string, DateCategory[]> = {
   bowling_alley: ["Entertainment"],
   amusement_arcade: ["Entertainment"],
   tourism: ["Outdoors", "Education", "Entertainment"],
+  fitness_centre: ["Sports"],
+  gym: ["Sports"],
+  sports_centre: ["Sports"],
+  swimming_pool: ["Sports"],
+  ice_rink: ["Sports"],
+  museum: ["Education"],
+  art_gallery: ["Education"],
+  library: ["Education"],
+  cinema: ["Entertainment"],
+  theme_park: ["Entertainment"],
 };
 
 function getCategoriesForSlots(slots: string[]): DateCategory[] {
@@ -170,6 +183,24 @@ const SHORT_DATE_TEMPLATE_DEFINITIONS: TemplateDefinition[] = [
     template: "Make {recipe} and {activity} to finish it off",
     slots: ["recipe", "activity"],
   },
+  { template: `Get active at {${SPORTS_PLACE_SLOT}}`, slots: [SPORTS_PLACE_SLOT] },
+  { template: `Train together at {${SPORTS_PLACE_SLOT}}`, slots: [SPORTS_PLACE_SLOT] },
+  {
+    template: `{activity} then cool off at {${SPORTS_PLACE_SLOT}}`,
+    slots: ["activity", SPORTS_PLACE_SLOT],
+  },
+  { template: `Explore {${EDUCATION_PLACE_SLOT}}`, slots: [EDUCATION_PLACE_SLOT] },
+  { template: `Discover something new at {${EDUCATION_PLACE_SLOT}}`, slots: [EDUCATION_PLACE_SLOT] },
+  {
+    template: `{activity} and then visit {${EDUCATION_PLACE_SLOT}}`,
+    slots: ["activity", EDUCATION_PLACE_SLOT],
+  },
+  { template: `Enjoy a night out at {${ENTERTAINMENT_PLACE_SLOT}}`, slots: [ENTERTAINMENT_PLACE_SLOT] },
+  { template: `Have fun together at {${ENTERTAINMENT_PLACE_SLOT}}`, slots: [ENTERTAINMENT_PLACE_SLOT] },
+  {
+    template: `{activity} then head to {${ENTERTAINMENT_PLACE_SLOT}}`,
+    slots: ["activity", ENTERTAINMENT_PLACE_SLOT],
+  },
 ];
 
 export const SHORT_DATE_TEMPLATES: TemplateLike[] = SHORT_DATE_TEMPLATE_DEFINITIONS.map(withCategories);
@@ -268,6 +299,54 @@ const STANDARD_DATE_TEMPLATE_DEFINITIONS: TemplateDefinition[] = [
   {
     template: `Begin at {${LEISURE_PLACE_SLOT}}, grab {${FOOD_PLACE_SLOT}}, and browse {${SHOP_PLACE_SLOT}}`,
     slots: [LEISURE_PLACE_SLOT, FOOD_PLACE_SLOT, SHOP_PLACE_SLOT],
+  },
+  {
+    template: `Work out at {${SPORTS_PLACE_SLOT}}, then grab a bite at {${FOOD_PLACE_SLOT}}`,
+    slots: [SPORTS_PLACE_SLOT, FOOD_PLACE_SLOT],
+  },
+  {
+    template: `Train at {${SPORTS_PLACE_SLOT}}, then treat yourselves at {${DESSERT_PLACE_SLOT}}`,
+    slots: [SPORTS_PLACE_SLOT, DESSERT_PLACE_SLOT],
+  },
+  {
+    template: `{activity} then get active at {${SPORTS_PLACE_SLOT}}`,
+    slots: ["activity", SPORTS_PLACE_SLOT],
+  },
+  {
+    template: `Hit up {${SPORTS_PLACE_SLOT}}, then walk at {${LEISURE_PLACE_SLOT}}`,
+    slots: [SPORTS_PLACE_SLOT, LEISURE_PLACE_SLOT],
+  },
+  {
+    template: `Visit {${EDUCATION_PLACE_SLOT}}, then grab food at {${FOOD_PLACE_SLOT}}`,
+    slots: [EDUCATION_PLACE_SLOT, FOOD_PLACE_SLOT],
+  },
+  {
+    template: `Explore {${EDUCATION_PLACE_SLOT}}, then {activity}`,
+    slots: [EDUCATION_PLACE_SLOT, "activity"],
+  },
+  {
+    template: `Check out {${EDUCATION_PLACE_SLOT}}, then stroll at {${LEISURE_PLACE_SLOT}}`,
+    slots: [EDUCATION_PLACE_SLOT, LEISURE_PLACE_SLOT],
+  },
+  {
+    template: `Discover {${EDUCATION_PLACE_SLOT}}, then browse {${SHOP_PLACE_SLOT}}`,
+    slots: [EDUCATION_PLACE_SLOT, SHOP_PLACE_SLOT],
+  },
+  {
+    template: `Enjoy {${ENTERTAINMENT_PLACE_SLOT}}, then dinner at {${FOOD_PLACE_SLOT}}`,
+    slots: [ENTERTAINMENT_PLACE_SLOT, FOOD_PLACE_SLOT],
+  },
+  {
+    template: `Go to {${ENTERTAINMENT_PLACE_SLOT}}, then dessert at {${DESSERT_PLACE_SLOT}}`,
+    slots: [ENTERTAINMENT_PLACE_SLOT, DESSERT_PLACE_SLOT],
+  },
+  {
+    template: `{activity} then head to {${ENTERTAINMENT_PLACE_SLOT}}`,
+    slots: ["activity", ENTERTAINMENT_PLACE_SLOT],
+  },
+  {
+    template: `{${ENTERTAINMENT_PLACE_SLOT}}, then a walk at {${LEISURE_PLACE_SLOT}}`,
+    slots: [ENTERTAINMENT_PLACE_SLOT, LEISURE_PLACE_SLOT],
   },
 ];
 
@@ -373,6 +452,54 @@ const LONG_DATE_TEMPLATE_DEFINITIONS: TemplateDefinition[] = [
   {
     template: `Visit {${OUTDOOR_PLACE_SLOT}}, then {${SHOP_PLACE_SLOT}}, then {${LEISURE_PLACE_SLOT}}, then {activity}, then {${DESSERT_PLACE_SLOT}}`,
     slots: [OUTDOOR_PLACE_SLOT, SHOP_PLACE_SLOT, LEISURE_PLACE_SLOT, "activity", DESSERT_PLACE_SLOT],
+  },
+  {
+    template: `Train at {${SPORTS_PLACE_SLOT}}, then {activity}, then dinner at {${FOOD_PLACE_SLOT}}`,
+    slots: [SPORTS_PLACE_SLOT, "activity", FOOD_PLACE_SLOT],
+  },
+  {
+    template: `Get active at {${SPORTS_PLACE_SLOT}}, grab {${FOOD_PLACE_SLOT}}, then {activity}, and end with {${DESSERT_PLACE_SLOT}}`,
+    slots: [SPORTS_PLACE_SLOT, FOOD_PLACE_SLOT, "activity", DESSERT_PLACE_SLOT],
+  },
+  {
+    template: `{activity}, then {${SPORTS_PLACE_SLOT}}, then wind down at {${LEISURE_PLACE_SLOT}}`,
+    slots: ["activity", SPORTS_PLACE_SLOT, LEISURE_PLACE_SLOT],
+  },
+  {
+    template: `Start at {${SPORTS_PLACE_SLOT}}, then browse {${SHOP_PLACE_SLOT}}, and end at {${FOOD_PLACE_SLOT}}`,
+    slots: [SPORTS_PLACE_SLOT, SHOP_PLACE_SLOT, FOOD_PLACE_SLOT],
+  },
+  {
+    template: `Explore {${EDUCATION_PLACE_SLOT}}, then {activity}, then dinner at {${FOOD_PLACE_SLOT}}`,
+    slots: [EDUCATION_PLACE_SLOT, "activity", FOOD_PLACE_SLOT],
+  },
+  {
+    template: `Visit {${EDUCATION_PLACE_SLOT}}, browse {${SHOP_PLACE_SLOT}}, then grab {${FOOD_PLACE_SLOT}}`,
+    slots: [EDUCATION_PLACE_SLOT, SHOP_PLACE_SLOT, FOOD_PLACE_SLOT],
+  },
+  {
+    template: `Start at {${EDUCATION_PLACE_SLOT}}, {activity}, walk at {${LEISURE_PLACE_SLOT}}, and dessert at {${DESSERT_PLACE_SLOT}}`,
+    slots: [EDUCATION_PLACE_SLOT, "activity", LEISURE_PLACE_SLOT, DESSERT_PLACE_SLOT],
+  },
+  {
+    template: `Discover {${EDUCATION_PLACE_SLOT}}, visit {${OUTDOOR_PLACE_SLOT}}, {activity}, and grab {${FOOD_PLACE_SLOT}}`,
+    slots: [EDUCATION_PLACE_SLOT, OUTDOOR_PLACE_SLOT, "activity", FOOD_PLACE_SLOT],
+  },
+  {
+    template: `{${ENTERTAINMENT_PLACE_SLOT}}, then {activity}, then dinner at {${FOOD_PLACE_SLOT}}`,
+    slots: [ENTERTAINMENT_PLACE_SLOT, "activity", FOOD_PLACE_SLOT],
+  },
+  {
+    template: `Dinner at {${FOOD_PLACE_SLOT}}, then {${ENTERTAINMENT_PLACE_SLOT}}, then walk at {${LEISURE_PLACE_SLOT}}`,
+    slots: [FOOD_PLACE_SLOT, ENTERTAINMENT_PLACE_SLOT, LEISURE_PLACE_SLOT],
+  },
+  {
+    template: `{activity}, then {${ENTERTAINMENT_PLACE_SLOT}}, then {activity}, then dessert at {${DESSERT_PLACE_SLOT}}`,
+    slots: ["activity", ENTERTAINMENT_PLACE_SLOT, "activity", DESSERT_PLACE_SLOT],
+  },
+  {
+    template: `Start at {${OUTDOOR_PLACE_SLOT}}, then {${ENTERTAINMENT_PLACE_SLOT}}, then {activity}, and grab {${FOOD_PLACE_SLOT}}`,
+    slots: [OUTDOOR_PLACE_SLOT, ENTERTAINMENT_PLACE_SLOT, "activity", FOOD_PLACE_SLOT],
   },
 ];
 

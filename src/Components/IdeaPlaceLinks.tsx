@@ -7,9 +7,10 @@ type IdeaPlaceLinksProps = {
   places: Array<PlaceSummary | null | undefined>;
   navigation: AppNavigation;
   marginTop?: number;
+  onActivityPress?: (place: PlaceSummary) => void;
 };
 
-export default function IdeaPlaceLinks({ places, navigation, marginTop = 12 }: IdeaPlaceLinksProps) {
+export default function IdeaPlaceLinks({ places, navigation, marginTop = 12, onActivityPress }: IdeaPlaceLinksProps) {
   const resolvedPlaces = places.filter(Boolean) as PlaceSummary[];
 
   if (!resolvedPlaces.length) {
@@ -24,7 +25,11 @@ export default function IdeaPlaceLinks({ places, navigation, marginTop = 12 }: I
           style={{ marginBottom: 10 }}
           onPress={() => {
             if (place.sourceKind === "activity") {
-              navigation.navigate("ActivityDetail", { id: place.id });
+              if (onActivityPress) {
+                onActivityPress(place);
+              } else {
+                navigation.navigate("ActivityDetail", { id: place.id });
+              }
               return;
             }
 

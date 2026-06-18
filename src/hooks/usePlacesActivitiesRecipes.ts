@@ -590,7 +590,7 @@ async function fetchPlacesForCategoryFromOverpass(
       hadSuccess = hadSuccess || cachedResult.hadSuccess;
       finalServerBaseUrl = cachedResult.serverBaseUrl || finalServerBaseUrl;
 
-      if (queryRadiusMeters >= distanceMeters && finalPlaces.length >= OVERPASS_CATEGORY_TARGET_COUNT) {
+      if (queryRadiusMeters >= distanceMeters || finalPlaces.length >= OVERPASS_CATEGORY_TARGET_COUNT) {
         break;
       }
 
@@ -611,7 +611,7 @@ async function fetchPlacesForCategoryFromOverpass(
       hadSuccess = true;
       finalServerBaseUrl = fetchedResult.serverBaseUrl || finalServerBaseUrl;
 
-      if (queryRadiusMeters >= distanceMeters && finalPlaces.length >= OVERPASS_CATEGORY_TARGET_COUNT) {
+      if (queryRadiusMeters >= distanceMeters || finalPlaces.length >= OVERPASS_CATEGORY_TARGET_COUNT) {
         break;
       }
     }
