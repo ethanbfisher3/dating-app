@@ -121,6 +121,8 @@ function SwipeBackLayout({ navigation, children }: { navigation: AppNavigation; 
 }
 
 export default function App() {
+  const appStartRef = useRef(Date.now());
+
   const [loaded, error] = useFonts({
     SuperMindset: require("./src/assets/fonts/SuperMindset.ttf"),
     SuperPandora: require("./src/assets/fonts/SuperPandora.ttf"),
@@ -129,7 +131,12 @@ export default function App() {
 
   useEffect(() => {
     if (loaded || error) {
-      SplashScreen.hideAsync();
+      const elapsed = Date.now() - appStartRef.current;
+      const remaining = Math.max(0, 2000 - elapsed);
+      const timer = setTimeout(() => {
+        SplashScreen.hideAsync();
+      }, remaining);
+      return () => clearTimeout(timer);
     }
   }, [loaded, error]);
 
