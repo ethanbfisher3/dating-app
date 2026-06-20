@@ -1,15 +1,12 @@
-Next update:
-More recipes
-More activities
+Images for new recipes
+Merge recipies and activities?
+Add recipe ideas only for premium?
+Redo date idea generation completely. there are way too many places being used on date ideas right now instead of activities, which are more interesting.
 Fix locations sending the user's map to a place far away
 Users can upload date ideas for their areas and others can view them on a 'social' page
 More date idea categories when generating ideas
-When opening an activity or recipe, open a popup from the bottom of the page instead of adding a whole page to the stack
-I shouldn't see 'Date' as a category ever in the plaanned date ideas page
-Add an app tutorial
 More visual stimuli (More animations, sounds, etc.)
 Let the user drop a location to plan the dates from instead of using their location
-Cute 'DateCraft' splash screen (with 'By ...' below with my name or something), display the splash screen for a couple seconds when opening the app as well
 
 Test:
 Test for if products don't load (test if the user has premium and they aren't connected to the internet)

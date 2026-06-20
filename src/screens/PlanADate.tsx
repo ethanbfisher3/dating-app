@@ -5,10 +5,10 @@ import * as Location from "expo-location";
 import { Ionicons } from "@expo/vector-icons";
 import type { AppNavigation } from "../types/navigation";
 import { DATE_CATEGORIES, SLOT_TO_CATEGORY, timesAreInvalid } from "../utils/utils";
+import { getActivityById } from "../data/activities";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { usePremium } from "../hooks/usePremium";
 import { addPlannedDate } from "../data/plannedDatesStore";
-import { fetchPlacesFromOverpassWithCache } from "../hooks/usePlacesActivitiesRecipes";
 import PaywallModal from "../Components/PaywallModal";
 import EditInputsModal from "../Components/EditInputsModal";
 import usePurchases from "src/hooks/usePurchases";
@@ -33,12 +33,23 @@ const CATEGORY_CONFIG: Record<string, CategoryConfig> = {
 
 const DEFAULT_CAT_CONFIG: CategoryConfig = { icon: "heart", color: "#e63f67", bg: "#fff0f5", label: "Date" };
 
-function getIdeaCategory(schedule: { slot: string }[]): string | null {
+function getIdeaCategory(schedule: Array<{ slot: string; place?: PlaceSummary | null }>): string | null {
   const weights: Record<string, number> = {};
   for (const step of schedule) {
-    for (const part of step.slot.split("|").map((s) => s.trim())) {
-      const cat = SLOT_TO_CATEGORY[part];
-      if (cat) weights[cat] = (weights[cat] ?? 0) + 1;
+    if (step.place?.sourceKind === "activity" && step.place.id) {
+      const activity = getActivityById(step.place.id);
+      if (activity) {
+        const primaryCat = activity.categories.find((c) => c !== "Entertainment") ?? activity.categories[0];
+        if (primaryCat) weights[primaryCat] = (weights[primaryCat] ?? 0) + 1;
+      }
+    } else if (step.place?.sourceKind === "place" && step.place.type) {
+      const cat = SLOT_TO_CATEGORY[step.place.type];
+      if (cat) weights[cat] = (weights[cat] ?? 0) + 2;
+    } else {
+      for (const part of step.slot.split("|").map((s) => s.trim())) {
+        const cat = SLOT_TO_CATEGORY[part];
+        if (cat) weights[cat] = (weights[cat] ?? 0) + 1;
+      }
     }
   }
   let best: string | null = null, bestW = 0;
@@ -106,14 +117,24 @@ export default function PlanADate({ navigation }: { navigation: AppNavigation })
           return;
         }
 
-        const position = await Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.Balanced,
-        });
+        // Use the OS-cached last known fix first — returns in milliseconds.
+        try {
+          const last = await Location.getLastKnownPositionAsync({ maxAge: 10 * 60 * 1000, requiredAccuracy: 2000 });
+          if (last) {
+            setActualUserLocation({ latitude: last.coords.latitude, longitude: last.coords.longitude });
+          }
+        } catch {}
 
-        setActualUserLocation({
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-        });
+        // Refine with a fresh fix, but don't wait more than 30 s.
+        const timeoutHandle = { id: null as ReturnType<typeof setTimeout> | null };
+        const fresh = await Promise.race([
+          Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }),
+          new Promise<null>((resolve) => { timeoutHandle.id = setTimeout(() => resolve(null), 30000); }),
+        ]).catch(() => null);
+        if (timeoutHandle.id !== null) clearTimeout(timeoutHandle.id);
+        if (fresh) {
+          setActualUserLocation({ latitude: fresh.coords.latitude, longitude: fresh.coords.longitude });
+        }
       } catch {}
     };
 
@@ -269,35 +290,40 @@ export default function PlanADate({ navigation }: { navigation: AppNavigation })
 
     const selectedDateIso = selectedDate.toISOString().slice(0, 10);
 
-    let finalMaxDistance = parsedDistance;
+    const continueGenerate = (location: { latitude: number; longitude: number } | null) => {
+      const plannerParams = {
+        maxPrice: parsedPrice,
+        selectedDate: selectedDateIso,
+        startHour: start24,
+        endHour: end24,
+        dateLengthMinutes: parsedDateLengthMinutes,
+        maxDistance: parsedDistance,
+        categories: selectedCategories,
+        serverTarget,
+        userLocation: location,
+      };
+
+      setIsGeneratingIdeas(true);
+      addPlannedDate(selectedDateIso);
+      setShowDatePicker(false);
+      setIsModalVisible(false);
+      navigation.navigate("PlannedDateResults", plannerParams);
+      setTimeout(() => setIsGeneratingIdeas(false), 500);
+    };
 
     if (!actualUserLocation) {
-      Alert.alert("Location Not Ready", "Your current location is not available yet. No places will be shown until it is loaded.");
+      Alert.alert(
+        "Location Unavailable",
+        "Your location couldn't be determined. Ideas will be based on activities only — no nearby places will be shown. You can try again once location is ready.",
+        [
+          { text: "Generate Anyway", onPress: () => continueGenerate(null) },
+          { text: "Cancel", style: "cancel" },
+        ],
+      );
       return;
     }
 
-    const plannerParams = {
-      maxPrice: parsedPrice,
-      selectedDate: selectedDateIso,
-      startHour: start24,
-      endHour: end24,
-      dateLengthMinutes: parsedDateLengthMinutes,
-      maxDistance: finalMaxDistance,
-      categories: selectedCategories,
-      serverTarget,
-      userLocation: actualUserLocation,
-    };
-
-    setIsGeneratingIdeas(true);
-    addPlannedDate(selectedDateIso);
-    setShowDatePicker(false);
-    setIsModalVisible(false);
-
-    void fetchPlacesFromOverpassWithCache(plannerParams);
-
-    navigation.navigate("PlannedDateResults", plannerParams);
-
-    setTimeout(() => setIsGeneratingIdeas(false), 500);
+    continueGenerate(actualUserLocation);
   };
 
   const openMarkDone = (idea: SavedDateIdea) => {
@@ -415,10 +441,17 @@ export default function PlanADate({ navigation }: { navigation: AppNavigation })
           <Text style={{ color: "#fff", fontSize: 18 }}>Generate Date Ideas</Text>
         </TouchableOpacity>
 
+        <View style={{ height: 1, backgroundColor: "#e8edf3", marginBottom: 20 }} />
+
         {/* Saved Ideas horizontal scroll */}
-        <View style={{ marginBottom: 20 }}>
+        <View style={{ marginBottom: 0 }}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-            <Text style={{ fontSize: 20, color: "#1a1a1a" }}>Saved Ideas</Text>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+              <View style={{ width: 28, height: 28, borderRadius: 8, backgroundColor: "#eff6ff", justifyContent: "center", alignItems: "center" }}>
+                <Ionicons name="bookmark" size={15} color="#1e90ff" />
+              </View>
+              <Text style={{ fontSize: 20, color: "#1a1a1a" }}>Saved Ideas</Text>
+            </View>
             {savedIdeas.length > 0 ? (
               <TouchableOpacity onPress={() => navigation.navigate("SavedIdeas")}>
                 <Text style={{ fontSize: 14, color: "#1e90ff" }}>View All</Text>
@@ -472,9 +505,16 @@ export default function PlanADate({ navigation }: { navigation: AppNavigation })
           )}
         </View>
 
+        <View style={{ height: 1, backgroundColor: "#e8edf3", marginTop: 20, marginBottom: 20 }} />
+
         {/* Inline calendar */}
         <View style={{ marginBottom: 20 }}>
-          <Text style={{ fontSize: 20, color: "#1a1a1a", marginBottom: 10 }}>Date Calendar</Text>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 10 }}>
+            <View style={{ width: 28, height: 28, borderRadius: 8, backgroundColor: "#f3eeff", justifyContent: "center", alignItems: "center" }}>
+              <Ionicons name="calendar" size={15} color="#7c3aed" />
+            </View>
+            <Text style={{ fontSize: 20, color: "#1a1a1a" }}>Date Calendar</Text>
+          </View>
           <CalendarWidget onDayPress={handleCalendarDayPress} />
         </View>
 

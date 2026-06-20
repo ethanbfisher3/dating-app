@@ -3,14 +3,8 @@ import type { PlannedDateResultsParams } from "../types/navigation";
 import activities, { Activity } from "../data/activities";
 import recipes, { Recipe } from "../data/Recipes";
 import type { DateCategory } from "src/utils/utils";
-import createOverpassQuery from "../data/overpass/overpass";
-import {
-  getAllCachedOverpassPlaces,
-  getCachedOverpassPlaces,
-  initializeOverpassPlacesStore,
-  saveOverpassPlacesSnapshot,
-  type StoredOverpassPlace,
-} from "../data/overpassPlacesStore";
+import { createQueryForSlots } from "../data/overpass/overpass";
+import { getRequiredPlaceSlots } from "../data/datePlannerTemplates";
 
 export type PlaceSummary = PlannerPlace & {
   sourceKind: "place" | "activity" | "recipe";
@@ -22,6 +16,14 @@ export type PlacesServerResponse = {
   ok: boolean;
   statusCode: number | null;
   details: string;
+};
+
+export type OverpassQueryAttempt = {
+  query: string;
+  radiusMeters: number;
+  elapsedMs: number;
+  placesFound: number;
+  succeeded: boolean;
 };
 
 function toPlannerWindowBounds(params: PlannedDateResultsParams): {
@@ -174,21 +176,17 @@ const MONTHS = ["January", "February", "March", "April", "May", "June", "July", 
 
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
-const MAX_PLACES_RETURNED = 500;
+const MAX_PLACES_RETURNED = 100;
 const METERS_PER_MILE = 1609.34;
-const OVERPASS_QUERY_MAX_RADIUS_METERS = Math.round(25 * METERS_PER_MILE);
+const MAX_OVERPASS_RADIUS_METERS = 2000;
+const CACHE_LOCATION_TOLERANCE_METERS = 400;
 const OVERPASS_INTERPRETER_URL = process.env.EXPO_PUBLIC_OVERPASS_INTERPRETER_URL || "https://overpass-api.de/api/interpreter";
 const OVERPASS_FALLBACK_URLS = [
   "https://overpass.private.coffee/api/interpreter",
   OVERPASS_INTERPRETER_URL,
   "https://overpass.kumi.systems/api/interpreter",
 ];
-const OVERPASS_REQUEST_TIMEOUT_MS = 12000;
-const PLANNER_SOFT_TIMEOUT_MS = 1800;
-const OVERPASS_PROGRESSIVE_RADII_METERS = [1000, 1 * METERS_PER_MILE, 5 * METERS_PER_MILE, 10 * METERS_PER_MILE, 25 * METERS_PER_MILE].map((radius) =>
-  Math.round(radius),
-);
-const OVERPASS_CATEGORY_TARGET_COUNT = 10;
+const OVERPASS_REQUEST_TIMEOUT_MS = 30000;
 const SUPPORTED_DATE_CATEGORIES = new Set<DateCategory>(["Food", "Sports", "Outdoors", "Education", "Shopping", "Entertainment"]);
 type PlannerIdeasFetchResult = {
   winner: {
@@ -199,40 +197,32 @@ type PlannerIdeasFetchResult = {
   responses: PlacesServerResponse[];
 };
 
-const plannerIdeasFetchCache = new Map<string, PlannerIdeasFetchResult>();
-const plannerIdeasFetchInflight = new Map<string, Promise<PlannerIdeasFetchResult>>();
-type CachedCategoryFetchResult = {
+type PlaceCache = {
   places: PlannerPlace[];
-  hadSuccess: boolean;
-  serverBaseUrl: string | null;
-  responses: PlacesServerResponse[];
+  locationLat: number;
+  locationLon: number;
+  distanceMeters: number;
+  slotsKey: string;
 };
 
-const categoryFetchCache = new Map<string, CachedCategoryFetchResult>();
+// Module-level so the cache survives navigation away and back to the results screen.
+// Used as a fallback when Overpass is unreachable or times out.
+let _placeCache: PlaceCache | null = null;
 
-function getPlannerIdeasCacheKey(params: PlannedDateResultsParams): string {
-  return JSON.stringify({
-    categories: params.categories || [],
-    endHour: params.endHour,
-    location: params.userLocation
-      ? {
-          latitude: params.userLocation.latitude,
-          longitude: params.userLocation.longitude,
-        }
-      : null,
-    maxDistance: params.maxDistance,
-    maxPrice: params.maxPrice,
-    selectedDate: params.selectedDate,
-    startHour: params.startHour,
-  });
-}
-
-function getCategoryLocationCacheKey(category: DateCategory, userLocation: PlannedDateResultsParams["userLocation"]): string | null {
-  if (!userLocation) {
-    return null;
-  }
-
-  return [category, userLocation.latitude.toFixed(5), userLocation.longitude.toFixed(5)].join(":");
+function isCacheCompatible(
+  cache: PlaceCache,
+  userCenter: { lat: number; lon: number },
+  distanceMeters: number,
+  slotsKey: string,
+): boolean {
+  if (cache.distanceMeters !== distanceMeters) return false;
+  if (cache.slotsKey !== slotsKey) return false;
+  return (
+    distanceMetersBetweenCoordinates(
+      { latitude: cache.locationLat, longitude: cache.locationLon },
+      { latitude: userCenter.lat, longitude: userCenter.lon },
+    ) <= CACHE_LOCATION_TOLERANCE_METERS
+  );
 }
 
 function toRadians(value: number): number {
@@ -274,138 +264,9 @@ function filterPlacesWithinRadius(
   });
 }
 
-function filterPlannerIdeasFetchResultByRadius(
-  result: PlannerIdeasFetchResult,
-  params: PlannedDateResultsParams,
-): PlannerIdeasFetchResult {
-  const maxDistanceMeters = Math.max(0, Math.round(params.maxDistance * METERS_PER_MILE));
-
-  return {
-    ...result,
-    winner: result.winner
-      ? {
-          ...result.winner,
-          places: filterPlacesWithinRadius(result.winner.places, params.userLocation, maxDistanceMeters),
-        }
-      : null,
-  };
-}
-
-function getCategoryRadiusCacheKey(
-  category: DateCategory,
-  params: PlannedDateResultsParams,
-  radiusMeters: number,
-): string | null {
-  const locationKey = getCategoryLocationCacheKey(category, params.userLocation);
-  if (!locationKey) {
-    return null;
-  }
-
-  return `${locationKey}:${radiusMeters}`;
-}
-
-function cacheCategoryFetchResult(
-  category: DateCategory,
-  params: PlannedDateResultsParams,
-  radiusMeters: number,
-  result: CachedCategoryFetchResult,
-): void {
-  const cacheKey = getCategoryRadiusCacheKey(category, params, radiusMeters);
-  if (!cacheKey) {
-    return;
-  }
-
-  categoryFetchCache.set(cacheKey, result);
-}
-
-function getCachedCategoryFetchResult(
-  category: DateCategory,
-  params: PlannedDateResultsParams,
-  distanceMeters: number,
-  radiusMeters: number,
-): CachedCategoryFetchResult | null {
-  const cacheKey = getCategoryRadiusCacheKey(category, params, radiusMeters);
-  if (!cacheKey) {
-    return null;
-  }
-
-  const cachedResult = categoryFetchCache.get(cacheKey);
-  if (!cachedResult) {
-    return null;
-  }
-
-  return {
-    ...cachedResult,
-    places: filterPlacesWithinRadius(cachedResult.places, params.userLocation, distanceMeters),
-    responses: cachedResult.responses.map((response) => ({ ...response })),
-  };
-}
-
-function cloneCategoryFetchResult(result: CachedCategoryFetchResult): CachedCategoryFetchResult {
-  return {
-    hadSuccess: result.hadSuccess,
-    places: [...result.places],
-    responses: result.responses.map((response) => ({ ...response })),
-    serverBaseUrl: result.serverBaseUrl,
-  };
-}
-
-function getCategoryCacheAtRadius(
-  category: DateCategory,
-  params: PlannedDateResultsParams,
-  radiusMeters: number,
-): CachedCategoryFetchResult | null {
-  const cachedResult = getCachedCategoryFetchResult(category, params, radiusMeters, radiusMeters);
-  if (!cachedResult) {
-    return null;
-  }
-
-  return cloneCategoryFetchResult(cachedResult);
-}
-
-function toStoredOverpassPlace(place: PlannerPlace): StoredOverpassPlace {
-  return {
-    id: place.id,
-    type: place.type,
-    types: place.types,
-    address: place.address,
-    location: {
-      latitude: place.location.latitude,
-      longitude: place.location.longitude,
-    },
-    name: place.name,
-  };
-}
-
-export function fetchPlacesFromOverpassWithCache(params: PlannedDateResultsParams): Promise<PlannerIdeasFetchResult> {
-  const cacheKey = getPlannerIdeasCacheKey(params);
-  const cachedResult = plannerIdeasFetchCache.get(cacheKey);
-  if (cachedResult) {
-    return Promise.resolve(filterPlannerIdeasFetchResultByRadius(cachedResult, params));
-  }
-
-  const inflightRequest = plannerIdeasFetchInflight.get(cacheKey);
-  if (inflightRequest) {
-    return inflightRequest;
-  }
-
-  const request = fetchPlacesFromOverpass(params)
-    .then((result) => {
-      if (result.winner) {
-        plannerIdeasFetchCache.set(cacheKey, result);
-      }
-
-      return filterPlannerIdeasFetchResultByRadius(result, params);
-    })
-    .finally(() => {
-      plannerIdeasFetchInflight.delete(cacheKey);
-    });
-
-  plannerIdeasFetchInflight.set(cacheKey, request);
-  return request;
-}
 
 function toSourceLabel(baseUrl: string): string {
+  if (baseUrl === "cache") return "Cache";
   try {
     const host = new URL(baseUrl).host;
     return `Overpass API (${host})`;
@@ -563,353 +424,238 @@ function toPlannerPlaceFromOverpassElement(element: OverpassElement): PlannerPla
     },
   };
 }
-async function fetchPlacesForCategoryFromOverpass(
-  category: DateCategory,
-  params: PlannedDateResultsParams,
+
+function offsetCoordinates(
+  center: { lat: number; lon: number },
   distanceMeters: number,
-  uniqueOverpassUrls: string[],
-  responses: PlacesServerResponse[],
-): Promise<{
-  category: DateCategory;
-  places: PlannerPlace[];
-  hadSuccess: boolean;
-  serverBaseUrl: string | null;
-}> {
-  const queryCenter = params.userLocation;
-  const progressiveRadii = OVERPASS_PROGRESSIVE_RADII_METERS.filter((radius) => radius <= OVERPASS_QUERY_MAX_RADIUS_METERS);
+  bearingDegrees: number,
+): { lat: number; lon: number } {
+  const R = 6371000;
+  const lat1 = (center.lat * Math.PI) / 180;
+  const lon1 = (center.lon * Math.PI) / 180;
+  const b = (bearingDegrees * Math.PI) / 180;
+  const d = distanceMeters / R;
+  const lat2 = Math.asin(Math.sin(lat1) * Math.cos(d) + Math.cos(lat1) * Math.sin(d) * Math.cos(b));
+  const lon2 = lon1 + Math.atan2(Math.sin(b) * Math.sin(d) * Math.cos(lat1), Math.cos(d) - Math.sin(lat1) * Math.sin(lat2));
+  return { lat: (lat2 * 180) / Math.PI, lon: (lon2 * 180) / Math.PI };
+}
 
-  let finalPlaces: PlannerPlace[] = [];
-  let hadSuccess = false;
-  let finalServerBaseUrl: string | null = null;
+function buildSearchCenters(
+  userCenter: { lat: number; lon: number },
+  maxDistanceMeters: number,
+): Array<{ lat: number; lon: number }> {
+  const maxOffset = maxDistanceMeters - MAX_OVERPASS_RADIUS_METERS;
+  // If the user's area fits within one search circle, we have no choice but to
+  // use their exact location.
+  if (maxOffset <= 0) return [userCenter];
+  // Otherwise pick random center points within the searchable area each time so
+  // the same location doesn't always surface the same places.
+  return Array.from({ length: 5 }, () =>
+    offsetCoordinates(userCenter, Math.random() * maxOffset, Math.random() * 360),
+  );
+}
 
-  for (const queryRadiusMeters of progressiveRadii) {
-    const cachedResult = getCategoryCacheAtRadius(category, params, queryRadiusMeters);
-    if (cachedResult) {
-      responses.push(...cachedResult.responses.map((response) => ({ ...response })));
-      finalPlaces = cachedResult.places;
-      hadSuccess = hadSuccess || cachedResult.hadSuccess;
-      finalServerBaseUrl = cachedResult.serverBaseUrl || finalServerBaseUrl;
+async function fetchPlacesFromOverpass(params: PlannedDateResultsParams, bypassCache = false, onStatus?: (s: string) => void, onQueryAttempt?: (attempt: OverpassQueryAttempt) => void): Promise<PlannerIdeasFetchResult> {
+  const responses: PlacesServerResponse[] = [];
+  const uniqueOverpassUrls = Array.from(new Set(OVERPASS_FALLBACK_URLS.filter(Boolean)));
+  const fallbackUrl = uniqueOverpassUrls[0] || OVERPASS_INTERPRETER_URL;
 
-      if (queryRadiusMeters >= distanceMeters || finalPlaces.length >= OVERPASS_CATEGORY_TARGET_COUNT) {
-        break;
+  if (!params.userLocation || params.maxDistance <= 0) {
+    return { winner: { places: [], fromCache: false, serverBaseUrl: fallbackUrl }, responses };
+  }
+
+  // Step 1: determine which slot types the selected templates actually need
+  let neededSlots = getRequiredPlaceSlots(params);
+
+  // Filter food/shopping slots if budget is $0
+  if (typeof params.maxPrice === "number" && params.maxPrice <= 0) {
+    const excluded = new Set(["restaurant", "fast_food", "cafe", "ice_cream", "food_court", "mall", "clothes", "books", "gift", "toys", "electronics"]);
+    neededSlots = neededSlots.filter((s) => !excluded.has(s));
+  }
+
+  if (!neededSlots.length) {
+    return { winner: { places: [], fromCache: false, serverBaseUrl: fallbackUrl }, responses };
+  }
+
+  const distanceMeters = Math.max(0, Math.round(params.maxDistance * METERS_PER_MILE));
+  const userCenter = { lat: params.userLocation.latitude, lon: params.userLocation.longitude };
+  const slotsKey = [...neededSlots].sort().join(",");
+
+  // Fire all search-center queries in parallel. Collect places as results arrive;
+  // once we have enough, abort any still-pending queries.
+  const searchRadius = Math.min(distanceMeters, MAX_OVERPASS_RADIUS_METERS);
+  const searchCenters = buildSearchCenters(userCenter, distanceMeters);
+  const resultLimit = neededSlots.length + 10;
+  const controllers = searchCenters.map(() => new AbortController());
+  const accumulatedPlaces: PlannerPlace[] = [];
+  let winnerBaseUrl = fallbackUrl;
+  let anySucceeded = false;
+  let completedCount = 0;
+
+  onStatus?.(`Calling Overpass API (${searchCenters.length} queries in parallel)...`);
+
+  await Promise.allSettled(
+    searchCenters.map(async (center, i) => {
+      const query = createQueryForSlots(neededSlots, center, searchRadius, resultLimit);
+      if (!query) return;
+      const start = Date.now();
+      const attempt = await runOverpassQuery(query, searchRadius, uniqueOverpassUrls, responses, controllers[i].signal);
+      const elapsed = Date.now() - start;
+      const aborted = controllers[i].signal.aborted;
+      completedCount++;
+      onQueryAttempt?.({
+        query,
+        radiusMeters: searchRadius,
+        elapsedMs: elapsed,
+        placesFound: attempt?.places.length ?? 0,
+        succeeded: attempt !== null && !aborted,
+      });
+      if (!attempt || aborted) {
+        onStatus?.(`${completedCount}/${searchCenters.length} done, ${accumulatedPlaces.length} places so far...`);
+        return;
       }
+      anySucceeded = true;
+      if (winnerBaseUrl === fallbackUrl) winnerBaseUrl = attempt.serverBaseUrl;
+      for (const place of attempt.places) accumulatedPlaces.push(place);
+      onStatus?.(`${completedCount}/${searchCenters.length} done, ${accumulatedPlaces.length} places found...`);
+      if (accumulatedPlaces.length >= resultLimit) {
+        controllers.forEach((c, j) => { if (j !== i) c.abort(); });
+      }
+    }),
+  );
 
-      continue;
-    }
+  const result = anySucceeded ? { places: accumulatedPlaces, serverBaseUrl: winnerBaseUrl } : null;
+  const rawPlaces = result?.places ?? [];
+  if (rawPlaces.length > 0) onStatus?.(`Processing ${rawPlaces.length} place${rawPlaces.length === 1 ? "" : "s"}...`);
 
-    const fetchedResult = await fetchPlacesForCategoryAtRadiusFromOverpass(
-      category,
-      params,
-      queryCenter,
-      queryRadiusMeters,
-      uniqueOverpassUrls,
-      responses,
+  if (rawPlaces.length > 0) {
+    const validPlaces = dedupePlannerPlacesById(rawPlaces).filter(
+      (p) =>
+        distanceMetersBetweenCoordinates(
+          { latitude: userCenter.lat, longitude: userCenter.lon },
+          p.location as { latitude: number; longitude: number },
+        ) <= distanceMeters,
     );
 
-    if (fetchedResult) {
-      finalPlaces = fetchedResult.places;
-      hadSuccess = true;
-      finalServerBaseUrl = fetchedResult.serverBaseUrl || finalServerBaseUrl;
+    if (validPlaces.length > 0) {
+      // Save the full pool so the fallback cache stays up to date.
+      _placeCache = {
+        places: validPlaces,
+        locationLat: userCenter.lat,
+        locationLon: userCenter.lon,
+        distanceMeters,
+        slotsKey,
+      };
 
-      if (queryRadiusMeters >= distanceMeters || finalPlaces.length >= OVERPASS_CATEGORY_TARGET_COUNT) {
-        break;
-      }
+      return {
+        winner: {
+          places: shufflePlaces(validPlaces).slice(0, MAX_PLACES_RETURNED),
+          fromCache: false,
+          serverBaseUrl: result!.serverBaseUrl,
+        },
+        responses,
+      };
     }
   }
 
-  return {
-    category,
-    places: finalPlaces,
-    hadSuccess,
-    serverBaseUrl: finalServerBaseUrl,
-  };
+  // Overpass failed or returned nothing — serve from cache if we have compatible data.
+  // No TTL check here: stale data is better than nothing when the network is down.
+  if (!bypassCache && _placeCache && isCacheCompatible(_placeCache, userCenter, distanceMeters, slotsKey)) {
+    onStatus?.("Loading from cache...");
+    return {
+      winner: {
+        places: shufflePlaces([..._placeCache.places]).slice(0, MAX_PLACES_RETURNED),
+        fromCache: true,
+        serverBaseUrl: "cache",
+      },
+      responses,
+    };
+  }
+
+  return { winner: null, responses };
 }
 
-async function fetchPlacesForCategoryAtRadiusFromOverpass(
-  category: DateCategory,
-  params: PlannedDateResultsParams,
-  queryCenter: { latitude: number; longitude: number },
-  queryRadiusMeters: number,
+async function runOverpassQuery(
+  query: string,
+  radiusMeters: number,
   uniqueOverpassUrls: string[],
   responses: PlacesServerResponse[],
-): Promise<CachedCategoryFetchResult | null> {
-  const query = createOverpassQuery(
-    [category],
-    {
-      lat: queryCenter.latitude,
-      lon: queryCenter.longitude,
-    },
-    queryRadiusMeters,
-  );
+  externalSignal?: AbortSignal,
+): Promise<{ places: PlannerPlace[]; serverBaseUrl: string } | null> {
+  if (!uniqueOverpassUrls.length) return null;
+  if (externalSignal?.aborted) return null;
 
-  const requestAttempts: Array<{
-    label: string;
-    contentType: string;
-    body: string;
-    method: "POST" | "GET";
-    toRequestUrl: (baseUrl: string) => string;
-  }> = [
-    {
-      label: "get-query-param",
-      method: "GET",
-      contentType: "application/x-www-form-urlencoded; charset=UTF-8",
-      body: "",
-      toRequestUrl: (baseUrl: string) => `${baseUrl}?data=${encodeURIComponent(query)}`,
-    },
-    {
-      label: "post-form-encoded",
-      method: "POST",
-      contentType: "application/x-www-form-urlencoded; charset=UTF-8",
-      body: `data=${encodeURIComponent(query)}`,
-      toRequestUrl: (baseUrl: string) => baseUrl,
-    },
-  ];
+  const encodedBody = `data=${encodeURIComponent(query)}`;
 
-  for (const serverBaseUrl of uniqueOverpassUrls) {
-    for (const attempt of requestAttempts) {
-      const requestUrl = attempt.toRequestUrl(serverBaseUrl);
-      const attemptController = new AbortController();
-      const attemptTimeoutId = setTimeout(() => attemptController.abort(), OVERPASS_REQUEST_TIMEOUT_MS);
+  return new Promise((resolve) => {
+    let settled = false;
+    let failCount = 0;
+    const total = uniqueOverpassUrls.length;
+    const internalControllers: AbortController[] = [];
+
+    const onSuccess = (result: { places: PlannerPlace[]; serverBaseUrl: string }) => {
+      if (!settled) { settled = true; resolve(result); }
+    };
+
+    const onFailure = () => {
+      failCount += 1;
+      if (!settled && failCount >= total) { settled = true; resolve(null); }
+    };
+
+    // When the caller cancels this query, abort all in-flight mirror fetches immediately.
+    externalSignal?.addEventListener("abort", () => {
+      if (!settled) {
+        settled = true;
+        for (const c of internalControllers) c.abort();
+        resolve(null);
+      }
+    }, { once: true });
+
+    for (const serverBaseUrl of uniqueOverpassUrls) {
+      const controller = new AbortController();
+      internalControllers.push(controller);
       const attemptStart = Date.now();
+      const timeoutId = setTimeout(() => controller.abort(), OVERPASS_REQUEST_TIMEOUT_MS);
 
-      const result = await fetch(requestUrl, {
-        method: attempt.method,
-        headers: {
-          "Content-Type": attempt.contentType,
-          Accept: "application/json, text/plain, */*",
-        },
-        signal: attemptController.signal,
-        body: attempt.method === "POST" ? attempt.body : undefined,
+      fetch(serverBaseUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8", Accept: "application/json, text/plain, */*" },
+        signal: controller.signal,
+        body: encodedBody,
       })
         .then(async (response) => {
-          const elapsedMs = Date.now() - attemptStart;
+          clearTimeout(timeoutId);
+          if (settled) return; // already resolved by external abort or a faster mirror
+          const elapsed = Date.now() - attemptStart;
           if (!response.ok) {
             const details = await response.text();
-            responses.push({
-              serverBaseUrl,
-              serverLabel: toSourceLabel(serverBaseUrl),
-              ok: false,
-              statusCode: response.status,
-              details: `[${category}][${queryRadiusMeters}m][${attempt.label}] ${details || "request failed"}`,
-            });
-            return null;
+            responses.push({ serverBaseUrl, serverLabel: toSourceLabel(serverBaseUrl), ok: false, statusCode: response.status, details: `[${radiusMeters}m] ${details || "request failed"}` });
+            onFailure();
+            return;
           }
-
           const payload = (await response.json()) as OverpassResponse;
-          const elements = payload.elements || [];
-
           const places = dedupePlannerPlacesById(
-            elements
-              .map(toPlannerPlaceFromOverpassElement)
-              .filter((place): place is PlannerPlace => Boolean(place))
-              .filter(
-                (place) => distanceMetersBetweenCoordinates(queryCenter, place.location as { latitude: number; longitude: number }) <= queryRadiusMeters,
-              ),
-          ).slice(0, MAX_PLACES_RETURNED);
-
-          cacheCategoryFetchResult(category, params, queryRadiusMeters, {
-            hadSuccess: true,
-            places: [...places],
-            responses: [
-              {
-                serverBaseUrl,
-                serverLabel: toSourceLabel(serverBaseUrl),
-                ok: true,
-                statusCode: response.status,
-                details: `[${category}][${queryRadiusMeters}m][${attempt.label}] OK (${places.length} places) (${elapsedMs}ms)`,
-              },
-            ],
-            serverBaseUrl,
-          });
-
-          saveOverpassPlacesSnapshot({
-            category,
-            userLocation: {
-              latitude: queryCenter.latitude,
-              longitude: queryCenter.longitude,
-            },
-            places: places.map(toStoredOverpassPlace),
-            serverBaseUrl,
-          });
-
-          responses.push({
-            serverBaseUrl,
-            serverLabel: toSourceLabel(serverBaseUrl),
-            ok: true,
-            statusCode: response.status,
-            details: `[${category}][${queryRadiusMeters}m][${attempt.label}] OK (${places.length} places) (${elapsedMs}ms)`,
-          });
-
-          return {
-            hadSuccess: true,
-            places,
-            responses: [
-              {
-                serverBaseUrl,
-                serverLabel: toSourceLabel(serverBaseUrl),
-                ok: true,
-                statusCode: response.status,
-                details: `[${category}][${queryRadiusMeters}m][${attempt.label}] OK (${places.length} places) (${elapsedMs}ms)`,
-              },
-            ],
-            serverBaseUrl,
-          };
+            (payload.elements || []).map(toPlannerPlaceFromOverpassElement).filter((p): p is PlannerPlace => Boolean(p)),
+          );
+          responses.push({ serverBaseUrl, serverLabel: toSourceLabel(serverBaseUrl), ok: true, statusCode: response.status, details: `[${radiusMeters}m] OK (${places.length} places) (${elapsed}ms)` });
+          onSuccess({ places, serverBaseUrl });
         })
-        .catch(async (error: any) => {
-          const elapsedMs = Date.now() - attemptStart;
-          if (error?.name === "AbortError") {
-            responses.push({
-              serverBaseUrl,
-              serverLabel: toSourceLabel(serverBaseUrl),
-              ok: false,
-              statusCode: null,
-              details: `[${category}][${queryRadiusMeters}m][${attempt.label}] timeout after ${OVERPASS_REQUEST_TIMEOUT_MS}ms`,
-            });
-            return null;
-          }
-
+        .catch((err: any) => {
+          clearTimeout(timeoutId);
+          const elapsed = Date.now() - attemptStart;
           responses.push({
             serverBaseUrl,
             serverLabel: toSourceLabel(serverBaseUrl),
             ok: false,
             statusCode: null,
-            details: `[${category}][${queryRadiusMeters}m][${attempt.label}] ${error?.message || "network error"}`,
+            details: err?.name === "AbortError"
+              ? `[${radiusMeters}m] cancelled or timed out (${elapsed}ms)`
+              : `[${radiusMeters}m] ${err?.message || "network error"} (${elapsed}ms)`,
           });
-
-          return null;
-        })
-        .finally(() => {
-          clearTimeout(attemptTimeoutId);
+          onFailure();
         });
-
-      if (result) {
-        return result;
-      }
     }
-  }
-
-  return null;
-}
-
-async function fetchPlacesFromOverpass(params: PlannedDateResultsParams): Promise<PlannerIdeasFetchResult> {
-  const responses: PlacesServerResponse[] = [];
-  const uniqueOverpassUrls = Array.from(new Set(OVERPASS_FALLBACK_URLS.filter(Boolean)));
-  const placesByCategory = new Map<DateCategory, PlannerPlace[]>();
-  let firstSuccessfulServerBaseUrl: string | null = null;
-
-  if (!params.userLocation || params.maxDistance <= 0) {
-    return {
-      winner: {
-        places: [],
-        fromCache: false,
-        serverBaseUrl: uniqueOverpassUrls[0] || OVERPASS_INTERPRETER_URL,
-      },
-      responses,
-    };
-  }
-
-  let categories = toSupportedDateCategories(params.categories || []);
-  if (typeof params.maxPrice === "number" && params.maxPrice <= 0) {
-    categories = categories.filter((category) => category !== "Food" && category !== "Shopping");
-  }
-
-  if (!categories.length) {
-    return {
-      winner: {
-        places: [],
-        fromCache: false,
-        serverBaseUrl: uniqueOverpassUrls[0] || OVERPASS_INTERPRETER_URL,
-      },
-      responses,
-    };
-  }
-
-  try {
-    const categoryConcurrency = Math.min(2, categories.length);
-    const categoryResults: Array<{
-      category: DateCategory;
-      places: PlannerPlace[];
-      hadSuccess: boolean;
-      serverBaseUrl: string | null;
-    }> = new Array(categories.length);
-    let nextCategoryIndex = 0;
-
-    const distanceMeters = Math.max(0, Math.round(params.maxDistance * METERS_PER_MILE));
-
-    const workers = Array.from({ length: categoryConcurrency }, async () => {
-      while (true) {
-        const currentIndex = nextCategoryIndex;
-        nextCategoryIndex += 1;
-
-        if (currentIndex >= categories.length) {
-          break;
-        }
-
-        const category = categories[currentIndex];
-        categoryResults[currentIndex] = await fetchPlacesForCategoryFromOverpass(
-          category,
-          params,
-          distanceMeters,
-          uniqueOverpassUrls,
-          responses,
-        );
-      }
-    });
-
-    await Promise.all(workers);
-
-    for (const result of categoryResults) {
-      if (!result) {
-        continue;
-      }
-
-      if (result.hadSuccess && !firstSuccessfulServerBaseUrl && result.serverBaseUrl) {
-        firstSuccessfulServerBaseUrl = result.serverBaseUrl;
-      }
-
-      if (result.places.length) {
-        const existingPlaces = placesByCategory.get(result.category) || [];
-        const dedupedPlaces = dedupePlannerPlacesById([...existingPlaces, ...result.places]).slice(0, MAX_PLACES_RETURNED);
-        placesByCategory.set(result.category, dedupedPlaces);
-      } else if (result.hadSuccess && !placesByCategory.has(result.category)) {
-        placesByCategory.set(result.category, []);
-      }
-    }
-
-    const balancedPlaces = mergePlacesEvenlyByCategory(categories, placesByCategory);
-    const finalPlaces = shufflePlaces(balancedPlaces)
-      .filter((place) => distanceMetersBetweenCoordinates(params.userLocation!, place.location as { latitude: number; longitude: number }) <= distanceMeters)
-      .slice(0, MAX_PLACES_RETURNED);
-
-    if (finalPlaces.length) {
-      return {
-        winner: {
-          places: finalPlaces,
-          fromCache: false,
-          serverBaseUrl: firstSuccessfulServerBaseUrl || uniqueOverpassUrls[0] || OVERPASS_INTERPRETER_URL,
-        },
-        responses,
-      };
-    }
-
-    return {
-      winner: null,
-      responses,
-    };
-  } catch (error: any) {
-    responses.push({
-      serverBaseUrl: OVERPASS_INTERPRETER_URL,
-      serverLabel: toSourceLabel(OVERPASS_INTERPRETER_URL),
-      ok: false,
-      statusCode: null,
-      details: error?.message || "network error",
-    });
-
-    return {
-      winner: null,
-      responses,
-    };
-  }
+  });
 }
 
 function normalizeHour12(hour12: number, period: string): number {
@@ -962,41 +708,6 @@ function dedupePlannerPlacesById(places: PlannerPlace[]): PlannerPlace[] {
     seen.add(place.id);
     return true;
   });
-}
-
-function mergePlacesEvenlyByCategory(categories: DateCategory[], placesByCategory: Map<DateCategory, PlannerPlace[]>): PlannerPlace[] {
-  const buckets = categories.map((category) => [...(placesByCategory.get(category) || [])]);
-  const merged: PlannerPlace[] = [];
-  const seenIds = new Set<string>();
-
-  while (merged.length < MAX_PLACES_RETURNED) {
-    let addedThisPass = false;
-
-    for (const bucket of buckets) {
-      while (bucket.length > 0 && seenIds.has(bucket[0].id)) {
-        bucket.shift();
-      }
-
-      const nextPlace = bucket.shift();
-      if (!nextPlace) {
-        continue;
-      }
-
-      seenIds.add(nextPlace.id);
-      merged.push(nextPlace);
-      addedThisPass = true;
-
-      if (merged.length >= MAX_PLACES_RETURNED) {
-        break;
-      }
-    }
-
-    if (!addedThisPass) {
-      break;
-    }
-  }
-
-  return merged;
 }
 
 const getAvailableAtHomeIdeas = (
@@ -1071,7 +782,7 @@ function toIsoDate(dateString: string): string {
   return parsed.toISOString().slice(0, 10);
 }
 
-export default function useDatePlannerIdeas(params: PlannedDateResultsParams): {
+export default function useDatePlannerIdeas(params: PlannedDateResultsParams, onStatus?: (status: string) => void): {
   places: PlaceSummary[];
   cachedPlaces: PlaceSummary[];
   allCachedPlaces: PlaceSummary[];
@@ -1081,47 +792,24 @@ export default function useDatePlannerIdeas(params: PlannedDateResultsParams): {
   isLoading: boolean;
   error: string | null;
   serverResponses: PlacesServerResponse[];
+  queryAttempts: OverpassQueryAttempt[];
   refetch: (options?: { bypassCache?: boolean }) => void;
 } {
   const [matchedPlaces, setMatchedPlaces] = useState<PlaceSummary[]>([]);
-  const [cachedPlaces, setCachedPlaces] = useState<PlaceSummary[]>([]);
-  const [allCachedPlaces, setAllCachedPlaces] = useState<PlaceSummary[]>([]);
   const [sourceFile, setSourceFile] = useState("Overpass API");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [serverResponses, setServerResponses] = useState<PlacesServerResponse[]>([]);
+  const [queryAttempts, setQueryAttempts] = useState<OverpassQueryAttempt[]>([]);
+  const queryAttemptsRef = useRef<OverpassQueryAttempt[]>([]);
   const fetchVersionRef = useRef(0);
 
   const atHomeOptions = useMemo(() => getAvailableAtHomeIdeas(params), [params]);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    void initializeOverpassPlacesStore().then(() => {
-      if (cancelled) {
-        return;
-      }
-
-      const cachedPlaces = getCachedOverpassPlaces(params).map(toPlaceSummary);
-      const allCachedPlaces = getAllCachedOverpassPlaces().map(toPlaceSummary);
-      setCachedPlaces(cachedPlaces);
-      setAllCachedPlaces(allCachedPlaces);
-      if (cachedPlaces.length) {
-        setMatchedPlaces(cachedPlaces);
-        setSourceFile("Cached Overpass Places");
-      }
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [params]);
-
-  const fetchIdeas = useCallback((options?: { bypassCache?: boolean }) => {
+  const fetchIdeas = useCallback((_options?: { bypassCache?: boolean }) => {
     const fetchVersion = fetchVersionRef.current + 1;
     fetchVersionRef.current = fetchVersion;
 
-    const planningStartMs = Date.now();
     setIsLoading(true);
     setError(null);
 
@@ -1129,24 +817,8 @@ export default function useDatePlannerIdeas(params: PlannedDateResultsParams): {
       if (fetchVersionRef.current !== fetchVersion) {
         return;
       }
-
       apply();
     };
-
-    const releaseLoadingState = () => {
-      applyIfCurrent(() => {
-        setIsLoading(false);
-      });
-    };
-
-    const cachedPlaces = getCachedOverpassPlaces(params).map(toPlaceSummary);
-    const allCachedPlaces = getAllCachedOverpassPlaces().map(toPlaceSummary);
-    setCachedPlaces(cachedPlaces);
-    setAllCachedPlaces(allCachedPlaces);
-    if (cachedPlaces.length) {
-      setMatchedPlaces(cachedPlaces);
-      setSourceFile("Cached Overpass Places");
-    }
 
     if (params.maxDistance <= 0 || !params.userLocation) {
       setMatchedPlaces([]);
@@ -1165,35 +837,30 @@ export default function useDatePlannerIdeas(params: PlannedDateResultsParams): {
       return;
     }
 
-    // When bypassing the outer cache (Regenerate), also clear the per-category cache so
-    // the Overpass API is queried fresh. This guarantees the loading gate is visible for
-    // a real network round-trip and that results are genuinely new.
-    if (options?.bypassCache) {
-      categoryFetchCache.clear();
-    }
+    const bypassCache = _options?.bypassCache ?? false;
 
-    const softTimeoutMs = options?.bypassCache ? 10000 : PLANNER_SOFT_TIMEOUT_MS;
-    const softTimeoutId = setTimeout(() => {
-      releaseLoadingState();
-    }, softTimeoutMs);
+    // Hard timeout in case AbortController is unreliable on this RN version.
+    const hardTimeoutId = setTimeout(() => {
+      applyIfCurrent(() => {
+        setError("Request timed out. Check your connection and try again.");
+        setMatchedPlaces([]);
+        setSourceFile("");
+        setIsLoading(false);
+      });
+    }, 90000);
 
-    const fetchPromise = options?.bypassCache
-      ? fetchPlacesFromOverpass(params)
-      : fetchPlacesFromOverpassWithCache(params);
-
-    void fetchPromise
+    queryAttemptsRef.current = [];
+    setQueryAttempts([]);
+    onStatus?.("Analyzing preferences...");
+    void fetchPlacesFromOverpass(params, bypassCache, onStatus, (attempt) => {
+      queryAttemptsRef.current = [...queryAttemptsRef.current, attempt];
+      setQueryAttempts(queryAttemptsRef.current);
+    })
       .then((serverResult) => {
         applyIfCurrent(() => {
           setServerResponses(serverResult.responses);
 
           if (!serverResult.winner || !serverResult.winner.places.length) {
-            if (cachedPlaces.length) {
-              setError(null);
-              setMatchedPlaces(cachedPlaces);
-              setSourceFile("Cached Overpass Places");
-              return;
-            }
-
             setError("Could not load places from Overpass API.");
             setMatchedPlaces([]);
             setSourceFile("");
@@ -1203,21 +870,13 @@ export default function useDatePlannerIdeas(params: PlannedDateResultsParams): {
           const serverPlaces = serverResult.winner.places.map(toPlaceSummary);
           const dedupedPlaces = dedupePlaceSummariesById(serverPlaces);
           const combinedPlaces = dedupedPlaces.slice(0, MAX_PLACES_RETURNED);
-          const placesSourceLabel = toSourceLabel(serverResult.winner.serverBaseUrl);
 
           setMatchedPlaces(combinedPlaces);
-          setSourceFile(placesSourceLabel);
+          setSourceFile(toSourceLabel(serverResult.winner.serverBaseUrl));
         });
       })
       .catch((fetchError: any) => {
         applyIfCurrent(() => {
-          if (cachedPlaces.length) {
-            setError(null);
-            setMatchedPlaces(cachedPlaces);
-            setSourceFile("Cached Overpass Places");
-            return;
-          }
-
           setError(fetchError?.message || "Failed to fetch date planner ideas.");
           setMatchedPlaces([]);
           setSourceFile("");
@@ -1225,8 +884,8 @@ export default function useDatePlannerIdeas(params: PlannedDateResultsParams): {
         });
       })
       .finally(() => {
-        clearTimeout(softTimeoutId);
-        releaseLoadingState();
+        clearTimeout(hardTimeoutId);
+        applyIfCurrent(() => setIsLoading(false));
       });
   }, [params]);
 
@@ -1236,14 +895,15 @@ export default function useDatePlannerIdeas(params: PlannedDateResultsParams): {
 
   return {
     places: matchedPlaces,
-    cachedPlaces,
-    allCachedPlaces,
+    cachedPlaces: [],
+    allCachedPlaces: [],
     recipes: atHomeOptions.recipes,
     activities: atHomeOptions.activities,
     sourceFile,
     isLoading,
     error,
     serverResponses,
+    queryAttempts,
     refetch: fetchIdeas,
   };
 }

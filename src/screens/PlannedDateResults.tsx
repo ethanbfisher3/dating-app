@@ -14,7 +14,7 @@ import {
 import DateTimePicker from "@react-native-community/datetimepicker";
 import EditInputsModal from "../Components/EditInputsModal";
 import type { AppScreenProps, PlannedDateResultsParams } from "../types/navigation";
-import useDatePlannerIdeas, { PlaceSummary } from "../hooks/useDatePlannerIdeas";
+import useDatePlannerIdeas, { PlaceSummary, type OverpassQueryAttempt } from "../hooks/useDatePlannerIdeas";
 import useFilledIdeas, {
   estimateTravelMinutesBetween,
   estimateTravelMinutesFromUserLocation,
@@ -109,6 +109,8 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
   const [draftCategoriesChecked, setDraftCategoriesChecked] = useState(
     DATE_CATEGORIES.map((category) => route.params.categories.includes(category)),
   );
+  const [devStatus, setDevStatus] = useState("");
+  const [showDevOverpass, setShowDevOverpass] = useState(false);
   const [showDevMatches, setShowDevMatches] = useState(false);
   const [showDevPlaces, setShowDevPlaces] = useState(false);
   const [showDevCachedPlaces, setShowDevCachedPlaces] = useState(false);
@@ -266,8 +268,8 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
     }
   };
 
-  const { places, cachedPlaces, allCachedPlaces, recipes, activities, sourceFile, isLoading, error, refetch } =
-    useDatePlannerIdeas(plannerParams);
+  const { places, cachedPlaces, allCachedPlaces, recipes, activities, sourceFile, isLoading, error, serverResponses: _serverResponses, queryAttempts, refetch } =
+    useDatePlannerIdeas(plannerParams, __DEV__ ? setDevStatus : undefined);
 
   const startNativeAdHoldTimer = () => {
     setNativeAdDisplayComplete(false);
@@ -496,6 +498,29 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
         >
           Finding places and building the best matches for your preferences.
         </AppText>
+        <AppText
+          style={{
+            marginTop: 8,
+            color: "#99aabb",
+            fontSize: 13,
+            textAlign: "center",
+          }}
+        >
+          This can take up to 30 seconds.
+        </AppText>
+        {__DEV__ && devStatus ? (
+          <AppText
+            style={{
+              marginTop: 12,
+              color: "#a0a0a0",
+              fontSize: 12,
+              textAlign: "center",
+              fontFamily: "monospace",
+            }}
+          >
+            {devStatus}
+          </AppText>
+        ) : null}
         {!isUnlocked ? (
           <View style={{ width: "100%", marginTop: 24 }}>
             <CustomNativeAd
@@ -636,6 +661,54 @@ export default function PlannedDateResults({ route, navigation }: AppScreenProps
                 paddingVertical: 4,
               }}
             >
+              <TouchableOpacity
+                onPress={() => setShowDevOverpass((prev) => !prev)}
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  paddingHorizontal: 14,
+                  paddingVertical: 10,
+                }}
+              >
+                <Text style={{ fontSize: 14, color: "#2c3e50" }}>
+                  Overpass Queries ({queryAttempts.length})
+                </Text>
+                <Text style={{ color: "#1e90ff" }}>{showDevOverpass ? "Hide" : "Show"}</Text>
+              </TouchableOpacity>
+
+              {showDevOverpass ? (
+                <View style={{ paddingHorizontal: 14, paddingBottom: 10, gap: 12 }}>
+                  {queryAttempts.length === 0 ? (
+                    <Text style={{ fontSize: 13, color: "#667788" }}>No queries recorded yet.</Text>
+                  ) : (
+                    queryAttempts.map((attempt, i) => (
+                      <View
+                        key={i}
+                        style={{
+                          backgroundColor: attempt.succeeded && attempt.placesFound > 0 ? "#f0faf4" : "#fff8f0",
+                          borderWidth: 1,
+                          borderColor: attempt.succeeded && attempt.placesFound > 0 ? "#86efac" : "#fcd9a0",
+                          borderRadius: 8,
+                          padding: 10,
+                          gap: 4,
+                        }}
+                      >
+                        <Text style={{ fontSize: 12, color: "#334155", fontWeight: "600" }}>
+                          Attempt {i + 1} — {attempt.elapsedMs}ms — {attempt.placesFound} place{attempt.placesFound !== 1 ? "s" : ""} — radius {attempt.radiusMeters}m — {attempt.succeeded ? "OK" : "FAILED"}
+                        </Text>
+                        <Text
+                          selectable
+                          style={{ fontSize: 11, color: "#475569", fontFamily: "monospace", marginTop: 4 }}
+                        >
+                          {attempt.query}
+                        </Text>
+                      </View>
+                    ))
+                  )}
+                </View>
+              ) : null}
+
               <TouchableOpacity
                 onPress={() => setShowDevPlaces((prev) => !prev)}
                 style={{

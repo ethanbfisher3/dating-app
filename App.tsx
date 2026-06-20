@@ -3,9 +3,8 @@ import "react-native-gesture-handler";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import type { AppNavigation, RootStackParamList } from "./src/types/navigation";
-import { AppState, View, StatusBar, TouchableOpacity, StyleSheet, Platform, Animated, Easing } from "react-native";
+import { View, StatusBar, TouchableOpacity, StyleSheet, Platform, Animated, Easing } from "react-native";
 import * as NavigationBar from "expo-navigation-bar";
-import * as Location from "expo-location";
 import { Asset } from "expo-asset";
 import { GestureHandlerRootView, PanGestureHandler, State } from "react-native-gesture-handler";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -24,9 +23,6 @@ import recipes from "./src/data/Recipes";
 import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
 import mobileAds from "react-native-google-mobile-ads";
 import { requestTrackingPermissionsAsync } from "expo-tracking-transparency";
-import { DATE_CATEGORIES } from "./src/utils/utils";
-import { fetchPlacesFromOverpassWithCache } from "./src/hooks/usePlacesActivitiesRecipes";
-import { initializeOverpassPlacesStore } from "./src/data/overpassPlacesStore";
 import BottomBackgroundArt from "./src/Components/BottomBackgroundArt";
 import Text from "./src/Components/AppText";
 import * as SplashScreen from "expo-splash-screen";
@@ -38,8 +34,6 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 const EDGE_SWIPE_WIDTH = 28;
 const SWIPE_BACK_DISTANCE = 70;
 const SWIPE_BACK_VELOCITY = 600;
-const OVERPASS_WARMUP_INTERVAL_MS = 5 * 60 * 1000;
-
 const TABS = [
   {
     key: "Home",
@@ -50,14 +44,14 @@ const TABS = [
   },
   {
     key: "Date History",
-    title: "Date History",
+    title: "History",
     icon: "time",
     iconOutline: "time-outline",
     component: DateHistory,
   },
   {
     key: "DateCraft",
-    title: "Date Ideas",
+    title: "Ideas",
     icon: "bulb",
     iconOutline: "bulb-outline",
     component: PlanADate,
@@ -78,9 +72,9 @@ const TABS = [
   },
 ];
 
-const SWIPE_IDEAS_TAB_INDEX = TABS.findIndex((t) => t.key === "SwipeIdeas");
-
 function SwipeBackLayout({ navigation, children }: { navigation: AppNavigation; children: React.ReactNode }) {
+  const insets = useSafeAreaInsets();
+
   const handleStateChange = useCallback(
     (event: any) => {
       if (event.nativeEvent.state !== State.END) {
@@ -99,22 +93,46 @@ function SwipeBackLayout({ navigation, children }: { navigation: AppNavigation; 
   );
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1, paddingTop: insets.top }}>
       <BottomBackgroundArt bottomOffset={0} />
       {children}
       {navigation.canGoBack() && (
-        <PanGestureHandler activeOffsetX={[-10, 10]} failOffsetY={[-15, 15]} onHandlerStateChange={handleStateChange}>
-          <View
-            collapsable={false}
+        <>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
             style={{
               position: "absolute",
-              left: 0,
-              top: 0,
-              bottom: 0,
-              width: EDGE_SWIPE_WIDTH,
+              top: insets.top + 8,
+              left: 16,
+              zIndex: 10,
+              backgroundColor: "rgba(255,255,255,0.85)",
+              borderRadius: 20,
+              width: 36,
+              height: 36,
+              alignItems: "center",
+              justifyContent: "center",
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 1 },
+              shadowOpacity: 0.1,
+              shadowRadius: 4,
+              elevation: 2,
             }}
-          />
-        </PanGestureHandler>
+          >
+            <Ionicons name="chevron-back" size={22} color="#1a1a1a" />
+          </TouchableOpacity>
+          <PanGestureHandler activeOffsetX={[-10, 10]} failOffsetY={[-15, 15]} onHandlerStateChange={handleStateChange}>
+            <View
+              collapsable={false}
+              style={{
+                position: "absolute",
+                left: 0,
+                top: 0,
+                bottom: 0,
+                width: EDGE_SWIPE_WIDTH,
+              }}
+            />
+          </PanGestureHandler>
+        </>
       )}
     </View>
   );
@@ -150,7 +168,6 @@ export default function App() {
       mobileAds().initialize();
     }
     void init();
-    void initializeOverpassPlacesStore();
     const recipeImages = recipes.map((recipe) => recipe.image).filter((image): image is number => typeof image === "number");
     const uniqueRecipeImages = [...new Set(recipeImages)];
 
@@ -165,7 +182,7 @@ export default function App() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <NavigationContainer>
-          <Stack.Navigator screenOptions={{ contentStyle: { backgroundColor: "#fafbfc" } }}>
+          <Stack.Navigator screenOptions={{ contentStyle: { backgroundColor: "#fafbfc" }, headerShown: false }}>
             <Stack.Screen name="MainTabs" component={MainTabs} options={{ headerShown: false }} />
             <Stack.Screen name="DateCraft">
               {({ navigation }) => (
@@ -188,7 +205,7 @@ export default function App() {
                 </SwipeBackLayout>
               )}
             </Stack.Screen>
-            <Stack.Screen name="SavedIdeas" options={{ headerBackTitle: "Back" }}>
+            <Stack.Screen name="SavedIdeas">
               {({ navigation }) => (
                 <SwipeBackLayout navigation={navigation as any}>
                   <SavedIdeas navigation={navigation as any} />
@@ -239,10 +256,8 @@ function MainTabs({ navigation }: { navigation: AppNavigation }) {
   const pressFade = useRef(new Animated.Value(1)).current;
   // tab bounce removed — only keep circle indicator
   const [isSwiping, setIsSwiping] = useState(false);
+  const [cardSwiping, setCardSwiping] = useState(false);
   const [tabColors, setTabColors] = useState<string[]>(TABS.map(() => "#8e8e93"));
-  const warmupInFlightRef = useRef<Promise<void> | null>(null);
-  const warmupTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const appStateRef = useRef(AppState.currentState);
 
   const handlePageSelected = useCallback(
     (e: any) => {
@@ -333,102 +348,6 @@ function MainTabs({ navigation }: { navigation: AppNavigation }) {
     }
   }, []);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    const warmUpNearbyPlaces = async (trigger: string) => {
-      if (warmupInFlightRef.current) {
-        return warmupInFlightRef.current;
-      }
-
-      const warmupPromise = (async () => {
-        try {
-          const lastKnownPosition = await Location.getLastKnownPositionAsync();
-          if (lastKnownPosition && !cancelled) {
-            await fetchPlacesFromOverpassWithCache({
-              maxPrice: 9999,
-              selectedDate: new Date().toISOString().slice(0, 10),
-              startHour: 0,
-              endHour: 23,
-              dateLengthMinutes: 24 * 60,
-              maxDistance: 25,
-              categories: [...DATE_CATEGORIES],
-              serverTarget: "overpass",
-              userLocation: {
-                latitude: lastKnownPosition.coords.latitude,
-                longitude: lastKnownPosition.coords.longitude,
-              },
-            });
-            return;
-          }
-
-          const { status } = await Location.requestForegroundPermissionsAsync();
-          if (status !== "granted" || cancelled) {
-            return;
-          }
-
-          const position = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-          if (cancelled) {
-            return;
-          }
-
-          await fetchPlacesFromOverpassWithCache({
-            maxPrice: 9999,
-            selectedDate: new Date().toISOString().slice(0, 10),
-            startHour: 0,
-            endHour: 23,
-            dateLengthMinutes: 24 * 60,
-            maxDistance: 25,
-            categories: [...DATE_CATEGORIES],
-            serverTarget: "overpass",
-            userLocation: {
-              latitude: position.coords.latitude,
-              longitude: position.coords.longitude,
-            },
-          });
-        } catch {}
-      })();
-
-      warmupInFlightRef.current = warmupPromise;
-
-      try {
-        await warmupPromise;
-      } finally {
-        warmupInFlightRef.current = null;
-      }
-    };
-
-    const scheduleWarmup = (trigger: string) => {
-      void warmUpNearbyPlaces(trigger);
-    };
-
-    scheduleWarmup("mount");
-
-    warmupTimerRef.current = setInterval(() => {
-      if (AppState.currentState === "active") {
-        scheduleWarmup("interval");
-      }
-    }, OVERPASS_WARMUP_INTERVAL_MS);
-
-    const appStateSubscription = AppState.addEventListener("change", (nextAppState) => {
-      const previousAppState = appStateRef.current;
-      appStateRef.current = nextAppState;
-
-      if (previousAppState.match(/inactive|background/) && nextAppState === "active") {
-        scheduleWarmup("app-active");
-      }
-    });
-
-    return () => {
-      cancelled = true;
-      appStateSubscription.remove();
-
-      if (warmupTimerRef.current) {
-        clearInterval(warmupTimerRef.current);
-        warmupTimerRef.current = null;
-      }
-    };
-  }, []);
 
   return (
     <>
@@ -441,7 +360,7 @@ function MainTabs({ navigation }: { navigation: AppNavigation }) {
           onPageSelected={handlePageSelected}
           onPageScroll={handlePageScroll}
           overdrag={true}
-          scrollEnabled={currentPage !== SWIPE_IDEAS_TAB_INDEX}
+          scrollEnabled={!cardSwiping}
         >
           {TABS.map((tab, index) => {
             const Component = tab.component;
@@ -449,7 +368,11 @@ function MainTabs({ navigation }: { navigation: AppNavigation }) {
               <View key={index} style={styles.page}>
                 <BottomBackgroundArt bottomOffset={0} />
                 <View style={styles.pageContent}>
-                  <Component navigation={navigation} goToTab={goToTab} />
+                  {tab.key === "SwipeIdeas" ? (
+                    <SwipeIdeas navigation={navigation} goToTab={goToTab} onCardSwipeActive={setCardSwiping} />
+                  ) : (
+                    <Component navigation={navigation} goToTab={goToTab} />
+                  )}
                 </View>
               </View>
             );

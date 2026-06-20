@@ -4,7 +4,7 @@ import Text from "../Components/AppText";
 import { Ionicons } from "@expo/vector-icons";
 import type { AppNavigation } from "../types/navigation";
 import IdeaPlaceLinks from "../Components/IdeaPlaceLinks";
-import { activities } from "../data/activities";
+import { getActivityById } from "../data/activities";
 import type { PlaceSummary } from "../hooks/useDatePlannerIdeas";
 import {
   FREE_TIER_SAVED_IDEAS_LIMIT,
@@ -14,12 +14,7 @@ import {
   subscribeSavedIdeas,
   type SavedDateIdea,
 } from "../data/savedIdeasStore";
-import {
-  addRecordedDate,
-  FREE_TIER_RECORDED_DATES_LIMIT,
-  getRecordedDates,
-  initializeRecordedDates,
-} from "../data/dateHistoryStore";
+import { addRecordedDate, FREE_TIER_RECORDED_DATES_LIMIT, getRecordedDates, initializeRecordedDates } from "../data/dateHistoryStore";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { usePremium } from "../hooks/usePremium";
 import PaywallModal from "../Components/PaywallModal";
@@ -30,12 +25,23 @@ import { SLOT_TO_CATEGORY } from "../utils/utils";
 
 type SortBy = "newest" | "date-asc" | "date-desc";
 
-function getIdeaCategory(schedule: { slot: string }[]): string | null {
+function getIdeaCategory(schedule: Array<{ slot: string; place?: PlaceSummary | null }>): string | null {
   const weights: Record<string, number> = {};
   for (const step of schedule) {
-    for (const part of step.slot.split("|").map((s) => s.trim())) {
-      const cat = SLOT_TO_CATEGORY[part];
-      if (cat) weights[cat] = (weights[cat] ?? 0) + 1;
+    if (step.place?.sourceKind === "activity" && step.place.id) {
+      const activity = getActivityById(step.place.id);
+      if (activity) {
+        const primaryCat = activity.categories.find((c) => c !== "Entertainment") ?? activity.categories[0];
+        if (primaryCat) weights[primaryCat] = (weights[primaryCat] ?? 0) + 1;
+      }
+    } else if (step.place?.sourceKind === "place" && step.place.type) {
+      const cat = SLOT_TO_CATEGORY[step.place.type];
+      if (cat) weights[cat] = (weights[cat] ?? 0) + 2;
+    } else {
+      for (const part of step.slot.split("|").map((s) => s.trim())) {
+        const cat = SLOT_TO_CATEGORY[part];
+        if (cat) weights[cat] = (weights[cat] ?? 0) + 1;
+      }
     }
   }
   let best: string | null = null, bestW = 0;
@@ -92,13 +98,21 @@ export default function SavedIdeas({ navigation }: { navigation: AppNavigation }
 
   useEffect(() => {
     let isMounted = true;
-    const load = () => { if (!isMounted) return; setSavedIdeas(getSavedIdeas()); };
+    const load = () => {
+      if (!isMounted) return;
+      setSavedIdeas(getSavedIdeas());
+    };
     void initializeSavedIdeas().then(load);
     const unsubscribe = subscribeSavedIdeas(load);
-    return () => { isMounted = false; unsubscribe(); };
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
   }, []);
 
-  useEffect(() => { void initializeRecordedDates(); }, []);
+  useEffect(() => {
+    void initializeRecordedDates();
+  }, []);
 
   const displayedIdeas = useMemo(() => {
     let ideas = [...savedIdeas];
@@ -128,11 +142,17 @@ export default function SavedIdeas({ navigation }: { navigation: AppNavigation }
     setMarkDoneShowDatePicker(false);
   };
 
-  const closeMarkDone = () => { setMarkDoneIdea(null); setMarkDoneShowDatePicker(false); };
+  const closeMarkDone = () => {
+    setMarkDoneIdea(null);
+    setMarkDoneShowDatePicker(false);
+  };
 
   const submitMarkDone = () => {
     if (!markDoneIdea) return;
-    if (!markDoneWhoWith.trim()) { Alert.alert("Required", "Please enter who you went with."); return; }
+    if (!markDoneWhoWith.trim()) {
+      Alert.alert("Required", "Please enter who you went with.");
+      return;
+    }
     const moneyValue = parseFloat(markDoneMoneySpent);
     addRecordedDate({
       dateOfDate: markDoneDate.toISOString().split("T")[0],
@@ -177,7 +197,7 @@ export default function SavedIdeas({ navigation }: { navigation: AppNavigation }
           <Text
             style={{
               fontSize: 36,
-              color: "#1a1a1a"
+              color: "#1a1a1a",
             }}
           >
             Saved Ideas
@@ -190,7 +210,7 @@ export default function SavedIdeas({ navigation }: { navigation: AppNavigation }
                 marginBottom: 6,
               }}
             >
-              ({savedIdeas.length} / {FREE_TIER_SAVED_IDEAS_LIMIT})
+              {savedIdeas.length} out of {FREE_TIER_SAVED_IDEAS_LIMIT} used
             </Text>
           ) : null}
         </View>
@@ -210,9 +230,7 @@ export default function SavedIdeas({ navigation }: { navigation: AppNavigation }
         </TouchableOpacity>
       </View>
 
-      <Text style={{ fontSize: 14, color: "#6b7280", marginBottom: 16 }}>
-        Your favorite generated date ideas, saved for later.
-      </Text>
+      <Text style={{ fontSize: 14, color: "#6b7280", marginBottom: 16 }}>Your favorite generated date ideas, saved for later.</Text>
 
       <Image
         source={require("../assets/images/thinking.jpg")}
@@ -370,11 +388,15 @@ export default function SavedIdeas({ navigation }: { navigation: AppNavigation }
               gap: 12,
             }}
           >
-            <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: cfg.bg, justifyContent: "center", alignItems: "center" }}>
+            <View
+              style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: cfg.bg, justifyContent: "center", alignItems: "center" }}
+            >
               <Ionicons name={cfg.icon as any} size={22} color={cfg.color} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 15, color: "#1f2d3d" }} numberOfLines={2}>{idea.filledTemplate}</Text>
+              <Text style={{ fontSize: 15, color: "#1f2d3d" }} numberOfLines={2}>
+                {idea.filledTemplate}
+              </Text>
               {dateLabel ? <Text style={{ fontSize: 12, color: "#8899aa", marginTop: 2 }}>{dateLabel}</Text> : null}
             </View>
             <Ionicons name="chevron-forward" size={18} color="#b0bec5" />
@@ -386,19 +408,40 @@ export default function SavedIdeas({ navigation }: { navigation: AppNavigation }
       <Modal visible={selectedIdea !== null} transparent animationType="slide" onRequestClose={() => setSelectedIdea(null)}>
         <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" }}>
           <View style={{ backgroundColor: "#fff", borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: "90%", paddingBottom: 24 }}>
-            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 24, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: "#f0f0f0" }}>
-              {selectedIdea ? (() => {
-                const cat = getIdeaCategory(selectedIdea.schedule || []);
-                const cfg = (cat ? CATEGORY_CONFIG[cat] : null) ?? DEFAULT_CONFIG;
-                return (
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: 10, flex: 1 }}>
-                    <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: cfg.bg, justifyContent: "center", alignItems: "center" }}>
-                      <Ionicons name={cfg.icon as any} size={18} color={cfg.color} />
-                    </View>
-                    <Text style={{ fontSize: 15, color: cfg.color, textTransform: "uppercase", letterSpacing: 0.5 }}>{cfg.label}</Text>
-                  </View>
-                );
-              })() : null}
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+                paddingHorizontal: 24,
+                paddingVertical: 16,
+                borderBottomWidth: 1,
+                borderBottomColor: "#f0f0f0",
+              }}
+            >
+              {selectedIdea
+                ? (() => {
+                    const cat = getIdeaCategory(selectedIdea.schedule || []);
+                    const cfg = (cat ? CATEGORY_CONFIG[cat] : null) ?? DEFAULT_CONFIG;
+                    return (
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 10, flex: 1 }}>
+                        <View
+                          style={{
+                            width: 36,
+                            height: 36,
+                            borderRadius: 10,
+                            backgroundColor: cfg.bg,
+                            justifyContent: "center",
+                            alignItems: "center",
+                          }}
+                        >
+                          <Ionicons name={cfg.icon as any} size={18} color={cfg.color} />
+                        </View>
+                        <Text style={{ fontSize: 15, color: cfg.color, textTransform: "uppercase", letterSpacing: 0.5 }}>{cfg.label}</Text>
+                      </View>
+                    );
+                  })()
+                : null}
               <TouchableOpacity onPress={() => setSelectedIdea(null)}>
                 <Ionicons name="close" size={28} color="#1a1a1a" />
               </TouchableOpacity>
@@ -407,9 +450,7 @@ export default function SavedIdeas({ navigation }: { navigation: AppNavigation }
             <ScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingVertical: 16 }}>
               {selectedIdea ? (
                 <>
-                  <Text style={{ fontSize: 16, color: "#1f2d3d", lineHeight: 24, marginBottom: 16 }}>
-                    {selectedIdea.filledTemplate}
-                  </Text>
+                  <Text style={{ fontSize: 16, color: "#1f2d3d", lineHeight: 24, marginBottom: 16 }}>{selectedIdea.filledTemplate}</Text>
 
                   {selectedIdea.schedule?.length ? (
                     <>
@@ -422,7 +463,9 @@ export default function SavedIdeas({ navigation }: { navigation: AppNavigation }
                           <View style={{ flex: 1 }}>
                             <Text style={{ fontSize: 14, color: "#2c3e50" }}>{step.title}</Text>
                             {step.startTime && step.endTime ? (
-                              <Text style={{ fontSize: 12, color: "#8899aa" }}>{step.startTime} – {step.endTime}</Text>
+                              <Text style={{ fontSize: 12, color: "#8899aa" }}>
+                                {step.startTime} – {step.endTime}
+                              </Text>
                             ) : null}
                           </View>
                         </View>
@@ -452,7 +495,17 @@ export default function SavedIdeas({ navigation }: { navigation: AppNavigation }
                         title: "Date Idea",
                       });
                     }}
-                    style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, borderWidth: 1, borderColor: "#dce6ef", borderRadius: 8, paddingVertical: 10 }}
+                    style={{
+                      flex: 1,
+                      flexDirection: "row",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 6,
+                      borderWidth: 1,
+                      borderColor: "#dce6ef",
+                      borderRadius: 8,
+                      paddingVertical: 10,
+                    }}
                   >
                     <Ionicons name="share-outline" size={18} color="#4b5b6b" />
                     <Text style={{ fontSize: 14, color: "#4b5b6b" }}>Share</Text>
@@ -464,11 +517,25 @@ export default function SavedIdeas({ navigation }: { navigation: AppNavigation }
                         {
                           text: "Remove",
                           style: "destructive",
-                          onPress: () => { removeSavedIdea(selectedIdea.id); setSelectedIdea(null); },
+                          onPress: () => {
+                            removeSavedIdea(selectedIdea.id);
+                            setSelectedIdea(null);
+                          },
                         },
                       ]);
                     }}
-                    style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, borderWidth: 1, borderColor: "#fee2e2", borderRadius: 8, paddingVertical: 10, backgroundColor: "#fff5f5" }}
+                    style={{
+                      flex: 1,
+                      flexDirection: "row",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 6,
+                      borderWidth: 1,
+                      borderColor: "#fee2e2",
+                      borderRadius: 8,
+                      paddingVertical: 10,
+                      backgroundColor: "#fff5f5",
+                    }}
                   >
                     <Ionicons name="trash-outline" size={18} color="#dc3545" />
                     <Text style={{ fontSize: 14, color: "#dc3545" }}>Remove</Text>
@@ -480,7 +547,17 @@ export default function SavedIdeas({ navigation }: { navigation: AppNavigation }
                     setSelectedIdea(null);
                     openMarkDone(idea);
                   }}
-                  style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, backgroundColor: "#edfaf2", borderRadius: 8, borderWidth: 1, borderColor: "#86efac", paddingVertical: 12 }}
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 6,
+                    backgroundColor: "#edfaf2",
+                    borderRadius: 8,
+                    borderWidth: 1,
+                    borderColor: "#86efac",
+                    paddingVertical: 12,
+                  }}
                 >
                   <Ionicons name="checkmark-circle-outline" size={18} color="#16803c" />
                   <Text style={{ fontSize: 14, color: "#16803c" }}>We did this!</Text>
@@ -505,9 +582,22 @@ export default function SavedIdeas({ navigation }: { navigation: AppNavigation }
 
       {/* Mark as done modal */}
       <Modal visible={markDoneIdea !== null} transparent animationType="slide" onRequestClose={closeMarkDone}>
-        <KeyboardAvoidingView style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
+        <KeyboardAvoidingView
+          style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" }}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+        >
           <View style={{ backgroundColor: "#fff", borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: "90%", paddingBottom: 24 }}>
-            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 24, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: "#f0f0f0" }}>
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+                paddingHorizontal: 24,
+                paddingVertical: 16,
+                borderBottomWidth: 1,
+                borderBottomColor: "#f0f0f0",
+              }}
+            >
               <Text style={{ fontSize: 20, color: "#1a1a1a" }}>We did this!</Text>
               <TouchableOpacity onPress={closeMarkDone}>
                 <Ionicons name="close" size={28} color="#1a1a1a" />
@@ -516,21 +606,40 @@ export default function SavedIdeas({ navigation }: { navigation: AppNavigation }
 
             <ScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingVertical: 16 }} keyboardShouldPersistTaps="handled">
               {markDoneIdea ? (
-                <Text style={{ fontSize: 14, color: "#6b7280", marginBottom: 16, lineHeight: 20 }}>
-                  {markDoneIdea.filledTemplate}
-                </Text>
+                <Text style={{ fontSize: 14, color: "#6b7280", marginBottom: 16, lineHeight: 20 }}>{markDoneIdea.filledTemplate}</Text>
               ) : null}
 
               <Text style={{ fontSize: 14, color: "#1a1a1a", marginBottom: 8 }}>When was the date? *</Text>
               <TouchableOpacity
                 onPress={() => setMarkDoneShowDatePicker((p) => !p)}
-                style={{ flexDirection: "row", alignItems: "center", gap: 8, borderWidth: 1, borderColor: "#ddd", borderRadius: 8, paddingVertical: 12, paddingHorizontal: 12, marginBottom: 8, backgroundColor: "#fafbfc" }}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 8,
+                  borderWidth: 1,
+                  borderColor: "#ddd",
+                  borderRadius: 8,
+                  paddingVertical: 12,
+                  paddingHorizontal: 12,
+                  marginBottom: 8,
+                  backgroundColor: "#fafbfc",
+                }}
               >
                 <Ionicons name="calendar" size={20} color="#007AFF" />
                 <Text style={{ fontSize: 14, color: "#1a1a1a" }}>{formatDateShort(markDoneDate)}</Text>
               </TouchableOpacity>
               {markDoneShowDatePicker ? (
-                <View style={{ borderRadius: 12, borderWidth: 1, borderColor: "#dfe5eb", backgroundColor: "#f3f6fa", paddingHorizontal: 8, paddingVertical: 6, marginBottom: 8 }}>
+                <View
+                  style={{
+                    borderRadius: 12,
+                    borderWidth: 1,
+                    borderColor: "#dfe5eb",
+                    backgroundColor: "#f3f6fa",
+                    paddingHorizontal: 8,
+                    paddingVertical: 6,
+                    marginBottom: 8,
+                  }}
+                >
                   <DateTimePicker
                     value={markDoneDate}
                     mode="date"
@@ -543,7 +652,10 @@ export default function SavedIdeas({ navigation }: { navigation: AppNavigation }
                     themeVariant="light"
                   />
                   {Platform.OS === "ios" ? (
-                    <TouchableOpacity onPress={() => setMarkDoneShowDatePicker(false)} style={{ alignItems: "center", paddingVertical: 12, borderTopWidth: 1, borderTopColor: "#dfe5eb" }}>
+                    <TouchableOpacity
+                      onPress={() => setMarkDoneShowDatePicker(false)}
+                      style={{ alignItems: "center", paddingVertical: 12, borderTopWidth: 1, borderTopColor: "#dfe5eb" }}
+                    >
                       <Text style={{ color: "#007AFF", fontSize: 16 }}>Done</Text>
                     </TouchableOpacity>
                   ) : null}
@@ -552,7 +664,18 @@ export default function SavedIdeas({ navigation }: { navigation: AppNavigation }
 
               <Text style={{ fontSize: 14, color: "#1a1a1a", marginBottom: 8, marginTop: 8 }}>Who did you go with? *</Text>
               <TextInput
-                style={{ borderWidth: 1, borderColor: "#ddd", borderRadius: 8, paddingVertical: 12, paddingHorizontal: 12, fontSize: 14, color: "#1a1a1a", backgroundColor: "#fafbfc", fontFamily: "System", marginBottom: 16 }}
+                style={{
+                  borderWidth: 1,
+                  borderColor: "#ddd",
+                  borderRadius: 8,
+                  paddingVertical: 12,
+                  paddingHorizontal: 12,
+                  fontSize: 14,
+                  color: "#1a1a1a",
+                  backgroundColor: "#fafbfc",
+                  fontFamily: "System",
+                  marginBottom: 16,
+                }}
                 placeholder="Name(s)"
                 placeholderTextColor="#999"
                 value={markDoneWhoWith}
@@ -560,7 +683,17 @@ export default function SavedIdeas({ navigation }: { navigation: AppNavigation }
               />
 
               <Text style={{ fontSize: 14, color: "#1a1a1a", marginBottom: 8 }}>How much did you spend?</Text>
-              <View style={{ flexDirection: "row", alignItems: "center", borderWidth: 1, borderColor: "#ddd", borderRadius: 8, backgroundColor: "#fafbfc", marginBottom: 16 }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  borderWidth: 1,
+                  borderColor: "#ddd",
+                  borderRadius: 8,
+                  backgroundColor: "#fafbfc",
+                  marginBottom: 16,
+                }}
+              >
                 <Text style={{ fontSize: 16, color: "#1a1a1a", paddingHorizontal: 12 }}>$</Text>
                 <TextInput
                   style={{ flex: 1, paddingVertical: 12, fontSize: 14, color: "#1a1a1a", fontFamily: "System" }}
@@ -574,14 +707,23 @@ export default function SavedIdeas({ navigation }: { navigation: AppNavigation }
 
               <Text style={{ fontSize: 14, color: "#1a1a1a", marginBottom: 8 }}>Rate the date (1–10)</Text>
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
-                {[1,2,3,4,5,6,7,8,9,10].map((n) => {
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => {
                   const color = getRatingColor(n);
                   const selected = markDoneRating === n;
                   return (
                     <TouchableOpacity
                       key={n}
                       onPress={() => setMarkDoneRating(selected ? null : n)}
-                      style={{ width: 40, height: 40, borderRadius: 8, borderWidth: 1, borderColor: color, alignItems: "center", justifyContent: "center", backgroundColor: selected ? color : "#fafbfc" }}
+                      style={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: 8,
+                        borderWidth: 1,
+                        borderColor: color,
+                        alignItems: "center",
+                        justifyContent: "center",
+                        backgroundColor: selected ? color : "#fafbfc",
+                      }}
                     >
                       <Text style={{ color: selected ? "#fff" : color, fontSize: 14 }}>{n}</Text>
                     </TouchableOpacity>
@@ -591,10 +733,16 @@ export default function SavedIdeas({ navigation }: { navigation: AppNavigation }
             </ScrollView>
 
             <View style={{ flexDirection: "row", gap: 12, paddingHorizontal: 24, paddingTop: 12 }}>
-              <TouchableOpacity onPress={closeMarkDone} style={{ flex: 1, borderWidth: 1, borderColor: "#ddd", borderRadius: 8, paddingVertical: 12, alignItems: "center" }}>
+              <TouchableOpacity
+                onPress={closeMarkDone}
+                style={{ flex: 1, borderWidth: 1, borderColor: "#ddd", borderRadius: 8, paddingVertical: 12, alignItems: "center" }}
+              >
                 <Text style={{ fontSize: 16, color: "#666" }}>Cancel</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={submitMarkDone} style={{ flex: 1, backgroundColor: "#007AFF", borderRadius: 8, paddingVertical: 12, alignItems: "center" }}>
+              <TouchableOpacity
+                onPress={submitMarkDone}
+                style={{ flex: 1, backgroundColor: "#007AFF", borderRadius: 8, paddingVertical: 12, alignItems: "center" }}
+              >
                 <Text style={{ fontSize: 16, color: "#fff" }}>Save to History</Text>
               </TouchableOpacity>
             </View>

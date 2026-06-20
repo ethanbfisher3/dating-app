@@ -5,7 +5,7 @@ import type { Activity } from "../data/activities";
 import { getFreeStayInTemplates, IdeaTemplate, LONG_TEMPLATES, SHORT_TEMPLATES, STANDARD_TEMPLATES } from "../data/datePlannerTemplates";
 import { templateMatchesSelectedCategories } from "../data/dateTemplatesCatalog";
 import type { PlaceSummary } from "./usePlacesActivitiesRecipes";
-import { SLOT_TO_PLACE_TYPES } from "src/utils/utils";
+import { SLOT_TO_PLACE_TYPES, SLOT_TO_CATEGORY } from "src/utils/utils";
 import { usePremium } from "./usePremium";
 
 export type FilledIdea = {
@@ -614,6 +614,32 @@ function buildFilledIdea(
   };
 }
 
+function getCategoryForIdea(idea: FilledIdea, activities: Activity[]): string {
+  const weights: Record<string, number> = {};
+  for (const step of idea.schedule ?? []) {
+    if (step.place?.sourceKind === "activity" && step.place.id) {
+      const act = activities.find((a) => a.id === step.place!.id);
+      if (act) {
+        // Use the first non-Entertainment category to avoid activities inflating Entertainment
+        const cat = act.categories.find((c) => c !== "Entertainment") ?? act.categories[0];
+        if (cat) weights[cat] = (weights[cat] ?? 0) + 1;
+      }
+    } else if (step.place?.sourceKind === "place" && step.place.type) {
+      const cat = SLOT_TO_CATEGORY[step.place.type];
+      if (cat) weights[cat] = (weights[cat] ?? 0) + 2;
+    } else {
+      const cat = SLOT_TO_CATEGORY[step.slot];
+      if (cat) weights[cat] = (weights[cat] ?? 0) + 1;
+    }
+  }
+  let best = "Entertainment";
+  let bestW = 0;
+  for (const [cat, w] of Object.entries(weights)) {
+    if (w > bestW) { best = cat; bestW = w; }
+  }
+  return best;
+}
+
 export default function useFilledIdeas({ params, places, recipes, activities }: UseFilledIdeasArgs): FilledIdea[] {
   const { isUnlocked } = usePremium();
 
@@ -664,8 +690,30 @@ export default function useFilledIdeas({ params, places, recipes, activities }: 
       cursor += 1;
     }
 
-    const finalIdeas = shuffleIdeas(ideas).slice(0, targetCount);
-    return finalIdeas;
+    // Group pool by category, then round-robin to ensure even distribution
+    const categoryBuckets = new Map<string, FilledIdea[]>();
+    for (const idea of ideas) {
+      const cat = getCategoryForIdea(idea, randomizedActivities);
+      const bucket = categoryBuckets.get(cat) ?? [];
+      bucket.push(idea);
+      categoryBuckets.set(cat, bucket);
+    }
+    for (const bucket of categoryBuckets.values()) {
+      shuffleIdeas(bucket);
+    }
+    const finalIdeas: FilledIdea[] = [];
+    const buckets = [...categoryBuckets.values()];
+    let anyAdded = true;
+    while (finalIdeas.length < targetCount && anyAdded) {
+      anyAdded = false;
+      for (const bucket of buckets) {
+        if (finalIdeas.length < targetCount && bucket.length > 0) {
+          finalIdeas.push(bucket.shift()!);
+          anyAdded = true;
+        }
+      }
+    }
+    return shuffleIdeas(finalIdeas);
   }, [activities, isUnlocked, params, places, recipes]);
 }
 
@@ -724,7 +772,6 @@ export function rebuildScheduleTimes(
 export {
   formatTimeLabel,
   estimateTravelMinutesBetween,
-  estimateTravelMinutesFromUserLocation,
   getPlaceCandidatesBySlotType as getPlaceCandidatesBySlot,
   getCandidatesForSlot,
 };

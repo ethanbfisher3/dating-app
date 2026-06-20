@@ -1,2 +1,2 @@
 export { default } from "./usePlacesActivitiesRecipes";
-export type { PlaceSummary } from "./usePlacesActivitiesRecipes";
+export type { PlaceSummary, OverpassQueryAttempt } from "./usePlacesActivitiesRecipes";

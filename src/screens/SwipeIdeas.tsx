@@ -1,15 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  View,
-  Animated,
-  Dimensions,
-  Platform,
-  StyleSheet,
-  TouchableOpacity,
-  ActivityIndicator,
-  Modal,
-  ScrollView,
-} from "react-native";
+import { View, Animated, Dimensions, Platform, StyleSheet, TouchableOpacity, ActivityIndicator, Modal, ScrollView } from "react-native";
 import { getActivityById } from "../data/activities";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { PanGestureHandler, State } from "react-native-gesture-handler";
@@ -100,18 +90,22 @@ function formatDate(iso: string) {
 function getIdeaCategory(idea: FilledIdea): string | null {
   const weights: Record<string, number> = {};
   for (const step of idea.schedule ?? []) {
-    for (const part of step.slot.split("|").map((s) => s.trim())) {
-      // "activity" has no entry in SLOT_TO_CATEGORY — look up the activity directly
-      if (part === "activity" && step.place?.sourceKind === "activity" && step.place.id) {
-        const activity = getActivityById(step.place.id);
-        if (activity) {
-          for (const cat of activity.categories) {
-            if (CATEGORY_CONFIG[cat]) weights[cat] = (weights[cat] ?? 0) + 1;
-          }
+    if (step.place?.sourceKind === "activity" && step.place.id) {
+      const activity = getActivityById(step.place.id);
+      if (activity) {
+        // Use the first non-Entertainment category to avoid Entertainment dominating
+        const primaryCat = activity.categories.find((c) => c !== "Entertainment") ?? activity.categories[0];
+        if (primaryCat && CATEGORY_CONFIG[primaryCat]) {
+          weights[primaryCat] = (weights[primaryCat] ?? 0) + 1;
         }
-        continue;
       }
-      const cat = SLOT_TO_CATEGORY[part];
+    } else if (step.place?.sourceKind === "place" && step.place.type) {
+      // Use the actual resolved place type instead of all possible slot options
+      const cat = SLOT_TO_CATEGORY[step.place.type];
+      if (cat) weights[cat] = (weights[cat] ?? 0) + 2;
+    } else {
+      // Recipe or no-place step — use the slot directly
+      const cat = SLOT_TO_CATEGORY[step.slot];
       if (cat) weights[cat] = (weights[cat] ?? 0) + 1;
     }
   }
@@ -126,7 +120,14 @@ function getIdeaCategory(idea: FilledIdea): string | null {
   return best;
 }
 
-export default function SwipeIdeas({ navigation }: { navigation: AppNavigation; goToTab?: (key: string) => void }) {
+export default function SwipeIdeas({
+  navigation,
+  onCardSwipeActive,
+}: {
+  navigation: AppNavigation;
+  goToTab?: (key: string) => void;
+  onCardSwipeActive?: (active: boolean) => void;
+}) {
   const { isUnlocked } = usePremium();
   const insets = useSafeAreaInsets();
   const [paywallVisible, setPaywallVisible] = useState(false);
@@ -146,6 +147,20 @@ export default function SwipeIdeas({ navigation }: { navigation: AppNavigation; 
   const cardOpacity = useRef(new Animated.Value(1)).current;
   const swipeCountRef = useRef(0);
   const isAnimatingRef = useRef(false);
+  const logicalIndexRef = useRef(0);
+  const swipeQueueRef = useRef<Array<"left" | "right">>([]);
+  const animationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const resetAnimationState = useCallback(() => {
+    if (animationTimeoutRef.current) {
+      clearTimeout(animationTimeoutRef.current);
+      animationTimeoutRef.current = null;
+    }
+    isAnimatingRef.current = false;
+    swipeQueueRef.current = [];
+    translateX.setValue(0);
+    cardOpacity.setValue(1);
+  }, [translateX, cardOpacity]);
   const interstitialRef = useRef<InterstitialAd | null>(null);
   const interstitialReadyRef = useRef(false);
 
@@ -180,17 +195,6 @@ export default function SwipeIdeas({ navigation }: { navigation: AppNavigation; 
     outputRange: ["-20deg", "0deg", "20deg"],
     extrapolate: "clamp",
   });
-  const skipOpacity = translateX.interpolate({
-    inputRange: [-SCREEN_WIDTH / 3, -20, 0],
-    outputRange: [1, 0.4, 0],
-    extrapolate: "clamp",
-  });
-  const saveOpacity = translateX.interpolate({
-    inputRange: [0, 20, SCREEN_WIDTH / 3],
-    outputRange: [0, 0.4, 1],
-    extrapolate: "clamp",
-  });
-
   const hasLocation = userLocation !== null;
 
   const params = useMemo(
@@ -266,49 +270,74 @@ export default function SwipeIdeas({ navigation }: { navigation: AppNavigation; 
     });
   }, []);
 
-  const advanceCard = useCallback(
+  const runAdvance = useCallback(
     (direction: "left" | "right") => {
-      if (isAnimatingRef.current) return;
-      isAnimatingRef.current = true;
+      if (animationTimeoutRef.current) clearTimeout(animationTimeoutRef.current);
+      animationTimeoutRef.current = setTimeout(resetAnimationState, 1000);
+
       const toX = direction === "right" ? SCREEN_WIDTH * 1.5 : -SCREEN_WIDTH * 1.5;
       Animated.parallel([
-        Animated.timing(translateX, { toValue: toX, duration: 220, useNativeDriver: true }),
-        Animated.timing(cardOpacity, { toValue: 0, duration: 180, useNativeDriver: true }),
+        Animated.timing(translateX, { toValue: toX, duration: 150, useNativeDriver: true }),
+        Animated.timing(cardOpacity, { toValue: 0, duration: 120, useNativeDriver: true }),
       ]).start(() => {
+        if (animationTimeoutRef.current) {
+          clearTimeout(animationTimeoutRef.current);
+          animationTimeoutRef.current = null;
+        }
         swipeCountRef.current += 1;
         translateX.setValue(0);
         setCurrentIndex((p) => p + 1);
-        // Wait one frame for React to commit the new card content before revealing it
-        requestAnimationFrame(() => {
-          cardOpacity.setValue(1);
-          isAnimatingRef.current = false;
-        });
 
         if (!isUnlocked && swipeCountRef.current % AD_EVERY_N_SWIPES === 0) {
           if (interstitialReadyRef.current && interstitialRef.current) {
             interstitialRef.current.show();
           }
         }
+
+        requestAnimationFrame(() => {
+          cardOpacity.setValue(1);
+          const next = swipeQueueRef.current.shift();
+          if (next) {
+            runAdvance(next);
+          } else {
+            isAnimatingRef.current = false;
+          }
+        });
       });
     },
-    [translateX, cardOpacity, isUnlocked],
+    [translateX, cardOpacity, isUnlocked, resetAnimationState],
+  );
+
+  const advanceCard = useCallback(
+    (direction: "left" | "right") => {
+      if (swipeQueueRef.current.length >= 4) return;
+      logicalIndexRef.current += 1;
+      if (isAnimatingRef.current) {
+        swipeQueueRef.current.push(direction);
+        return;
+      }
+      isAnimatingRef.current = true;
+      runAdvance(direction);
+    },
+    [runAdvance],
   );
 
   const handleSave = useCallback(() => {
-    const idea = ideas[currentIndex];
+    const idea = ideas[logicalIndexRef.current];
     if (!idea) return;
     if (!canSave) {
       setPaywallVisible(true);
+      Animated.spring(translateX, { toValue: 0, useNativeDriver: true }).start();
       return;
     }
     saveDateIdea(idea);
     advanceCard("right");
-  }, [ideas, currentIndex, canSave, advanceCard]);
+  }, [ideas, canSave, advanceCard, translateX]);
 
   const handleSkip = useCallback(() => {
-    if (!ideas[currentIndex]) return;
+    if (!ideas[logicalIndexRef.current]) return;
     advanceCard("left");
-  }, [ideas, currentIndex, advanceCard]);
+  }, [ideas, advanceCard]);
 
   const onGestureEvent = useCallback(
     (event: any) => {
@@ -321,21 +350,26 @@ export default function SwipeIdeas({ navigation }: { navigation: AppNavigation; 
 
   const onHandlerStateChange = useCallback(
     (event: any) => {
-      if (isAnimatingRef.current) return;
       const { state, translationX: tx } = event.nativeEvent;
-      if (state === State.END) {
+      if (state === State.BEGAN) {
+        onCardSwipeActive?.(true);
+      } else if (state === State.END) {
+        onCardSwipeActive?.(false);
         if (tx > SWIPE_THRESHOLD) {
           handleSave();
         } else if (tx < -SWIPE_THRESHOLD) {
           handleSkip();
-        } else {
+        } else if (!isAnimatingRef.current) {
           Animated.spring(translateX, { toValue: 0, useNativeDriver: true }).start();
         }
       } else if (state === State.FAILED || state === State.CANCELLED) {
-        Animated.spring(translateX, { toValue: 0, useNativeDriver: true }).start();
+        onCardSwipeActive?.(false);
+        if (!isAnimatingRef.current) {
+          Animated.spring(translateX, { toValue: 0, useNativeDriver: true }).start();
+        }
       }
     },
-    [translateX, handleSave, handleSkip],
+    [translateX, handleSave, handleSkip, onCardSwipeActive],
   );
 
   const currentIdea = ideas[currentIndex];
@@ -364,10 +398,11 @@ export default function SwipeIdeas({ navigation }: { navigation: AppNavigation; 
         <View style={styles.center}>
           <Ionicons name="checkmark-circle" size={72} color="#22c55e" />
           <Text style={styles.doneTitle}>Thanks for watching the ads — it helps keep this app free!</Text>
-          <Text style={styles.doneSub}>You've seen all {ideas.length} ideas.</Text>
           <TouchableOpacity
             style={styles.restartBtn}
             onPress={() => {
+              resetAnimationState();
+              logicalIndexRef.current = 0;
               setCurrentIndex(0);
               setGenerationCount((c) => c + 1);
             }}
@@ -410,7 +445,9 @@ export default function SwipeIdeas({ navigation }: { navigation: AppNavigation; 
               {(nextIdea.schedule ?? []).slice(0, 4).map((step, i) => (
                 <View key={i} style={styles.scheduleRow}>
                   <View style={[styles.dot, { backgroundColor: nextCatConfig.color + "80" }]} />
-                  <Text style={styles.stepTitle} numberOfLines={1}>{step.title}</Text>
+                  <Text style={styles.stepTitle} numberOfLines={1}>
+                    {step.title}
+                  </Text>
                   {step.startTime ? <Text style={styles.stepTime}>{step.startTime}</Text> : null}
                 </View>
               ))}
@@ -438,13 +475,6 @@ export default function SwipeIdeas({ navigation }: { navigation: AppNavigation; 
               { transform: [{ translateX }, { rotate }], opacity: cardOpacity, backgroundColor: catConfig.bg },
             ]}
           >
-            <Animated.View style={[styles.badge, styles.badgeSkip, { opacity: skipOpacity }]}>
-              <Text style={[styles.badgeText, { color: "#ef4444" }]}>SKIP</Text>
-            </Animated.View>
-            <Animated.View style={[styles.badge, styles.badgeSave, { opacity: saveOpacity }]}>
-              <Text style={[styles.badgeText, { color: "#22c55e" }]}>SAVE</Text>
-            </Animated.View>
-
             <View style={[styles.catPill, { borderColor: catConfig.color }]}>
               <Ionicons name={catConfig.icon as any} size={13} color={catConfig.color} />
               <Text style={[styles.catText, { color: catConfig.color }]}>{catConfig.label}</Text>
@@ -474,10 +504,6 @@ export default function SwipeIdeas({ navigation }: { navigation: AppNavigation; 
         </PanGestureHandler>
       </View>
 
-      <Text style={styles.counterText}>
-        {currentIndex + 1} / {ideas.length}
-      </Text>
-
       <View style={styles.buttons}>
         <TouchableOpacity style={[styles.btn, styles.btnSkip]} onPress={handleSkip}>
           <Ionicons name="close" size={32} color="#ef4444" />
@@ -493,12 +519,7 @@ export default function SwipeIdeas({ navigation }: { navigation: AppNavigation; 
       <PaywallModal visible={paywallVisible} onClose={() => setPaywallVisible(false)} reason="general" />
 
       {/* Filter sheet */}
-      <Modal
-        visible={filterVisible}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setFilterVisible(false)}
-      >
+      <Modal visible={filterVisible} transparent animationType="slide" onRequestClose={() => setFilterVisible(false)}>
         <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setFilterVisible(false)}>
           <TouchableOpacity activeOpacity={1} style={styles.filterSheet}>
             {/* Header */}
@@ -512,10 +533,7 @@ export default function SwipeIdeas({ navigation }: { navigation: AppNavigation; 
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 8 }}>
               {/* Date */}
               <Text style={styles.filterSectionLabel}>Date</Text>
-              <TouchableOpacity
-                style={styles.dateBtn}
-                onPress={() => setShowDatePicker((v) => !v)}
-              >
+              <TouchableOpacity style={styles.dateBtn} onPress={() => setShowDatePicker((v) => !v)}>
                 <Ionicons name="calendar-outline" size={16} color="#555" />
                 <Text style={styles.dateBtnText}>{formatDate(draft.selectedDate)}</Text>
                 <Ionicons name={showDatePicker ? "chevron-up" : "chevron-down"} size={16} color="#999" />
@@ -622,10 +640,7 @@ export default function SwipeIdeas({ navigation }: { navigation: AppNavigation; 
                   return (
                     <TouchableOpacity
                       key={cat}
-                      style={[
-                        styles.catChip,
-                        active && { backgroundColor: cfg.bg, borderColor: cfg.color },
-                      ]}
+                      style={[styles.catChip, active && { backgroundColor: cfg.bg, borderColor: cfg.color }]}
                       onPress={() => toggleDraftCategory(cat)}
                     >
                       <Ionicons name={cfg.icon as any} size={14} color={active ? cfg.color : "#999"} />
@@ -645,12 +660,7 @@ export default function SwipeIdeas({ navigation }: { navigation: AppNavigation; 
       </Modal>
 
       {/* Activity detail sheet */}
-      <Modal
-        visible={activityModalId !== null}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setActivityModalId(null)}
-      >
+      <Modal visible={activityModalId !== null} transparent animationType="slide" onRequestClose={() => setActivityModalId(null)}>
         <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setActivityModalId(null)}>
           <TouchableOpacity activeOpacity={1} style={styles.modalSheet}>
             {(() => {
@@ -708,9 +718,9 @@ const styles = StyleSheet.create({
   savedLink: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 18 },
   savedLinkText: { color: "#e63f67", fontSize: 15, fontWeight: "500" },
   header: { paddingHorizontal: 24, paddingBottom: 8 },
-  headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "center" },
-  headerTitle: { fontSize: 26, fontWeight: "700", color: "#1a1a1a" },
-  filterBtn: { position: "absolute", right: 0, padding: 4 },
+  headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  headerTitle: { fontSize: 36, color: "#1a1a1a", fontFamily: "SuperPandora" },
+  filterBtn: { padding: 4 },
   filterDot: {
     position: "absolute",
     top: 2,
@@ -720,7 +730,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     backgroundColor: "#1e90ff",
   },
-  headerSub: { fontSize: 13, color: "#8e8e93", marginTop: 2, textAlign: "center" },
+  headerSub: { fontSize: 14, color: "#6b7280", marginTop: 2 },
   cardArea: { flex: 1, alignItems: "center", justifyContent: "center" },
   card: {
     position: "absolute",

@@ -6,6 +6,7 @@ import type { PlaceSummary } from "../hooks/useDatePlannerIdeas";
 import type { AppNavigation } from "../types/navigation";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { SLOT_TO_CATEGORY } from "../utils/utils";
+import { getActivityById } from "../data/activities";
 
 type CategoryConfig = { icon: string; color: string; bg: string; label: string };
 
@@ -26,14 +27,24 @@ function getPrimaryCategory(schedule: Array<{ slot: string; place: PlaceSummary 
   const weights: Record<string, number> = {};
 
   for (const step of schedule) {
-    const parts = step.slot.split("|").map((s) => s.trim());
-    const sources = [...parts, step.place?.type ?? ""].filter(Boolean);
     const weight = step.durationMinutes && step.durationMinutes > 0 ? step.durationMinutes : 1;
 
-    for (const part of sources) {
-      const cat = SLOT_TO_CATEGORY[part];
-      if (cat) {
-        weights[cat] = (weights[cat] ?? 0) + weight;
+    if (step.place?.sourceKind === "activity" && step.place.id) {
+      const activity = getActivityById(step.place.id);
+      if (activity) {
+        const primaryCat = activity.categories.find((c) => c !== "Entertainment") ?? activity.categories[0];
+        if (primaryCat && CATEGORY_CONFIG[primaryCat]) {
+          weights[primaryCat] = (weights[primaryCat] ?? 0) + weight;
+        }
+      }
+    } else {
+      const parts = step.slot.split("|").map((s) => s.trim());
+      const sources = [...parts, step.place?.type ?? ""].filter(Boolean);
+      for (const part of sources) {
+        const cat = SLOT_TO_CATEGORY[part];
+        if (cat) {
+          weights[cat] = (weights[cat] ?? 0) + weight;
+        }
       }
     }
   }

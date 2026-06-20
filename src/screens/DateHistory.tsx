@@ -171,9 +171,7 @@ export default function DateHistoryScreen(_: { navigation: AppNavigation }) {
     const now = new Date();
     const thisMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
     const datesWithSpending = recordedDates.filter((d) => d.moneySpent !== -1);
-    const spentThisMonth = datesWithSpending
-      .filter((d) => d.dateOfDate.startsWith(thisMonthKey))
-      .reduce((s, d) => s + d.moneySpent, 0);
+    const spentThisMonth = datesWithSpending.filter((d) => d.dateOfDate.startsWith(thisMonthKey)).reduce((s, d) => s + d.moneySpent, 0);
     const spentAllTime = datesWithSpending.reduce((s, d) => s + d.moneySpent, 0);
     const hasSpending = datesWithSpending.length > 0;
 
@@ -327,7 +325,7 @@ export default function DateHistoryScreen(_: { navigation: AppNavigation }) {
             <Text style={styles.title}>Date History</Text>
             {!isUnlocked && (
               <Text style={styles.freeCounterText}>
-                ({recordedDates.length} / {FREE_TIER_RECORDED_DATES_LIMIT})
+                {recordedDates.length} out of {FREE_TIER_RECORDED_DATES_LIMIT} used
               </Text>
             )}
           </View>
@@ -336,9 +334,7 @@ export default function DateHistoryScreen(_: { navigation: AppNavigation }) {
           </TouchableOpacity>
         </View>
 
-        <Text style={{ fontSize: 14, color: "#6b7280", marginBottom: 12, marginTop: 2 }}>
-          Log and reflect on dates you've been on.
-        </Text>
+        <Text style={{ fontSize: 14, color: "#6b7280", marginBottom: 12, marginTop: 2 }}>Log and reflect on dates you've been on.</Text>
 
         {/* Stats carousel */}
         {stats ? (
