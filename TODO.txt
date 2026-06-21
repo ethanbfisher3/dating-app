@@ -8,6 +8,11 @@ More date idea categories when generating ideas
 More visual stimuli (More animations, sounds, etc.)
 Let the user drop a location to plan the dates from instead of using their location
 
+Discover page:
+    Display a picture of any recipe in the idea
+    Create a cool image collage for any date idea on the page, make it look really cool
+    
+
 Redesign bottom layout?
     New tabs:
         Home
