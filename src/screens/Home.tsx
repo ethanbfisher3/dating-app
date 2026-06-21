@@ -71,9 +71,7 @@ export default function Info({ goToTab }) {
         DateCraft
       </Text>
 
-      <Text style={{ fontSize: 14, color: "#6b7280", marginBottom: 20 }}>
-        Your all-in-one date planning companion.
-      </Text>
+      <Text style={{ fontSize: 14, color: "#6b7280", marginBottom: 20 }}>Your all-in-one date planning companion.</Text>
 
       {/* <View style={{ width: "100%" }}>
         <Image
@@ -189,9 +187,7 @@ export default function Info({ goToTab }) {
           <Ionicons name="star" size={28} color="#007AFF" />
           <View style={{ flex: 1 }}>
             <Text style={{ fontSize: 16, color: "#007AFF", marginBottom: 2 }}>Unlock Premium</Text>
-            <Text style={{ fontSize: 13, color: "#0051D5" }}>
-              Save unlimited ideas for only {lifetimePremium?.priceString || "..."}
-            </Text>
+            <Text style={{ fontSize: 13, color: "#0051D5" }}>Save unlimited ideas for only {lifetimePremium?.priceString || "..."}</Text>
           </View>
           <Ionicons name="chevron-forward" size={20} color="#007AFF" />
         </TouchableOpacity>
@@ -217,7 +213,7 @@ export default function Info({ goToTab }) {
         </View>
       )}
 
-      {__DEV__ && (
+      {__DEV__ && isUnlocked && (
         <TouchableOpacity
           activeOpacity={0.9}
           onPress={handleRemovePremium}
@@ -239,7 +235,7 @@ export default function Info({ goToTab }) {
               fontSize: 15,
             }}
           >
-            {isUnlocked ? "Remove Premium (DEV)" : "Premium Already Removed (DEV)"}
+            Remove Premium (DEV)
           </Text>
         </TouchableOpacity>
       )}

@@ -373,14 +373,8 @@ export default function DateHistoryScreen(_: { navigation: AppNavigation }) {
           </ScrollView>
         ) : null}
 
-        {/* Record button */}
-        <TouchableOpacity style={styles.addButton} onPress={openCreateModal}>
-          <Ionicons name="add" size={22} color="#fff" />
-          <Text style={styles.addButtonText}>{recordedDates.length ? "Record Date" : "Record Your First Date"}</Text>
-        </TouchableOpacity>
-
         {/* Empty state */}
-        {recordedDates.length === 0 ? (
+        {recordedDates.length === 0 && (
           <View style={styles.emptyState}>
             <Ionicons name="heart-outline" size={56} color="#ccc" style={{ marginBottom: 20 }} />
             <Text style={styles.emptyTitle}>No Dates Recorded Yet</Text>
@@ -388,7 +382,15 @@ export default function DateHistoryScreen(_: { navigation: AppNavigation }) {
               Keep track of dates you've been on — what you did, how much you spent, and what you learned.
             </Text>
           </View>
-        ) : (
+        )}
+
+        {/* Record button */}
+        <TouchableOpacity style={styles.addButton} onPress={openCreateModal}>
+          <Ionicons name="add" size={22} color="#fff" />
+          <Text style={styles.addButtonText}>{recordedDates.length ? "Record Date" : "Record Your First Date"}</Text>
+        </TouchableOpacity>
+
+        {recordedDates.length > 0 && (
           <View style={{ gap: 12 }}>
             {recordedDates.map((date) => (
               <DateCard key={date.id} date={date} onPress={() => setDetailDate(date)} />

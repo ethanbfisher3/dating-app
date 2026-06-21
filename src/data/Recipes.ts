@@ -1147,7 +1147,7 @@ const recipes: Recipe[] = [
     estimatedTime: 25,
     categories: ["Dinner", "Lunch"],
     description: "Build-your-own pizza night — a fun, customizable dinner where everyone gets exactly what they want.",
-    image: "recipes/256/homemade_pizza.jpg",
+    image: "recipes/1024/homemade_pizza.jpg",
   },
   {
     name: "French Toast",
@@ -1171,7 +1171,7 @@ const recipes: Recipe[] = [
     estimatedTime: 15,
     categories: ["Breakfast"],
     description: "Classic French toast with a custardy center and crisp golden edges — a breakfast treat worth waking up for.",
-    image: "recipes/256/french_toast.jpg",
+    image: "recipes/1024/french_toast.jpg",
   },
   {
     name: "Shakshuka",
@@ -1200,7 +1200,7 @@ const recipes: Recipe[] = [
     estimatedTime: 25,
     categories: ["Breakfast", "Dinner"],
     description: "Eggs poached in spiced tomato sauce — an impressive Middle Eastern dish that comes together in one pan.",
-    image: "recipes/256/shakshuka.jpg",
+    image: "recipes/1024/shakshuka.jpg",
   },
   {
     name: "Homemade Mac and Cheese",
@@ -1225,7 +1225,7 @@ const recipes: Recipe[] = [
     estimatedTime: 20,
     categories: ["Dinner", "Lunch"],
     description: "Creamy stovetop mac and cheese from scratch — way better than the box and only takes a few extra minutes.",
-    image: "recipes/256/mac_and_cheese.jpg",
+    image: "recipes/1024/mac_and_cheese.jpg",
   },
   {
     name: "Honey Garlic Salmon",
@@ -1250,7 +1250,7 @@ const recipes: Recipe[] = [
     estimatedTime: 20,
     categories: ["Dinner"],
     description: "Pan-seared salmon with a sticky honey garlic glaze — restaurant quality in under 20 minutes.",
-    image: "recipes/256/honey_garlic_salmon.jpg",
+    image: "recipes/1024/honey_garlic_salmon.jpg",
   },
   {
     name: "Crepes",
@@ -1274,7 +1274,7 @@ const recipes: Recipe[] = [
     estimatedTime: 25,
     categories: ["Breakfast", "Dessert"],
     description: "Thin, delicate crepes you can fill with anything sweet or savory — an elegant breakfast that's more fun than it is difficult.",
-    image: "recipes/256/crepes.jpg",
+    image: "recipes/1024/crepes.jpg",
   },
   {
     name: "Loaded Baked Potato",
@@ -1297,7 +1297,7 @@ const recipes: Recipe[] = [
     estimatedTime: 65,
     categories: ["Dinner", "Lunch"],
     description: "Fully loaded baked potatoes with all the toppings — a hearty, customizable meal with almost no active cooking time.",
-    image: "recipes/256/loaded_baked_potato.jpg",
+    image: "recipes/1024/loaded_baked_potato.jpg",
   },
   {
     name: "Pasta Primavera",
@@ -1323,7 +1323,7 @@ const recipes: Recipe[] = [
     estimatedTime: 25,
     categories: ["Dinner", "Lunch"],
     description: "Colorful pasta loaded with fresh vegetables and finished with Parmesan — light, fresh, and endlessly adaptable.",
-    image: "recipes/256/pasta_primavera.jpg",
+    image: "recipes/1024/pasta_primavera.jpg",
   },
   {
     name: "Street Tacos",
@@ -1349,7 +1349,7 @@ const recipes: Recipe[] = [
     estimatedTime: 30,
     categories: ["Dinner", "Lunch"],
     description: "Simple, authentic-style street tacos with marinated steak, fresh onion, and cilantro on warm corn tortillas.",
-    image: "recipes/256/street_tacos.jpg",
+    image: "recipes/1024/homemade_tacos.jpg",
   },
   {
     name: "Chili",
@@ -1376,7 +1376,7 @@ const recipes: Recipe[] = [
     estimatedTime: 35,
     categories: ["Dinner", "Lunch"],
     description: "Hearty, warming chili that's filling enough to be the main event and even better the next day.",
-    image: "recipes/256/chili.jpg",
+    image: "recipes/1024/chili.jpg",
   },
   {
     name: "Lemon Bars",
@@ -1402,7 +1402,7 @@ const recipes: Recipe[] = [
     estimatedTime: 50,
     categories: ["Dessert"],
     description: "Tart and sweet lemon bars with a buttery shortbread crust — a bright, refreshing dessert worth every minute.",
-    image: "recipes/256/lemon_bars.jpg",
+    image: "recipes/1024/lemon_bars.jpg",
   },
   {
     name: "Fried Egg Sandwich",
@@ -1426,7 +1426,7 @@ const recipes: Recipe[] = [
     estimatedTime: 10,
     categories: ["Breakfast", "Lunch"],
     description: "The humble fried egg sandwich — crispy toast, a runny yolk, melted cheese. Greater than the sum of its parts.",
-    image: "recipes/256/fried_egg_sandwich.jpg",
+    image: "recipes/1024/fried_egg_sandwich.jpg",
   },
   {
     name: "Spinach and Feta Quesadilla",
@@ -1449,7 +1449,7 @@ const recipes: Recipe[] = [
     estimatedTime: 12,
     categories: ["Lunch", "Dinner"],
     description: "A cheesy, satisfying quesadilla with a Mediterranean twist — spinach and feta make it feel a little fancy without extra effort.",
-    image: "recipes/256/spinach_feta_quesadilla.jpg",
+    image: "recipes/1024/spinach_and_feta_quesadilla.jpg",
   },
 ].sort((a, b) => a.name.localeCompare(b.name));
 

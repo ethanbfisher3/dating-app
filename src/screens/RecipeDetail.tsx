@@ -12,8 +12,10 @@ export default function RecipeDetail({ route, navigation }: AppScreenProps<"Reci
 
   useLayoutEffect(() => {
     navigation.setOptions({
-      headerBackTitle: "Back",
-      title: recipe?.name ?? "Recipe",
+      headerTransparent: true,
+      title: "",
+      headerBackTitle: "",
+      headerTintColor: "#fff",
     });
   }, [navigation]);
 
@@ -110,7 +112,7 @@ const styles = StyleSheet.create({
 
   heroImage: {
     width: "100%",
-    height: 230,
+    height: 300,
     backgroundColor: "#e8edf3",
   },
 

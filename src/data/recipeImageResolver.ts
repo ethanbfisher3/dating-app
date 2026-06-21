@@ -3,7 +3,7 @@ import type { ImageSourcePropType } from "react-native";
 const FALLBACK_RECIPE_IMAGE: ImageSourcePropType = require("../assets/images/cooking.jpg");
 
 // Map of recipe image filenames to their require() calls
-const RECIPE_IMAGES: Record<string, ImageSourcePropType> = {
+const RECIPE_IMAGES_256: Record<string, ImageSourcePropType> = {
   "avocado_toast.jpg": require("../assets/images/recipes/256/avocado_toast.jpg"),
   "baked_sweet_potato.jpg": require("../assets/images/recipes/256/baked_sweet_potato.jpg"),
   "banana_pancakes.jpg": require("../assets/images/recipes/256/banana_pancakes.jpg"),
@@ -62,6 +62,22 @@ const RECIPE_IMAGES: Record<string, ImageSourcePropType> = {
   "zucchini_fritters.jpg": require("../assets/images/recipes/256/zucchini_fritters.jpg"),
 };
 
+const RECIPE_IMAGES_1024: Record<string, ImageSourcePropType> = {
+  "pasta_primavera.jpg": require("../assets/images/recipes/1024/pasta_primavera.jpg"),
+  "homemade_tacos.jpg": require("../assets/images/recipes/1024/homemade_tacos.jpg"),
+  "loaded_baked_potato.jpg": require("../assets/images/recipes/1024/loaded_baked_potato.jpg"),
+  "homemade_pizza.jpg": require("../assets/images/recipes/1024/homemade_pizza.jpg"),
+  "french_toast.jpg": require("../assets/images/recipes/1024/french_toast.jpg"),
+  "chili.jpg": require("../assets/images/recipes/1024/chili.jpg"),
+  "lemon_bars.jpg": require("../assets/images/recipes/1024/lemon_bars.jpg"),
+  "mac_and_cheese.jpg": require("../assets/images/recipes/1024/mac_and_cheese.jpg"),
+  "spinach_and_feta_quesadilla.jpg": require("../assets/images/recipes/1024/spinach_and_feta_quesadilla.jpg"),
+  "crepes.jpg": require("../assets/images/recipes/1024/crepes.jpg"),
+  "fried_egg_sandwich.jpg": require("../assets/images/recipes/1024/fried_egg_sandwich.jpg"),
+  "honey_garlic_salmon.jpg": require("../assets/images/recipes/1024/honey_garlic_salmon.jpg"),
+  "shakshuka.jpg": require("../assets/images/recipes/1024/shakshuka.jpg"),
+};
+
 function normalizeRecipeImageKey(imagePath: string): string {
   return imagePath.replace(/\\/g, "/").replace(/^\.\.\/assets\/images\//, "");
 }
@@ -82,10 +98,14 @@ export function resolveRecipeImage(image: unknown): ImageSourcePropType {
       return { uri: normalized } as ImageSourcePropType;
     }
 
-    // Handle local recipe image paths like "recipes/256/filename.jpg"
     if (normalized.startsWith("recipes/256/")) {
       const filename = normalized.replace("recipes/256/", "");
-      return RECIPE_IMAGES[filename] || FALLBACK_RECIPE_IMAGE;
+      return RECIPE_IMAGES_256[filename] || FALLBACK_RECIPE_IMAGE;
+    }
+
+    if (normalized.startsWith("recipes/1024/")) {
+      const filename = normalized.replace("recipes/1024/", "");
+      return RECIPE_IMAGES_1024[filename] || FALLBACK_RECIPE_IMAGE;
     }
 
     return FALLBACK_RECIPE_IMAGE;

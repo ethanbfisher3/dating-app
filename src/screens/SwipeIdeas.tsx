@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { View, Animated, Dimensions, Platform, StyleSheet, TouchableOpacity, ActivityIndicator, Modal, ScrollView } from "react-native";
+import { View, Dimensions, Platform, StyleSheet, TouchableOpacity, ActivityIndicator, Modal, ScrollView } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { getActivityById } from "../data/activities";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { PanGestureHandler, State } from "react-native-gesture-handler";
 import { AdEventType, InterstitialAd, TestIds } from "react-native-google-mobile-ads";
 import * as Location from "expo-location";
 import Text from "../Components/AppText";
@@ -23,22 +23,20 @@ const IOS_INTERSTITIAL_ID = "ca-app-pub-9592701510571371/5004294097";
 const PRODUCTION_INTERSTITIAL_ID = Platform.select({ android: ANDROID_INTERSTITIAL_ID, ios: IOS_INTERSTITIAL_ID });
 const INTERSTITIAL_AD_UNIT_ID = __DEV__ || !PRODUCTION_INTERSTITIAL_ID ? TestIds.INTERSTITIAL : PRODUCTION_INTERSTITIAL_ID;
 
-const AD_EVERY_N_SWIPES = 10;
+const AD_EVERY_N_CARDS = 10;
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
-const SWIPE_THRESHOLD = 100;
-const CARD_WIDTH = SCREEN_WIDTH * 0.88;
-const CARD_HEIGHT = CARD_WIDTH * 1.4;
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
+const HERO_HEIGHT = Math.round(SCREEN_HEIGHT * 0.50);
 
-const CATEGORY_CONFIG: Record<string, { icon: string; color: string; bg: string; label: string }> = {
-  Food: { icon: "restaurant", color: "#d4522a", bg: "#fef0e8", label: "Food" },
-  Sports: { icon: "barbell", color: "#16803c", bg: "#edfaf2", label: "Sports" },
-  Outdoors: { icon: "leaf", color: "#0d7560", bg: "#e6f4f0", label: "Outdoors" },
-  Education: { icon: "book", color: "#5746af", bg: "#eeebff", label: "Education" },
-  Shopping: { icon: "bag-handle", color: "#b45309", bg: "#fef8e8", label: "Shopping" },
-  Entertainment: { icon: "film", color: "#7c3aed", bg: "#f3eeff", label: "Entertainment" },
+const CATEGORY_CONFIG: Record<string, { icon: string; color: string; deepColor: string; bg: string; label: string }> = {
+  Food:          { icon: "restaurant",  color: "#d4522a", deepColor: "#a83a1a", bg: "#fef0e8", label: "Food" },
+  Sports:        { icon: "barbell",     color: "#16803c", deepColor: "#0e5828", bg: "#edfaf2", label: "Sports" },
+  Outdoors:      { icon: "leaf",        color: "#0d7560", deepColor: "#095446", bg: "#e6f4f0", label: "Outdoors" },
+  Education:     { icon: "book",        color: "#5746af", deepColor: "#3d3182", bg: "#eeebff", label: "Education" },
+  Shopping:      { icon: "bag-handle",  color: "#b45309", deepColor: "#8a3e06", bg: "#fef8e8", label: "Shopping" },
+  Entertainment: { icon: "film",        color: "#7c3aed", deepColor: "#5b22c4", bg: "#f3eeff", label: "Entertainment" },
 };
-const DEFAULT_CAT = { icon: "heart", color: "#e63f67", bg: "#fff0f5", label: "Date" };
+const DEFAULT_CAT = { icon: "heart", color: "#e63f67", deepColor: "#b82e51", bg: "#fff0f5", label: "Date" };
 
 const DURATION_OPTIONS = [
   { label: "1 hr", value: 60 },
@@ -87,24 +85,28 @@ function formatDate(iso: string) {
   return d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
 }
 
+function formatDuration(minutes: number): string {
+  if (minutes < 60) return `${minutes}m`;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return m === 0 ? `${h}h` : `${h}h ${m}m`;
+}
+
 function getIdeaCategory(idea: FilledIdea): string | null {
   const weights: Record<string, number> = {};
   for (const step of idea.schedule ?? []) {
     if (step.place?.sourceKind === "activity" && step.place.id) {
       const activity = getActivityById(step.place.id);
       if (activity) {
-        // Use the first non-Entertainment category to avoid Entertainment dominating
         const primaryCat = activity.categories.find((c) => c !== "Entertainment") ?? activity.categories[0];
         if (primaryCat && CATEGORY_CONFIG[primaryCat]) {
           weights[primaryCat] = (weights[primaryCat] ?? 0) + 1;
         }
       }
     } else if (step.place?.sourceKind === "place" && step.place.type) {
-      // Use the actual resolved place type instead of all possible slot options
       const cat = SLOT_TO_CATEGORY[step.place.type];
       if (cat) weights[cat] = (weights[cat] ?? 0) + 2;
     } else {
-      // Recipe or no-place step — use the slot directly
       const cat = SLOT_TO_CATEGORY[step.slot];
       if (cat) weights[cat] = (weights[cat] ?? 0) + 1;
     }
@@ -112,17 +114,31 @@ function getIdeaCategory(idea: FilledIdea): string | null {
   let best: string | null = null;
   let bestW = 0;
   for (const [cat, w] of Object.entries(weights)) {
-    if (w > bestW) {
-      best = cat;
-      bestW = w;
-    }
+    if (w > bestW) { best = cat; bestW = w; }
   }
   return best;
 }
 
+function getStepCategory(
+  step: { slot: string; place: { sourceKind: string; id?: string; type?: string } | null },
+  stepIndex: number
+): (typeof DEFAULT_CAT) {
+  let cat: string | null = null;
+  if (step.place?.sourceKind === "activity" && step.place.id) {
+    const activity = getActivityById(step.place.id);
+    if (activity) {
+      const validCats = activity.categories.filter((c) => CATEGORY_CONFIG[c]);
+      if (validCats.length > 0) cat = validCats[stepIndex % validCats.length];
+    }
+  } else if (step.place?.sourceKind === "place" && step.place.type) {
+    cat = SLOT_TO_CATEGORY[step.place.type] ?? null;
+  }
+  if (!cat) cat = SLOT_TO_CATEGORY[step.slot] ?? null;
+  return (cat && CATEGORY_CONFIG[cat]) || DEFAULT_CAT;
+}
+
 export default function SwipeIdeas({
   navigation,
-  onCardSwipeActive,
 }: {
   navigation: AppNavigation;
   goToTab?: (key: string) => void;
@@ -137,64 +153,26 @@ export default function SwipeIdeas({
   const [generationCount, setGenerationCount] = useState(0);
   const [activityModalId, setActivityModalId] = useState<string | null>(null);
 
-  // Filter state
   const [filters, setFilters] = useState<Filters>(makeDefaultFilters);
   const [filterVisible, setFilterVisible] = useState(false);
   const [draft, setDraft] = useState<Filters>(makeDefaultFilters);
   const [showDatePicker, setShowDatePicker] = useState(false);
 
-  const translateX = useRef(new Animated.Value(0)).current;
-  const cardOpacity = useRef(new Animated.Value(1)).current;
-  const swipeCountRef = useRef(0);
-  const isAnimatingRef = useRef(false);
-  const logicalIndexRef = useRef(0);
-  const swipeQueueRef = useRef<Array<"left" | "right">>([]);
-  const animationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const resetAnimationState = useCallback(() => {
-    if (animationTimeoutRef.current) {
-      clearTimeout(animationTimeoutRef.current);
-      animationTimeoutRef.current = null;
-    }
-    isAnimatingRef.current = false;
-    swipeQueueRef.current = [];
-    translateX.setValue(0);
-    cardOpacity.setValue(1);
-  }, [translateX, cardOpacity]);
+  const cardCountRef = useRef(0);
   const interstitialRef = useRef<InterstitialAd | null>(null);
   const interstitialReadyRef = useRef(false);
 
-  // Pre-load interstitial ad for free users
   useEffect(() => {
     if (isUnlocked) return;
     const ad = InterstitialAd.createForAdRequest(INTERSTITIAL_AD_UNIT_ID);
     interstitialRef.current = ad;
-
-    const unsubLoaded = ad.addAdEventListener(AdEventType.LOADED, () => {
-      interstitialReadyRef.current = true;
-    });
-    const unsubClosed = ad.addAdEventListener(AdEventType.CLOSED, () => {
-      interstitialReadyRef.current = false;
-      ad.load();
-    });
-    const unsubError = ad.addAdEventListener(AdEventType.ERROR, () => {
-      interstitialReadyRef.current = false;
-    });
-
+    const unsubLoaded = ad.addAdEventListener(AdEventType.LOADED, () => { interstitialReadyRef.current = true; });
+    const unsubClosed = ad.addAdEventListener(AdEventType.CLOSED, () => { interstitialReadyRef.current = false; ad.load(); });
+    const unsubError = ad.addAdEventListener(AdEventType.ERROR, () => { interstitialReadyRef.current = false; });
     ad.load();
-
-    return () => {
-      unsubLoaded();
-      unsubClosed();
-      unsubError();
-    };
+    return () => { unsubLoaded(); unsubClosed(); unsubError(); };
   }, [isUnlocked]);
 
-  const rotate = translateX.interpolate({
-    inputRange: [-SCREEN_WIDTH, 0, SCREEN_WIDTH],
-    outputRange: ["-20deg", "0deg", "20deg"],
-    extrapolate: "clamp",
-  });
   const hasLocation = userLocation !== null;
 
   const params = useMemo(
@@ -214,7 +192,6 @@ export default function SwipeIdeas({
   );
 
   const { places, recipes, activities, isLoading } = useDatePlannerIdeas(params);
-  // Spread into a new array each generation so useFilledIdeas re-shuffles instead of returning cached ideas
   const memoizedPlaces = useMemo(() => [...places], [places, generationCount]);
   const ideas = useFilledIdeas({ params, places: memoizedPlaces, recipes, activities });
 
@@ -252,8 +229,6 @@ export default function SwipeIdeas({
   const applyFilter = useCallback(() => {
     setFilters(draft);
     setFilterVisible(false);
-    // Do NOT reset currentIndex — user continues from where they are in their current
-    // batch of 10 so the swipe counter keeps running and ads trigger as expected.
     setGenerationCount((c) => c + 1);
   }, [draft]);
 
@@ -265,119 +240,40 @@ export default function SwipeIdeas({
   const toggleDraftCategory = useCallback((cat: string) => {
     setDraft((d) => {
       const has = d.categories.includes(cat);
-      if (has && d.categories.length === 1) return d; // require at least one
+      if (has && d.categories.length === 1) return d;
       return { ...d, categories: has ? d.categories.filter((c) => c !== cat) : [...d.categories, cat] };
     });
   }, []);
 
-  const runAdvance = useCallback(
-    (direction: "left" | "right") => {
-      if (animationTimeoutRef.current) clearTimeout(animationTimeoutRef.current);
-      animationTimeoutRef.current = setTimeout(resetAnimationState, 1000);
-
-      const toX = direction === "right" ? SCREEN_WIDTH * 1.5 : -SCREEN_WIDTH * 1.5;
-      Animated.parallel([
-        Animated.timing(translateX, { toValue: toX, duration: 150, useNativeDriver: true }),
-        Animated.timing(cardOpacity, { toValue: 0, duration: 120, useNativeDriver: true }),
-      ]).start(() => {
-        if (animationTimeoutRef.current) {
-          clearTimeout(animationTimeoutRef.current);
-          animationTimeoutRef.current = null;
-        }
-        swipeCountRef.current += 1;
-        translateX.setValue(0);
-        setCurrentIndex((p) => p + 1);
-
-        if (!isUnlocked && swipeCountRef.current % AD_EVERY_N_SWIPES === 0) {
-          if (interstitialReadyRef.current && interstitialRef.current) {
-            interstitialRef.current.show();
-          }
-        }
-
-        requestAnimationFrame(() => {
-          cardOpacity.setValue(1);
-          const next = swipeQueueRef.current.shift();
-          if (next) {
-            runAdvance(next);
-          } else {
-            isAnimatingRef.current = false;
-          }
-        });
-      });
-    },
-    [translateX, cardOpacity, isUnlocked, resetAnimationState],
-  );
-
-  const advanceCard = useCallback(
-    (direction: "left" | "right") => {
-      if (swipeQueueRef.current.length >= 4) return;
-      logicalIndexRef.current += 1;
-      if (isAnimatingRef.current) {
-        swipeQueueRef.current.push(direction);
-        return;
+  const advance = useCallback(() => {
+    cardCountRef.current += 1;
+    if (!isUnlocked && cardCountRef.current % AD_EVERY_N_CARDS === 0) {
+      if (interstitialReadyRef.current && interstitialRef.current) {
+        interstitialRef.current.show();
       }
-      isAnimatingRef.current = true;
-      runAdvance(direction);
-    },
-    [runAdvance],
-  );
+    }
+    setCurrentIndex((p) => p + 1);
+  }, [isUnlocked]);
 
   const handleSave = useCallback(() => {
-    const idea = ideas[logicalIndexRef.current];
+    const idea = ideas[currentIndex];
     if (!idea) return;
     if (!canSave) {
       setPaywallVisible(true);
-      Animated.spring(translateX, { toValue: 0, useNativeDriver: true }).start();
       return;
     }
     saveDateIdea(idea);
-    advanceCard("right");
-  }, [ideas, canSave, advanceCard, translateX]);
+    advance();
+  }, [ideas, currentIndex, canSave, advance]);
 
   const handleSkip = useCallback(() => {
-    if (!ideas[logicalIndexRef.current]) return;
-    advanceCard("left");
-  }, [ideas, advanceCard]);
-
-  const onGestureEvent = useCallback(
-    (event: any) => {
-      if (!isAnimatingRef.current) {
-        translateX.setValue(event.nativeEvent.translationX);
-      }
-    },
-    [translateX],
-  );
-
-  const onHandlerStateChange = useCallback(
-    (event: any) => {
-      const { state, translationX: tx } = event.nativeEvent;
-      if (state === State.BEGAN) {
-        onCardSwipeActive?.(true);
-      } else if (state === State.END) {
-        onCardSwipeActive?.(false);
-        if (tx > SWIPE_THRESHOLD) {
-          handleSave();
-        } else if (tx < -SWIPE_THRESHOLD) {
-          handleSkip();
-        } else if (!isAnimatingRef.current) {
-          Animated.spring(translateX, { toValue: 0, useNativeDriver: true }).start();
-        }
-      } else if (state === State.FAILED || state === State.CANCELLED) {
-        onCardSwipeActive?.(false);
-        if (!isAnimatingRef.current) {
-          Animated.spring(translateX, { toValue: 0, useNativeDriver: true }).start();
-        }
-      }
-    },
-    [translateX, handleSave, handleSkip, onCardSwipeActive],
-  );
+    if (!ideas[currentIndex]) return;
+    advance();
+  }, [ideas, currentIndex, advance]);
 
   const currentIdea = ideas[currentIndex];
-  const nextIdea = ideas[currentIndex + 1];
   const category = currentIdea ? getIdeaCategory(currentIdea) : null;
   const catConfig = (category && CATEGORY_CONFIG[category]) || DEFAULT_CAT;
-  const nextCategory = nextIdea ? getIdeaCategory(nextIdea) : null;
-  const nextCatConfig = (nextCategory && CATEGORY_CONFIG[nextCategory]) || DEFAULT_CAT;
 
   if (isLoading && ideas.length === 0) {
     return (
@@ -401,8 +297,6 @@ export default function SwipeIdeas({
           <TouchableOpacity
             style={styles.restartBtn}
             onPress={() => {
-              resetAnimationState();
-              logicalIndexRef.current = 0;
               setCurrentIndex(0);
               setGenerationCount((c) => c + 1);
             }}
@@ -418,102 +312,109 @@ export default function SwipeIdeas({
     );
   }
 
+  const steps = currentIdea.schedule ?? [];
+
   return (
-    <View style={[styles.container, { paddingTop: insets.top + 8 }]}>
-      <BottomBackgroundArt bottomOffset={0} />
+    <View style={styles.container}>
+      {/* Full-screen card */}
+      <View style={styles.card}>
+        {/* Hero section */}
+        <View style={[styles.cardHero, { height: HERO_HEIGHT }]}>
+          <LinearGradient
+            colors={[catConfig.deepColor, catConfig.color]}
+            style={StyleSheet.absoluteFill}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          />
 
-      <View style={styles.header}>
-        <View style={styles.headerRow}>
-          <Text style={styles.headerTitle}>Discover</Text>
-          <TouchableOpacity style={styles.filterBtn} onPress={openFilter}>
-            <Ionicons name="options-outline" size={22} color={hasActiveFilters ? "#1e90ff" : "#555"} />
-            {hasActiveFilters && <View style={styles.filterDot} />}
-          </TouchableOpacity>
-        </View>
-        <Text style={styles.headerSub}>Swipe right to save · left to skip</Text>
-      </View>
+          {/* Header overlaid at top of hero */}
+          <View style={[styles.heroHeader, { paddingTop: insets.top + 10 }]}>
+            <Text style={styles.heroHeaderTitle}>Discover</Text>
+            <TouchableOpacity style={styles.filterBtn} onPress={openFilter}>
+              <Ionicons name="options-outline" size={20} color={hasActiveFilters ? "#fff" : "rgba(255,255,255,0.75)"} />
+              {hasActiveFilters && <View style={styles.filterDot} />}
+            </TouchableOpacity>
+          </View>
 
-      <View style={styles.cardArea}>
-        {nextIdea && (
-          <Animated.View style={[styles.card, styles.cardShadow, { backgroundColor: nextCatConfig.bg }]}>
-            <View style={[styles.catPill, { borderColor: nextCatConfig.color }]}>
-              <Ionicons name={nextCatConfig.icon as any} size={13} color={nextCatConfig.color} />
-              <Text style={[styles.catText, { color: nextCatConfig.color }]}>{nextCatConfig.label}</Text>
-            </View>
-            <Text style={styles.ideaText}>{nextIdea.filledTemplate}</Text>
-            <View style={styles.schedule}>
-              {(nextIdea.schedule ?? []).slice(0, 4).map((step, i) => (
-                <View key={i} style={styles.scheduleRow}>
-                  <View style={[styles.dot, { backgroundColor: nextCatConfig.color + "80" }]} />
-                  <Text style={styles.stepTitle} numberOfLines={1}>
-                    {step.title}
-                  </Text>
-                  {step.startTime ? <Text style={styles.stepTime}>{step.startTime}</Text> : null}
-                </View>
-              ))}
-            </View>
-            <View style={styles.linkDivider} />
-            <IdeaPlaceLinks
-              places={Object.values(nextIdea.places ?? {})}
-              navigation={navigation}
-              marginTop={0}
-              onActivityPress={(p) => setActivityModalId(p.id)}
-            />
-          </Animated.View>
-        )}
+          {/* Progress dots */}
+          <View style={styles.progressDots}>
+            {Array.from({ length: Math.min(steps.length, 5) }).map((_, i) => (
+              <View key={i} style={[styles.progressDot, i === 0 && styles.progressDotActive]} />
+            ))}
+          </View>
 
-        <PanGestureHandler
-          onGestureEvent={onGestureEvent}
-          onHandlerStateChange={onHandlerStateChange}
-          activeOffsetX={[-12, 12]}
-          failOffsetY={[-30, 30]}
-        >
-          <Animated.View
-            style={[
-              styles.card,
-              styles.cardShadow,
-              { transform: [{ translateX }, { rotate }], opacity: cardOpacity, backgroundColor: catConfig.bg },
-            ]}
+          {/* Category icon */}
+          <View style={styles.heroIconCircle}>
+            <Ionicons name={catConfig.icon as any} size={52} color="white" />
+          </View>
+
+          {/* Bottom gradient with title */}
+          <LinearGradient
+            colors={["transparent", "rgba(0,0,0,0.80)"]}
+            style={styles.heroOverlay}
           >
-            <View style={[styles.catPill, { borderColor: catConfig.color }]}>
-              <Ionicons name={catConfig.icon as any} size={13} color={catConfig.color} />
-              <Text style={[styles.catText, { color: catConfig.color }]}>{catConfig.label}</Text>
+            <View style={styles.heroCatPill}>
+              <Ionicons name={catConfig.icon as any} size={10} color="rgba(255,255,255,0.92)" />
+              <Text style={styles.heroCatText}>{catConfig.label.toUpperCase()}</Text>
             </View>
+            <Text style={styles.heroTitle} numberOfLines={3}>{currentIdea.filledTemplate}</Text>
+          </LinearGradient>
+        </View>
 
-            <Text style={styles.ideaText}>{currentIdea.filledTemplate}</Text>
-
-            <View style={styles.schedule}>
-              {(currentIdea.schedule ?? []).slice(0, 4).map((step, i) => (
-                <View key={i} style={styles.scheduleRow}>
-                  <View style={[styles.dot, { backgroundColor: catConfig.color + "80" }]} />
-                  <Text style={styles.stepTitle} numberOfLines={1}>
+        {/* Scrollable content */}
+        <ScrollView
+          style={styles.contentScroll}
+          contentContainerStyle={styles.cardContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.scheduleWrap}>
+            {steps.slice(0, 6).map((step, i) => {
+              const stepCat = getStepCategory(step, i);
+              return (
+                <View key={i} style={[styles.stepPill, { backgroundColor: stepCat.bg }]}>
+                  <Ionicons name={stepCat.icon as any} size={12} color={stepCat.color} />
+                  <Text style={[styles.stepPillText, { color: stepCat.deepColor }]} numberOfLines={1}>
                     {step.title}
                   </Text>
-                  {step.startTime ? <Text style={styles.stepTime}>{step.startTime}</Text> : null}
+                  {step.durationMinutes > 0 && (
+                    <Text style={styles.stepDuration}>{formatDuration(step.durationMinutes)}</Text>
+                  )}
                 </View>
-              ))}
-            </View>
-            <View style={styles.linkDivider} />
-            <IdeaPlaceLinks
-              places={Object.values(currentIdea.places ?? {})}
-              navigation={navigation}
-              marginTop={0}
-              onActivityPress={(p) => setActivityModalId(p.id)}
-            />
-          </Animated.View>
-        </PanGestureHandler>
+              );
+            })}
+          </View>
+
+          {Object.keys(currentIdea.places ?? {}).length > 0 && (
+            <>
+              <View style={styles.linkDivider} />
+              <IdeaPlaceLinks
+                places={Object.values(currentIdea.places ?? {})}
+                navigation={navigation}
+                marginTop={0}
+                onActivityPress={(p) => setActivityModalId(p.id)}
+              />
+            </>
+          )}
+        </ScrollView>
       </View>
 
-      <View style={styles.buttons}>
-        <TouchableOpacity style={[styles.btn, styles.btnSkip]} onPress={handleSkip}>
-          <Ionicons name="close" size={32} color="#ef4444" />
-        </TouchableOpacity>
+      {/* Action buttons */}
+      <View style={[styles.buttons, { paddingBottom: Math.max(insets.bottom, 12) }]}>
+        <View style={styles.btnWrapper}>
+          <TouchableOpacity style={[styles.btn, styles.btnSkip]} onPress={handleSkip}>
+            <Ionicons name="close" size={38} color="#ef4444" />
+          </TouchableOpacity>
+          <Text style={styles.btnLabel}>Pass</Text>
+        </View>
         <TouchableOpacity style={styles.btnBookmark} onPress={() => navigation.navigate("SavedIdeas")}>
-          <Ionicons name="bookmark-outline" size={20} color="#666" />
+          <Ionicons name="bookmark-outline" size={22} color="#666" />
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.btn, styles.btnSave]} onPress={handleSave}>
-          <Ionicons name="heart" size={32} color="#22c55e" />
-        </TouchableOpacity>
+        <View style={styles.btnWrapper}>
+          <TouchableOpacity style={[styles.btn, styles.btnSave]} onPress={handleSave}>
+            <Ionicons name="heart" size={38} color="#22c55e" />
+          </TouchableOpacity>
+          <Text style={styles.btnLabel}>Save</Text>
+        </View>
       </View>
 
       <PaywallModal visible={paywallVisible} onClose={() => setPaywallVisible(false)} reason="general" />
@@ -522,7 +423,6 @@ export default function SwipeIdeas({
       <Modal visible={filterVisible} transparent animationType="slide" onRequestClose={() => setFilterVisible(false)}>
         <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setFilterVisible(false)}>
           <TouchableOpacity activeOpacity={1} style={styles.filterSheet}>
-            {/* Header */}
             <View style={styles.filterHeader}>
               <Text style={styles.filterTitle}>Filters</Text>
               <TouchableOpacity onPress={resetDraft}>
@@ -531,7 +431,6 @@ export default function SwipeIdeas({
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 8 }}>
-              {/* Date */}
               <Text style={styles.filterSectionLabel}>Date</Text>
               <TouchableOpacity style={styles.dateBtn} onPress={() => setShowDatePicker((v) => !v)}>
                 <Ionicons name="calendar-outline" size={16} color="#555" />
@@ -546,103 +445,71 @@ export default function SwipeIdeas({
                   minimumDate={new Date()}
                   onChange={(_event, date) => {
                     if (Platform.OS === "android") setShowDatePicker(false);
-                    if (date) {
-                      setDraft((d) => ({ ...d, selectedDate: date.toISOString().slice(0, 10) }));
-                    }
+                    if (date) setDraft((d) => ({ ...d, selectedDate: date.toISOString().slice(0, 10) }));
                   }}
                 />
               )}
 
-              {/* Time window */}
               <Text style={styles.filterSectionLabel}>Time Window</Text>
               <View style={styles.timeRow}>
                 <View style={styles.timeStepper}>
                   <Text style={styles.timeLabel}>Start</Text>
                   <View style={styles.stepperRow}>
-                    <TouchableOpacity
-                      style={styles.stepperBtn}
-                      onPress={() => setDraft((d) => ({ ...d, startHour: Math.max(0, d.startHour - 1) }))}
-                    >
+                    <TouchableOpacity style={styles.stepperBtn} onPress={() => setDraft((d) => ({ ...d, startHour: Math.max(0, d.startHour - 1) }))}>
                       <Ionicons name="remove" size={18} color="#333" />
                     </TouchableOpacity>
                     <Text style={styles.stepperValue}>{formatHour(draft.startHour)}</Text>
-                    <TouchableOpacity
-                      style={styles.stepperBtn}
-                      onPress={() => setDraft((d) => ({ ...d, startHour: Math.min(d.endHour - 1, d.startHour + 1) }))}
-                    >
+                    <TouchableOpacity style={styles.stepperBtn} onPress={() => setDraft((d) => ({ ...d, startHour: Math.min(d.endHour - 1, d.startHour + 1) }))}>
                       <Ionicons name="add" size={18} color="#333" />
                     </TouchableOpacity>
                   </View>
                 </View>
-
                 <Ionicons name="arrow-forward" size={16} color="#bbb" style={{ marginTop: 20 }} />
-
                 <View style={styles.timeStepper}>
                   <Text style={styles.timeLabel}>End</Text>
                   <View style={styles.stepperRow}>
-                    <TouchableOpacity
-                      style={styles.stepperBtn}
-                      onPress={() => setDraft((d) => ({ ...d, endHour: Math.max(d.startHour + 1, d.endHour - 1) }))}
-                    >
+                    <TouchableOpacity style={styles.stepperBtn} onPress={() => setDraft((d) => ({ ...d, endHour: Math.max(d.startHour + 1, d.endHour - 1) }))}>
                       <Ionicons name="remove" size={18} color="#333" />
                     </TouchableOpacity>
                     <Text style={styles.stepperValue}>{formatHour(draft.endHour)}</Text>
-                    <TouchableOpacity
-                      style={styles.stepperBtn}
-                      onPress={() => setDraft((d) => ({ ...d, endHour: Math.min(23, d.endHour + 1) }))}
-                    >
+                    <TouchableOpacity style={styles.stepperBtn} onPress={() => setDraft((d) => ({ ...d, endHour: Math.min(23, d.endHour + 1) }))}>
                       <Ionicons name="add" size={18} color="#333" />
                     </TouchableOpacity>
                   </View>
                 </View>
               </View>
 
-              {/* Duration */}
               <Text style={styles.filterSectionLabel}>Duration</Text>
               <View style={styles.chipRow}>
                 {DURATION_OPTIONS.map((opt) => {
                   const active = draft.dateLengthMinutes === opt.value;
                   return (
-                    <TouchableOpacity
-                      key={opt.value}
-                      style={[styles.chip, active && styles.chipActive]}
-                      onPress={() => setDraft((d) => ({ ...d, dateLengthMinutes: opt.value }))}
-                    >
+                    <TouchableOpacity key={opt.value} style={[styles.chip, active && styles.chipActive]} onPress={() => setDraft((d) => ({ ...d, dateLengthMinutes: opt.value }))}>
                       <Text style={[styles.chipText, active && styles.chipTextActive]}>{opt.label}</Text>
                     </TouchableOpacity>
                   );
                 })}
               </View>
 
-              {/* Budget */}
               <Text style={styles.filterSectionLabel}>Budget</Text>
               <View style={styles.chipRow}>
                 {BUDGET_OPTIONS.map((opt) => {
                   const active = draft.maxPrice === opt.value;
                   return (
-                    <TouchableOpacity
-                      key={opt.value}
-                      style={[styles.chip, active && styles.chipActive]}
-                      onPress={() => setDraft((d) => ({ ...d, maxPrice: opt.value }))}
-                    >
+                    <TouchableOpacity key={opt.value} style={[styles.chip, active && styles.chipActive]} onPress={() => setDraft((d) => ({ ...d, maxPrice: opt.value }))}>
                       <Text style={[styles.chipText, active && styles.chipTextActive]}>{opt.label}</Text>
                     </TouchableOpacity>
                   );
                 })}
               </View>
 
-              {/* Categories */}
               <Text style={styles.filterSectionLabel}>Categories</Text>
               <View style={styles.catGrid}>
                 {(DATE_CATEGORIES as readonly string[]).map((cat) => {
                   const active = draft.categories.includes(cat);
                   const cfg = CATEGORY_CONFIG[cat];
                   return (
-                    <TouchableOpacity
-                      key={cat}
-                      style={[styles.catChip, active && { backgroundColor: cfg.bg, borderColor: cfg.color }]}
-                      onPress={() => toggleDraftCategory(cat)}
-                    >
+                    <TouchableOpacity key={cat} style={[styles.catChip, active && { backgroundColor: cfg.bg, borderColor: cfg.color }]} onPress={() => toggleDraftCategory(cat)}>
                       <Ionicons name={cfg.icon as any} size={14} color={active ? cfg.color : "#999"} />
                       <Text style={[styles.catChipText, active && { color: cfg.color }]}>{cat}</Text>
                     </TouchableOpacity>
@@ -651,7 +518,6 @@ export default function SwipeIdeas({
               </View>
             </ScrollView>
 
-            {/* Apply */}
             <TouchableOpacity style={styles.applyBtn} onPress={applyFilter}>
               <Text style={styles.applyBtnText}>Apply Filters</Text>
             </TouchableOpacity>
@@ -677,9 +543,7 @@ export default function SwipeIdeas({
                     </View>
                     <View style={styles.modalStatBox}>
                       <Text style={styles.modalStatLabel}>Duration</Text>
-                      <Text style={styles.modalStatValue}>
-                        {activity.durationMinutes.min}–{activity.durationMinutes.max} min
-                      </Text>
+                      <Text style={styles.modalStatValue}>{activity.durationMinutes.min}–{activity.durationMinutes.max} min</Text>
                     </View>
                   </View>
                   {activity.categories.length > 0 && (
@@ -706,123 +570,210 @@ const styles = StyleSheet.create({
   center: { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 32 },
   loadingText: { marginTop: 18, color: "#6b7280", fontSize: 15, textAlign: "center" },
   doneTitle: { fontSize: 22, color: "#1a1a1a", marginTop: 20, textAlign: "center", lineHeight: 30 },
-  doneSub: { fontSize: 15, color: "#6b7280", marginTop: 8, textAlign: "center" },
-  restartBtn: {
-    marginTop: 28,
-    backgroundColor: "#1e90ff",
-    borderRadius: 14,
-    paddingHorizontal: 36,
-    paddingVertical: 14,
-  },
+  restartBtn: { marginTop: 28, backgroundColor: "#1e90ff", borderRadius: 14, paddingHorizontal: 36, paddingVertical: 14 },
   restartBtnText: { color: "#fff", fontSize: 16, fontWeight: "600" },
   savedLink: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 18 },
   savedLinkText: { color: "#e63f67", fontSize: 15, fontWeight: "500" },
-  header: { paddingHorizontal: 24, paddingBottom: 8 },
-  headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  headerTitle: { fontSize: 36, color: "#1a1a1a", fontFamily: "SuperPandora" },
-  filterBtn: { padding: 4 },
+
+  // Full-screen card
+  card: {
+    flex: 1,
+    backgroundColor: "#fff",
+    overflow: "hidden",
+  },
+
+  // Hero
+  cardHero: {
+    overflow: "hidden",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  heroHeader: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 24,
+    zIndex: 10,
+  },
+  heroHeaderTitle: {
+    fontSize: 32,
+    color: "#fff",
+    fontFamily: "SuperPandora",
+    textShadowColor: "rgba(0,0,0,0.25)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
+  },
+  filterBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(255,255,255,0.18)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.28)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
   filterDot: {
     position: "absolute",
-    top: 2,
-    right: 2,
+    top: 7,
+    right: 7,
     width: 7,
     height: 7,
     borderRadius: 4,
-    backgroundColor: "#1e90ff",
+    backgroundColor: "#fff",
   },
-  headerSub: { fontSize: 14, color: "#6b7280", marginTop: 2 },
-  cardArea: { flex: 1, alignItems: "center", justifyContent: "center" },
-  card: {
+  progressDots: {
     position: "absolute",
-    width: CARD_WIDTH,
-    minHeight: CARD_HEIGHT,
-    borderRadius: 22,
-    padding: 24,
+    bottom: 90,
+    left: 0,
+    right: 0,
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 5,
+    zIndex: 5,
+    paddingHorizontal: 24,
   },
-  backCard: {
-    transform: [{ scale: 0.95 }],
+  progressDot: {
+    height: 3,
+    flex: 1,
+    maxWidth: 40,
+    borderRadius: 2,
+    backgroundColor: "rgba(255,255,255,0.38)",
   },
-  linkDivider: {
-    height: 1,
-    backgroundColor: "#e5e7eb",
-    marginTop: 14,
-    marginBottom: 4,
+  progressDotActive: {
+    backgroundColor: "rgba(255,255,255,0.92)",
   },
-  cardShadow: {
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.1,
-    shadowRadius: 16,
-    elevation: 6,
+  heroIconCircle: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: "rgba(255,255,255,0.15)",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1.5,
+    borderColor: "rgba(255,255,255,0.28)",
+    marginBottom: 60,
   },
-  badge: {
+  heroOverlay: {
     position: "absolute",
-    top: 24,
-    paddingHorizontal: 14,
-    paddingVertical: 5,
-    borderRadius: 8,
-    borderWidth: 3,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 24,
+    paddingTop: 60,
+    paddingBottom: 20,
   },
-  badgeSkip: { right: 20, borderColor: "#ef4444", transform: [{ rotate: "12deg" }] },
-  badgeSave: { left: 20, borderColor: "#22c55e", transform: [{ rotate: "-12deg" }] },
-  badgeText: { fontSize: 20, fontWeight: "900", letterSpacing: 2 },
-  catPill: {
+  heroCatPill: {
     flexDirection: "row",
     alignItems: "center",
     gap: 5,
-    borderWidth: 1.5,
-    borderRadius: 20,
+    backgroundColor: "rgba(255,255,255,0.18)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.28)",
     paddingHorizontal: 10,
     paddingVertical: 4,
+    borderRadius: 20,
     alignSelf: "flex-start",
-    backgroundColor: "rgba(255,255,255,0.7)",
-    marginBottom: 16,
-    marginTop: 8,
+    marginBottom: 8,
   },
-  catText: { fontSize: 12, fontWeight: "600" },
-  ideaText: { fontSize: 19, fontWeight: "700", color: "#1a1a1a", lineHeight: 27, marginBottom: 20 },
-  schedule: { gap: 10 },
-  scheduleRow: { flexDirection: "row", alignItems: "center", gap: 10 },
-  dot: { width: 7, height: 7, borderRadius: 4, flexShrink: 0 },
-  stepTitle: { flex: 1, fontSize: 14, color: "#374151" },
-  stepTime: { fontSize: 12, color: "#9ca3af" },
-  counterText: { textAlign: "center", fontSize: 13, color: "#aaa", paddingVertical: 4 },
+  heroCatText: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: "rgba(255,255,255,0.92)",
+    letterSpacing: 1,
+  },
+  heroTitle: {
+    fontSize: 24,
+    fontWeight: "800",
+    color: "#fff",
+    lineHeight: 32,
+  },
+
+  // Content
+  contentScroll: { flex: 1 },
+  cardContent: {
+    padding: 20,
+    paddingTop: 18,
+  },
+  scheduleWrap: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  stepPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  stepPillText: {
+    fontSize: 13,
+    fontWeight: "600",
+    maxWidth: SCREEN_WIDTH * 0.30,
+  },
+  stepDuration: {
+    fontSize: 11,
+    color: "#9ca3af",
+  },
+  linkDivider: {
+    height: 1,
+    backgroundColor: "#f0f0f0",
+    marginTop: 16,
+    marginBottom: 4,
+  },
+
+  // Action buttons
   buttons: {
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
     gap: 20,
-    paddingVertical: 18,
-    paddingHorizontal: 40,
+    paddingTop: 12,
+    paddingHorizontal: 32,
+    backgroundColor: "#fff",
+    borderTopWidth: 1,
+    borderTopColor: "#f0f0f0",
   },
+  btnWrapper: { alignItems: "center", gap: 5 },
+  btnLabel: { fontSize: 12, fontWeight: "600", color: "#888" },
   btn: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  btnSkip: { backgroundColor: "#fff", shadowColor: "#ef4444", shadowOpacity: 0.16 },
+  btnSave: { backgroundColor: "#fff", shadowColor: "#22c55e", shadowOpacity: 0.20 },
+  btnBookmark: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: "#f5f5f5",
     alignItems: "center",
     justifyContent: "center",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 3,
+    shadowOpacity: 0.07,
+    shadowRadius: 5,
+    elevation: 2,
   },
-  btnSkip: { backgroundColor: "#fff1f1" },
-  btnSave: { backgroundColor: "#f0fdf4" },
-  btnBookmark: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: "#f5f5f5",
-    alignItems: "center",
-    justifyContent: "center",
-  },
+
   // Shared modal overlay
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.45)",
-    justifyContent: "flex-end",
-  },
+  modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.45)", justifyContent: "flex-end" },
+
   // Filter sheet
   filterSheet: {
     backgroundColor: "#fff",
@@ -832,12 +783,7 @@ const styles = StyleSheet.create({
     paddingBottom: 36,
     maxHeight: "88%",
   },
-  filterHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 20,
-  },
+  filterHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 20 },
   filterTitle: { fontSize: 20, fontWeight: "700", color: "#1a1a1a" },
   filterReset: { fontSize: 15, color: "#1e90ff" },
   filterSectionLabel: {
@@ -859,33 +805,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
   },
   dateBtnText: { flex: 1, fontSize: 15, color: "#1a1a1a" },
-  timeRow: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    justifyContent: "space-between",
-    gap: 12,
-  },
+  timeRow: { flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", gap: 12 },
   timeStepper: { flex: 1, alignItems: "center" },
   timeLabel: { fontSize: 13, color: "#888", marginBottom: 6 },
   stepperRow: { flexDirection: "row", alignItems: "center", gap: 12 },
-  stepperBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "#f0f0f0",
-    alignItems: "center",
-    justifyContent: "center",
-  },
+  stepperBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: "#f0f0f0", alignItems: "center", justifyContent: "center" },
   stepperValue: { fontSize: 15, fontWeight: "600", color: "#1a1a1a", minWidth: 52, textAlign: "center" },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
-  chip: {
-    paddingHorizontal: 16,
-    paddingVertical: 9,
-    borderRadius: 20,
-    backgroundColor: "#f0f0f0",
-    borderWidth: 1.5,
-    borderColor: "transparent",
-  },
+  chip: { paddingHorizontal: 16, paddingVertical: 9, borderRadius: 20, backgroundColor: "#f0f0f0", borderWidth: 1.5, borderColor: "transparent" },
   chipActive: { backgroundColor: "#e8f0fe", borderColor: "#1e90ff" },
   chipText: { fontSize: 14, color: "#555", fontWeight: "500" },
   chipTextActive: { color: "#1e90ff" },
@@ -902,14 +829,9 @@ const styles = StyleSheet.create({
     borderColor: "transparent",
   },
   catChipText: { fontSize: 14, color: "#999", fontWeight: "500" },
-  applyBtn: {
-    marginTop: 24,
-    backgroundColor: "#1e90ff",
-    borderRadius: 14,
-    paddingVertical: 15,
-    alignItems: "center",
-  },
+  applyBtn: { marginTop: 24, backgroundColor: "#1e90ff", borderRadius: 14, paddingVertical: 15, alignItems: "center" },
   applyBtnText: { color: "#fff", fontSize: 16, fontWeight: "700" },
+
   // Activity detail sheet
   modalSheet: {
     backgroundColor: "#fff",
@@ -919,39 +841,13 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
     maxHeight: "70%",
   },
-  modalTitle: {
-    fontSize: 24,
-    color: "#1a1a1a",
-    marginBottom: 10,
-    fontFamily: "SuperPandora",
-  },
-  modalDesc: {
-    fontSize: 15,
-    lineHeight: 22,
-    color: "#555",
-    marginBottom: 18,
-  },
-  modalStats: {
-    flexDirection: "row",
-    gap: 12,
-    marginBottom: 16,
-  },
-  modalStatBox: {
-    flex: 1,
-    backgroundColor: "#f5f5f5",
-    borderRadius: 10,
-    paddingVertical: 14,
-    paddingHorizontal: 12,
-    alignItems: "center",
-  },
+  modalTitle: { fontSize: 24, color: "#1a1a1a", marginBottom: 10, fontFamily: "SuperPandora" },
+  modalDesc: { fontSize: 15, lineHeight: 22, color: "#555", marginBottom: 18 },
+  modalStats: { flexDirection: "row", gap: 12, marginBottom: 16 },
+  modalStatBox: { flex: 1, backgroundColor: "#f5f5f5", borderRadius: 10, paddingVertical: 14, paddingHorizontal: 12, alignItems: "center" },
   modalStatLabel: { fontSize: 12, color: "#888", marginBottom: 4 },
   modalStatValue: { fontSize: 16, color: "#1a1a1a", fontWeight: "600" },
   modalTags: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  modalTag: {
-    backgroundColor: "#ede9fe",
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-  },
+  modalTag: { backgroundColor: "#ede9fe", borderRadius: 12, paddingHorizontal: 12, paddingVertical: 5 },
   modalTagText: { fontSize: 13, color: "#6d28d9" },
 });

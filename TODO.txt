@@ -8,5 +8,14 @@ More date idea categories when generating ideas
 More visual stimuli (More animations, sounds, etc.)
 Let the user drop a location to plan the dates from instead of using their location
 
-Test:
-Test for if products don't load (test if the user has premium and they aren't connected to the internet)
+Redesign bottom layout?
+    New tabs:
+        Home
+        Date History
+        Date activities
+        Date recipes
+        Saved dates
+        Date calendar
+        Date idea generation
+        Discover
+        Places near me
