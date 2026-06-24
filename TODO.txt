@@ -7,6 +7,7 @@ Users can upload date ideas for their areas and others can view them on a 'socia
 More date idea categories when generating ideas
 More visual stimuli (More animations, sounds, etc.)
 Let the user drop a location to plan the dates from instead of using their location
+Change date idea templates to not include places at all, but activities instead. when chosen, options will show up near you for that activity
 
 Discover page:
     Display a picture of any recipe in the idea
@@ -24,3 +25,28 @@ Redesign bottom layout?
         Date idea generation
         Discover
         Places near me
+
+
+
+
+9 tabs is too many for a bottom bar (standard max is 5) — you'd need to group them. Here's how I'd approach it:
+
+Proposed 5 primary tabs:
+
+Tab	Icon	Contains
+Home	home	Current home screen
+Explore	compass	Discover + Activities + Places Near Me (sub-tabs at top)
+Plan	calendar	Idea Generation + Date Calendar + Saved Ideas (sub-tabs at top)
+Recipes	restaurant	Date Recipes
+History	time	Date History
+The two tabs with sub-content ("Explore" and "Plan") would use a top segmented control or chip row to switch between their inner screens — the same pattern Instagram uses for Reels/Photos or Spotify uses for Albums/Tracks.
+
+Why this grouping:
+
+Explore = things you browse to find something new
+Plan = things tied to organizing and remembering dates
+Main tradeoff: Activities, Places, Saved Ideas, Calendar, and Idea Generation each gain one extra tap to reach. That's the unavoidable cost of going from 9 to 5. The gain is a usable bottom bar that actually fits on screen without tiny icons and clipped labels.
+
+Alternative if you want to avoid the sub-tab complexity: Drop "Places Near Me" (fold it into Activities or Discover as a filter), and drop "Date Activities" as a tab (fold it into Discover). That gets you to 6-7 naturally, then maybe merge History + Saved into one "My Dates" tab to land at 5.
+
+Want me to implement one of these approaches?
